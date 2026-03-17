@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'Layout/main_layout.dart';
-import 'Layout/premium_theme_controller.dart'; // পাথটি আপনার প্রোজেক্ট অনুযায়ী চেক করে নিন
+import 'screen/splash_screen.dart'; // স্প্ল্যাশ স্ক্রিন ইমপোর্ট করা হলো
+import 'Layout/premium_theme_controller.dart'; 
 
 void main() {
   runApp(const MyApp());
@@ -17,15 +17,15 @@ class MyApp extends StatelessWidget {
       builder: (context, currentMode, child) {
         return MaterialApp(
           debugShowCheckedModeBanner: false,
-          title: 'SKYTHOR',
-          
+          title: 'SKYTHOR', // আপনার অ্যাপের প্রিমিয়াম নাম
+
           // থিম মোড সেট করা (ডার্ক বা লাইট)
           themeMode: currentMode,
 
           // লাইট থিম কনফিগারেশন
           theme: ThemeData(
             brightness: Brightness.light,
-            primarySwatch: Colors.blue,
+            primaryColor: Colors.blue, // primarySwatch এর বদলে primaryColor ব্যবহার করা ভালো
             fontFamily: 'Inter',
             scaffoldBackgroundColor: Colors.white,
           ),
@@ -33,12 +33,12 @@ class MyApp extends StatelessWidget {
           // ডার্ক থিম কনফিগারেশন (OLED Black)
           darkTheme: ThemeData(
             brightness: Brightness.dark,
-            scaffoldBackgroundColor: Colors.black,
+            scaffoldBackgroundColor: Colors.black, // ট্রু ব্ল্যাক
             fontFamily: 'Inter',
           ),
 
-          // এখানে 'const' সরিয়ে দেওয়া হয়েছে কারণ MainLayout ডাইনামিক ডাটা লিসেন করে
-          home: MainLayout(), 
+          // অ্যাপ ওপেন হলে প্রথমে আপনার ইউটিউবের মতো স্প্ল্যাশ অ্যানিমেশন আসবে
+          home: const SplashScreen(), 
         );
       },
     );
