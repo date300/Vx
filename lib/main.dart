@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'Layout/main_layout.dart';
+import 'Layout/premium_theme_controller.dart'; // পাথটি আপনার প্রোজেক্ট অনুযায়ী চেক করে নিন
 
 void main() {
   runApp(const MyApp());
@@ -10,15 +11,36 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'Premium App',
-      theme: ThemeData(
-        brightness: Brightness.dark,
-        scaffoldBackgroundColor: Colors.black, // Pure OLED Black ব্যাকগ্রাউন্ড
-        fontFamily: 'Inter', // আপনার ফন্ট থাকলে এটি কাজ করবে
-      ),
-      home: const MainLayout(), 
+    // এখানে ValueListenableBuilder থিম মোড (Dark/Light) লিসেন করবে
+    return ValueListenableBuilder<ThemeMode>(
+      valueListenable: PremiumTheme.themeMode,
+      builder: (context, currentMode, child) {
+        return MaterialApp(
+          debugShowCheckedModeBanner: false,
+          title: 'SKYTHOR',
+          
+          // থিম মোড সেট করা (ডার্ক বা লাইট)
+          themeMode: currentMode,
+
+          // লাইট থিম কনফিগারেশন
+          theme: ThemeData(
+            brightness: Brightness.light,
+            primarySwatch: Colors.blue,
+            fontFamily: 'Inter',
+            scaffoldBackgroundColor: Colors.white,
+          ),
+
+          // ডার্ক থিম কনফিগারেশন (OLED Black)
+          darkTheme: ThemeData(
+            brightness: Brightness.dark,
+            scaffoldBackgroundColor: Colors.black,
+            fontFamily: 'Inter',
+          ),
+
+          // এখানে 'const' সরিয়ে দেওয়া হয়েছে কারণ MainLayout ডাইনামিক ডাটা লিসেন করে
+          home: MainLayout(), 
+        );
+      },
     );
   }
 }
