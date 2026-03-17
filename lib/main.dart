@@ -15,10 +15,10 @@ class MyApp extends StatelessWidget {
       title: 'Premium App',
       theme: ThemeData(
         brightness: Brightness.dark,
-        scaffoldBackgroundColor: Colors.black, // Pure OLED Black
-        fontFamily: 'Inter',
+        scaffoldBackgroundColor: Colors.black, // Pure OLED Black ব্যাকগ্রাউন্ড
+        fontFamily: 'Inter', // আপনার ফন্ট থাকলে এটি কাজ করবে
       ),
-      home: const MainLayout(), // এখানেই মূলত আমাদের নতুন ডিজাইনটা কানেক্ট করা হলো
+      home: const MainLayout(), 
     );
   }
 }
