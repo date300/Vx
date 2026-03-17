@@ -1,3 +1,5 @@
+permissions:
+  contents: write
 name: Flutter Build & Deploy
 
 on:
@@ -57,7 +59,7 @@ jobs:
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
-          personal_token: ${{ secrets.DEPLOY_TOKEN }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./build/web
 
       - name: Upload Web artifact
