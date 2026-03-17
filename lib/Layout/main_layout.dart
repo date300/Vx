@@ -1,198 +1,147 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'premium_theme_controller.dart';
-import '../Pages/home_feed_page.dart';
+import '../Layout/premium_theme_controller.dart'; // আপনার থিম কন্ট্রোলারের পাথ ঠিক করে নেবেন
 
-class MainLayout extends StatefulWidget {
-  const MainLayout({super.key});
-
-  @override
-  State<MainLayout> createState() => _MainLayoutState();
-}
-
-class _MainLayoutState extends State<MainLayout> {
-  int _selectedIndex = 0;
-
-  final List<Widget> _pages = [
-    const HomeFeedPage(),
-    const Center(child: Text("Discover", style: TextStyle(color: Colors.white, fontSize: 24))),
-    const Center(child: Text("Inbox", style: TextStyle(color: Colors.white, fontSize: 24))),
-    const Center(child: Text("Profile", style: TextStyle(color: Colors.white, fontSize: 24))),
-  ];
+class ProfilePage extends StatelessWidget {
+  const ProfilePage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    bool isMobile = MediaQuery.of(context).size.width < 800;
-
     return Scaffold(
-      backgroundColor: Colors.black, // Pure OLED Black
-      extendBody: true,
-      body: Row(
-        children: [
-          // ডেক্সটপের জন্য আইকন-বেসড সাইডবার (কোনো টেক্সট লোগো ছাড়া)
-          if (!isMobile) _buildDesktopSidebar(),
-          
-          // মেইন কন্টেন্ট
-          Expanded(
-            child: Stack(
-              children: [
-                IndexedStack(
-                  index: _selectedIndex,
-                  children: _pages,
-                ),
-                // ডেক্সটপ টপবার
-                if (!isMobile) _buildDesktopTopBar(),
-              ],
-            ),
+      backgroundColor: Colors.transparent, // MainLayout এর ব্যাকগ্রাউন্ড বজায় রাখার জন্য
+      
+      // প্রোফাইল পেজের উপরের অ্যাপবার
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        title: const Text(
+          "Profile",
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
+        actions: [
+          // মেনু বাটন (ডান দিকে)
+          Builder(
+            builder: (context) {
+              return IconButton(
+                icon: const Icon(Icons.menu, color: Colors.white),
+                onPressed: () {
+                  // ডান দিকের সাইডবার ওপেন করবে
+                  Scaffold.of(context).openEndDrawer();
+                },
+              );
+            }
           ),
+          const SizedBox(width: 16),
         ],
       ),
-      // মোবাইলের জন্য ফ্লোটিং গ্লাস বটম নেভিগেশন
-      bottomNavigationBar: isMobile ? _buildMobileGlassNav() : null,
-    );
-  }
-
-  // === মোবাইল গ্লাস নেভিগেশন ===
-  Widget _buildMobileGlassNav() {
-    return ValueListenableBuilder<Color>(
-      valueListenable: PremiumTheme.accentColor,
-      builder: (context, activeColor, child) {
-        return Container(
-          height: 80,
-          margin: const EdgeInsets.only(left: 24, right: 24, bottom: 32),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(40), // iOS Pill Shape
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 30, sigmaY: 30),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.08), // Ultra subtle frosted glass
-                  border: Border.all(color: Colors.white.withOpacity(0.15), width: 0.5),
+      
+      // ডান দিকের সাইডবার (End Drawer)
+      endDrawer: Drawer(
+        backgroundColor: Colors.grey[900], // ড্রয়ারের ব্যাকগ্রাউন্ড কালার
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.horizontal(left: Radius.circular(20)),
+        ),
+        child: SafeArea(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Padding(
+                padding: EdgeInsets.all(20.0),
+                child: Text(
+                  "Theme & Colors",
+                  style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
                 ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              ),
+              const Divider(color: Colors.white24),
+              
+              // থিম মোড অপশন (যদি আপনার আলাদা ডার্ক/লাইট মোড লজিক থাকে)
+              ListTile(
+                leading: const Icon(Icons.dark_mode, color: Colors.white),
+                title: const Text("Dark Mode", style: TextStyle(color: Colors.white)),
+                onTap: () {
+                  // এখানে ডার্ক মোডের লজিক দিন
+                  Navigator.pop(context); // সিলেক্ট করার পর ড্রয়ার বন্ধ করতে
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.light_mode, color: Colors.white),
+                title: const Text("Light Mode", style: TextStyle(color: Colors.white)),
+                onTap: () {
+                  // এখানে লাইট মোডের লজিক দিন
+                  Navigator.pop(context);
+                },
+              ),
+              
+              const SizedBox(height: 20),
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 20.0),
+                child: Text(
+                  "Accent Colors",
+                  style: TextStyle(color: Colors.white54, fontSize: 16),
+                ),
+              ),
+              const SizedBox(height: 10),
+              
+              // এক্সেন্ট কালার পিকার
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                child: Wrap(
+                  spacing: 15,
+                  runSpacing: 15,
                   children: [
-                    _navIcon(Icons.home_rounded, 0, activeColor),
-                    _navIcon(Icons.explore_rounded, 1, activeColor),
-                    // সেন্টার অ্যাকশন বাটন (টিকটকের প্লাস বাটনের মত)
-                    _buildCenterActionButton(activeColor),
-                    _navIcon(Icons.chat_bubble_rounded, 2, activeColor),
-                    _navIcon(Icons.person_rounded, 3, activeColor),
+                    _buildColorDot(context, Colors.blue),
+                    _buildColorDot(context, Colors.green),
+                    _buildColorDot(context, Colors.redAccent),
+                    _buildColorDot(context, Colors.purple),
+                    _buildColorDot(context, Colors.orange),
+                    _buildColorDot(context, Colors.teal),
+                    _buildColorDot(context, Colors.pink),
+                    _buildColorDot(context, Colors.yellow),
                   ],
                 ),
               ),
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  // নেভিগেশন আইকন বিল্ডার
-  Widget _navIcon(IconData icon, int index, Color activeColor) {
-    bool isSelected = _selectedIndex == index;
-    return GestureDetector(
-      onTap: () => setState(() => _selectedIndex = index),
-      behavior: HitTestBehavior.opaque,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeOutBack,
-        padding: const EdgeInsets.all(12),
-        child: Icon(
-          icon,
-          size: isSelected ? 30 : 26,
-          color: isSelected ? activeColor : Colors.white54,
-        ),
-      ),
-    );
-  }
-
-  // টিকটকের মত মাঝখানের স্পেশাল বাটন
-  Widget _buildCenterActionButton(Color activeColor) {
-    return Container(
-      height: 48,
-      width: 48,
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [activeColor, activeColor.withOpacity(0.6)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: activeColor.withOpacity(0.4),
-            blurRadius: 15,
-            spreadRadius: 2,
-            offset: const Offset(0, 4),
-          )
-        ],
-      ),
-      child: const Icon(Icons.add, color: Colors.black, size: 30),
-    );
-  }
-
-  // === ডেক্সটপ সাইডবার (শুধুমাত্র আইকন) ===
-  Widget _buildDesktopSidebar() {
-    return ValueListenableBuilder<Color>(
-      valueListenable: PremiumTheme.accentColor,
-      builder: (context, activeColor, child) {
-        return Container(
-          width: 80,
-          color: Colors.black,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              _navIcon(Icons.home_rounded, 0, activeColor),
-              const SizedBox(height: 32),
-              _navIcon(Icons.explore_rounded, 1, activeColor),
-              const SizedBox(height: 32),
-              _navIcon(Icons.chat_bubble_rounded, 2, activeColor),
-              const SizedBox(height: 32),
-              _navIcon(Icons.person_rounded, 3, activeColor),
             ],
           ),
-        );
-      },
+        ),
+      ),
+      
+      // প্রোফাইল পেজের মেইন বডি
+      body: const Center(
+        child: Text(
+          "Profile Page Content",
+          style: TextStyle(color: Colors.white, fontSize: 24),
+        ),
+      ),
     );
   }
 
-  // === ডেক্সটপ টপবার (এখানে ব্র্যান্ডিং থাকবে) ===
-  Widget _buildDesktopTopBar() {
-    return Positioned(
-      top: 0, left: 0, right: 0,
-      child: ClipRRect(
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-          child: Container(
-            height: 70,
-            padding: const EdgeInsets.symmetric(horizontal: 32),
+  // একটি ছোট উইজেট ফাংশন কালার ডট বানানোর জন্য
+  Widget _buildColorDot(BuildContext context, Color color) {
+    return GestureDetector(
+      onTap: () {
+        // আপনার PremiumTheme এর accentColor চেঞ্জ করে দেবে
+        PremiumTheme.accentColor.value = color;
+        // আপনি চাইলে ক্লিক করার পর ড্রয়ার বন্ধ করার জন্য নিচের লাইন অ্যাড করতে পারেন
+        // Navigator.pop(context);
+      },
+      child: ValueListenableBuilder<Color>(
+        valueListenable: PremiumTheme.accentColor,
+        builder: (context, activeColor, child) {
+          bool isSelected = activeColor == color;
+          return Container(
+            width: 40,
+            height: 40,
             decoration: BoxDecoration(
-              color: Colors.black.withOpacity(0.4),
-              border: Border(bottom: BorderSide(color: Colors.white.withOpacity(0.1))),
+              color: color,
+              shape: BoxShape.circle,
+              border: isSelected
+                  ? Border.all(color: Colors.white, width: 3)
+                  : null,
+              boxShadow: isSelected
+                  ? [BoxShadow(color: color.withOpacity(0.5), blurRadius: 10)]
+                  : null,
             ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  "SKYTHOR", // টপ বারে লোগো টেক্সট 
-                  style: TextStyle(
-                    color: Colors.white, 
-                    fontSize: 22, 
-                    fontWeight: FontWeight.w800, 
-                    letterSpacing: 1.5
-                  ),
-                ),
-                ValueListenableBuilder<Color>(
-                  valueListenable: PremiumTheme.accentColor,
-                  builder: (context, activeColor, child) {
-                     return Icon(Icons.search, color: activeColor);
-                  }
-                ),
-              ],
-            ),
-          ),
-        ),
+          );
+        },
       ),
     );
   }
