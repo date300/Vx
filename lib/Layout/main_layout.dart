@@ -1,10 +1,5 @@
 import 'package:flutter/material.dart';
 
-<<<<<<< HEAD
-// প্রোজেক্টের নামের ঝামেলা এড়াতে সরাসরি পাথ ব্যবহার করা হলো
-=======
-// সঠিক ইম্পোর্ট পাথ (আপনার 'Pages' ফোল্ডার স্ট্রাকচার অনুযায়ী)
->>>>>>> d6e0df6 (Update: description of changes)
 import '../Pages/home_page.dart';
 import '../Pages/explore_page.dart';
 import '../Pages/profile_page.dart';
