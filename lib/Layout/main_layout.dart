@@ -40,7 +40,7 @@ class _MainLayoutState extends State<MainLayout> {
       // লগ-ইন স্ট্যাটাস চেক করুন
       if (AuthService.isLoggedIn == false) {
         // লগ-ইন না থাকলে পপ-আপ ফাংশনটি কল করুন
-        showAuthPopup(context); 
+        showAuthPopup(context);
         return; // পেজের ইনডেক্স পরিবর্তন হবে না, তাই এখানেই return করে দিচ্ছি
       }
     }
@@ -117,7 +117,8 @@ class _MainLayoutState extends State<MainLayout> {
                       ),
                       activeIcon: Padding(
                         padding: EdgeInsets.only(bottom: 4),
-                        child: Icon(CupertinoIcons.search_fill, size: 24),
+                        // সমাধান: search_fill এর জায়গায় search ব্যবহার করা হয়েছে
+                        child: Icon(CupertinoIcons.search, size: 24), 
                       ),
                       label: "Discover",
                     ),
