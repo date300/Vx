@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
-// আপনার প্রোজেক্টের নাম 'vx' হলে নিচের ইম্পোর্টগুলো সঠিক কাজ করবে
-import 'package:vx/Pages/home_page.dart';
-import 'package:vx/Pages/explore_page.dart';
-import 'package:vx/Pages/profile_page.dart';
+// প্রোজেক্টের নাম যাই হোক (Vx বা vx), এই Relative Import সব জায়গায় কাজ করবে
+import '../Pages/home_page.dart';
+import '../Pages/explore_page.dart';
+import '../Pages/profile_page.dart';
 
 class MainLayout extends StatefulWidget {
   const MainLayout({super.key});
@@ -13,9 +13,9 @@ class MainLayout extends StatefulWidget {
 }
 
 class _MainLayoutState extends State<MainLayout> {
-  int _selectedIndex = 0; // সাধারণত Home পেজ দিয়ে শুরু করা ভালো
+  int _selectedIndex = 0; // সাধারণত Home পেজ (Index 0) দিয়ে শুরু করা হয়
 
-  // ইম্পোর্ট করা পেজগুলোর লিস্ট
+  // পেজগুলোর লিস্ট (নিশ্চিত করুন যে home_page.dart ফাইলে ক্লাসের নাম HomePage-ই আছে)
   final List<Widget> _pages = [
     const HomePage(),
     const ExplorePage(),
@@ -113,7 +113,7 @@ class _MainLayoutState extends State<MainLayout> {
         ),
       ),
 
-      // বডি পার্ট
+      // IndexedStack ব্যবহার করা হয়েছে যাতে পেজ পরিবর্তনের সময় স্টেট বজায় থাকে
       body: IndexedStack(
         index: _selectedIndex,
         children: _pages,
@@ -146,7 +146,7 @@ class _MainLayoutState extends State<MainLayout> {
   Widget _buildColorDot(BuildContext context, Color color) {
     return GestureDetector(
       onTap: () {
-        // Theme logic here
+        // থিম পরিবর্তনের লজিক এখানে দিন
       },
       child: Container(
         width: 40,
