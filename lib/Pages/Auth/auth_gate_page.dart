@@ -1,149 +1,178 @@
-import 'dart:ui';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+// গুগল এবং এক্স আইকনের জন্য প্যাকেজ ইম্পোর্ট
+import 'package:flutter_material_design_icons/flutter_material_design_icons.dart';
 
+// এই ফাংশনটি একটি ফুল-স্ক্রিন পপ-আপ ওপেন করবে যা Grok-এর মতো ডিজাইন করা হয়েছে।
 void showAuthPopup(BuildContext context) {
   showGeneralDialog(
     context: context,
-    barrierDismissible: true, // বাইরে ক্লিক করলে কেটে যাবে
-    barrierLabel: "AuthPopup",
-    transitionDuration: const Duration(milliseconds: 300), // স্মুথ এনিমেশন
+    // পপ-আপটি ফুল-স্ক্রিন হবে
+    barrierDismissible: false,
+    barrierColor: Colors.black, // ব্যাকগ্রাউন্ড কালো
+    transitionDuration: const Duration(milliseconds: 300),
     pageBuilder: (context, animation, secondaryAnimation) {
-      return const SizedBox();
-    },
-    transitionBuilder: (context, animation, secondaryAnimation, child) {
-      return BackdropFilter(
-        filter: ImageFilter.blur(
-          sigmaX: 15 * animation.value, // ব্যাকগ্রাউন্ড ব্লার ইফেক্ট
-          sigmaY: 15 * animation.value,
-        ),
-        child: FadeTransition(
-          opacity: animation,
-          child: ScaleTransition(
-            scale: Tween<double>(begin: 0.8, end: 1.0).animate(
-              CurvedAnimation(parent: animation, curve: Curves.easeOutBack),
-            ),
-            child: Dialog(
-              backgroundColor: Colors.transparent,
-              elevation: 0,
-              child: Container(
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF1D1F23).withOpacity(0.85), // iOS Dark Glass
-                  borderRadius: BorderRadius.circular(28), // রাউন্ডেড কর্নার
-                  border: Border.all(
-                    color: Colors.white.withOpacity(0.1), // হালকা বর্ডার
-                    width: 1.5,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.4),
-                      blurRadius: 30,
-                      spreadRadius: 10,
-                    ),
-                  ],
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min, // যতটুকু জায়গা দরকার ততটুকু নিবে
-                  children: [
-                    // Premium Icon / Glowing Lock
-                    Container(
-                      width: 80,
-                      height: 80,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: const Color(0xFF00C897).withOpacity(0.1),
-                        boxShadow: [
-                          BoxShadow(
-                            color: const Color(0xFF00C897).withOpacity(0.3),
-                            blurRadius: 20,
-                            spreadRadius: 2,
-                          ),
-                        ],
-                      ),
-                      child: const Icon(
-                        Icons.lock_person_rounded, // এখানে আপনার 3D Lock ইমেজও দিতে পারেন
-                        color: Color(0xFF00C897),
-                        size: 40,
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-
-                    // Title
-                    Text(
-                      "Access Restricted",
-                      style: GoogleFonts.inter(
-                        color: Colors.white,
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-
-                    // Subtitle
-                    Text(
-                      "Please log in or create an account to unlock this premium feature.",
-                      textAlign: TextAlign.center,
-                      style: GoogleFonts.inter(
-                        color: const Color(0xFF9EA4AF),
-                        fontSize: 14,
-                        height: 1.5,
-                      ),
-                    ),
-                    const SizedBox(height: 32),
-
-                    // Login Button
-                    SizedBox(
-                      width: double.infinity,
-                      height: 50,
-                      child: ElevatedButton(
-                        onPressed: () {
-                          Navigator.pop(context); // পপ-আপ বন্ধ করবে
-                          // Navigator.pushNamed(context, '/login'); // লগইন পেজে নিয়ে যাবে
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF00C897),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          elevation: 0,
-                        ),
-                        child: Text(
-                          "Log In Now",
-                          style: GoogleFonts.inter(
-                            color: Colors.white,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-
-                    // Cancel Button
-                    TextButton(
-                      onPressed: () => Navigator.pop(context), // পপ-আপ কেটে দিবে
-                      style: TextButton.styleFrom(
-                        splashFactory: NoSplash.splashFactory, // iOS স্টাইল (নো স্প্ল্যাশ)
-                      ),
-                      child: Text(
-                        "Maybe Later",
-                        style: GoogleFonts.inter(
-                          color: const Color(0xFF9EA4AF),
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ),
-      );
+      return const GrokAuthGateContent();
     },
   );
 }
 
+class GrokAuthGateContent extends StatelessWidget {
+  const GrokAuthGateContent({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    // প্রিমিয়াম ব্ল্যাক থিম
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // ১. উপরের 'Skip' বাটন
+              Align(
+                alignment: Alignment.topRight,
+                child: TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop(); // পপ-আপটি বন্ধ করার জন্য
+                  },
+                  child: const Text(
+                    "Skip",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                    ),
+                  ),
+                ),
+              ),
+
+              // ২. মাঝের অংশ (লোগো এবং টেক্সট)
+              Expanded(
+                child: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      // Grok লোগো টেক্সট
+                      const Text(
+                        "Grok",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 64, // বড় ফন্ট
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 32), // গ্যাপ
+                      // সাব-টেক্সট ১
+                      const Text(
+                        "Thanks for trying Grok.",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 22,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      // সাব-টেক্সট ২
+                      const Text(
+                        "You've logged out. We can't wait to\nhave you back to explore the\nuniverse with Grok",
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.7),
+                          fontSize: 18,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              // ৩. নিচের অংশ (লগ-ইন বাটন এবং শর্তাবলী)
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // গুগল বাটন
+                  _buildAuthButton(
+                    icon: MdiIcons.google, // গুগল আইকন
+                    text: "Continue with Google",
+                    onPressed: () {
+                      // গুগলের লগ-ইন লজিক এখানে
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  // ইমেল বাটন
+                  _buildAuthButton(
+                    icon: Icons.email_outlined, // ইমেল আইকন
+                    text: "Continue with Email",
+                    onPressed: () {
+                      // ইমেলের লগ-ইন লজিক এখানে
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  // এক্স (X) বাটন
+                  _buildAuthButton(
+                    icon: MdiIcons.twitter, // এক্স (X) আইকন (টুইটারের লোগো হিসেবে)
+                    text: "Continue with X",
+                    onPressed: () {
+                      // এক্স-এর লগ-ইন লজিক এখানে
+                    },
+                  ),
+                  const SizedBox(height: 32),
+                  // শর্তাবলী এবং প্রাইভেসী পলিসি টেক্সট
+                  Center(
+                    child: Text(
+                      "By continuing you agree to Terms and\nPrivacy Policy",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.5),
+                        fontSize: 14,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // বাটন তৈরির জন্য একটি সাহায্যকারী ফাংশন
+  Widget _buildAuthButton({
+    required IconData icon,
+    required String text,
+    required VoidCallback onPressed,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFF1E1E1E), // গাঢ় ধূসর রং
+        borderRadius: BorderRadius.circular(30), // গোলাকার কোণা
+      ),
+      child: CupertinoButton(
+        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+        onPressed: onPressed,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              icon,
+              color: Colors.white,
+              size: 24,
+            ),
+            const SizedBox(width: 12), // আইকন এবং টেক্সটের মাঝের গ্যাপ
+            Text(
+              text,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 18,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
