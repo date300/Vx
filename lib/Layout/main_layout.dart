@@ -35,20 +35,16 @@ class _MainLayoutState extends State<MainLayout> {
 
   // এই ফাংশনটি প্রতিটি ট্যাপ নিয়ন্ত্রণ করবে
   void _onItemTapped(int index) {
-    // যদি 'Profile' ট্যাবে (ইনডেক্স ২) ট্যাপ করা হয়
-    if (index == 2) {
-      // লগ-ইন স্ট্যাটাস চেক করুন
-      if (AuthService.isLoggedIn == false) {
-        // লগ-ইন না থাকলে পপ-আপ ফাংশনটি কল করুন
-        showAuthPopup(context);
-        return; // পেজের ইনডেক্স পরিবর্তন হবে না, তাই এখানেই return করে দিচ্ছি
-      }
-    }
-
-    // অন্য যেকোনো ট্যাবের জন্য, বা ইউজার লগ-ইন থাকলে, পেজ পরিবর্তন করুন
+    // ১. প্রথমে যে ট্যাবে ক্লিক করা হয়েছে, সেই পেজটি ওপেন করার জন্য ইনডেক্স সেট করে দিচ্ছি
     setState(() {
       _selectedIndex = index;
     });
+
+    // ২. এরপর চেক করছি, যদি প্রোফাইল পেজ (ইনডেক্স ২) হয় এবং ইউজার লগ-ইন না থাকে
+    if (index == 2 && AuthService.isLoggedIn == false) {
+      // তাহলে প্রোফাইল পেজের উপরে পপ-আপটি ওপেন হবে
+      showAuthPopup(context);
+    }
   }
 
   @override
@@ -117,7 +113,6 @@ class _MainLayoutState extends State<MainLayout> {
                       ),
                       activeIcon: Padding(
                         padding: EdgeInsets.only(bottom: 4),
-                        // সমাধান: search_fill এর জায়গায় search ব্যবহার করা হয়েছে
                         child: Icon(CupertinoIcons.search, size: 24), 
                       ),
                       label: "Discover",
