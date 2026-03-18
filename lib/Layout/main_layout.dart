@@ -14,9 +14,9 @@ class MainLayout extends StatefulWidget {
 class _MainLayoutState extends State<MainLayout> {
   int _selectedIndex = 0;
 
-  // পেজগুলোর লিস্ট (const ব্যবহারের মাধ্যমে অপ্টিমাইজ করা হয়েছে)
+  // পেজগুলোর লিস্ট (এখানে HomePage() এর বদলে HomeFeedPage() দেওয়া হলো আগের এরর ফিক্স করার জন্য)
   final List<Widget> _pages = const [
-    HomePage(),
+    HomeFeedPage(), // <--- এখানেই মূল পরিবর্তনটি করা হয়েছে
     ExplorePage(),
     ProfilePage(),
   ];
@@ -39,7 +39,7 @@ class _MainLayoutState extends State<MainLayout> {
         title: Text(
           _pageTitles[_selectedIndex],
           style: const TextStyle(
-            color: Colors.white, 
+            color: Colors.white,
             fontWeight: FontWeight.bold,
             letterSpacing: 1.2,
           ),
@@ -78,7 +78,7 @@ class _MainLayoutState extends State<MainLayout> {
                 ),
               ),
               const Divider(color: Colors.white10, thickness: 1),
-              
+
               ListTile(
                 leading: const Icon(Icons.dark_mode_rounded, color: Colors.blueAccent),
                 title: const Text("Dark Theme", style: TextStyle(color: Colors.white)),
