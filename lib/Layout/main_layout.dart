@@ -4,8 +4,6 @@ import 'package:flutter/material.dart';
 
 // আপনার নতুন ইম্পোর্ট
 import '../Pages/Auth/auth_gate_page.dart';
-import '../services/auth_service.dart';
-
 // আগের ইম্পোর্ট গুলো ঠিক থাকবে
 import '../Pages/home_page.dart';
 import '../Pages/explore_page.dart';
