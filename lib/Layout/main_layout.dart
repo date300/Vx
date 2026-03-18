@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 
+<<<<<<< HEAD
 // প্রোজেক্টের নামের ঝামেলা এড়াতে সরাসরি পাথ ব্যবহার করা হলো
+=======
+// সঠিক ইম্পোর্ট পাথ (আপনার 'Pages' ফোল্ডার স্ট্রাকচার অনুযায়ী)
+>>>>>>> d6e0df6 (Update: description of changes)
 import '../Pages/home_page.dart';
 import '../Pages/explore_page.dart';
 import '../Pages/profile_page.dart';
@@ -13,6 +17,7 @@ class MainLayout extends StatefulWidget {
 }
 
 class _MainLayoutState extends State<MainLayout> {
+<<<<<<< HEAD
   // অ্যাপ ওপেন হলে ডিফল্টভাবে Home (Index 0) দেখাবে
   int _selectedIndex = 0;
 
@@ -21,6 +26,15 @@ class _MainLayoutState extends State<MainLayout> {
     const HomePage(),
     const ExplorePage(),
     const ProfilePage(),
+=======
+  int _selectedIndex = 0;
+
+  // পেজগুলোর লিস্ট (const ব্যবহারের মাধ্যমে অপ্টিমাইজ করা হয়েছে)
+  final List<Widget> _pages = const [
+    HomePage(),
+    ExplorePage(),
+    ProfilePage(),
+>>>>>>> d6e0df6 (Update: description of changes)
   ];
 
   final List<String> _pageTitles = [
@@ -62,7 +76,11 @@ class _MainLayoutState extends State<MainLayout> {
         ],
       ),
 
+<<<<<<< HEAD
       // থিম সেটিংস ড্রয়ার
+=======
+      // ডান পাশের থিম সেটিংস ড্রয়ার
+>>>>>>> d6e0df6 (Update: description of changes)
       endDrawer: Drawer(
         backgroundColor: const Color(0xFF121212),
         shape: const RoundedRectangleBorder(
@@ -105,7 +123,11 @@ class _MainLayoutState extends State<MainLayout> {
         ),
       ),
 
+<<<<<<< HEAD
       // IndexedStack ব্যবহার করা হয়েছে যাতে পেজ সুইচ করলে আগের পেজের ডেটা বা স্ক্রল পজিশন ঠিক থাকে
+=======
+      // বডি পার্ট (IndexedStack ব্যবহারের ফলে পেজ সুইচ করার সময় ডেটা রিলোড হবে না)
+>>>>>>> d6e0df6 (Update: description of changes)
       body: IndexedStack(
         index: _selectedIndex,
         children: _pages,
@@ -123,6 +145,7 @@ class _MainLayoutState extends State<MainLayout> {
           unselectedFontSize: 12,
           type: BottomNavigationBarType.fixed,
           currentIndex: _selectedIndex,
+          type: BottomNavigationBarType.fixed, // তিনটি আইটেমের জন্য ফিক্সড টাইপ ভালো
           onTap: (index) {
             setState(() {
               _selectedIndex = index;
@@ -149,4 +172,25 @@ class _MainLayoutState extends State<MainLayout> {
       ),
     );
   }
+<<<<<<< HEAD
+=======
+
+  Widget _buildColorDot(BuildContext context, Color color) {
+    return GestureDetector(
+      onTap: () {
+        // এখানে ফিউচারে থিম পরিবর্তনের লজিক অ্যাড করা যাবে
+        Navigator.pop(context);
+      },
+      child: Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          color: color,
+          shape: BoxShape.circle,
+          border: Border.all(color: Colors.white24, width: 1),
+        ),
+      ),
+    );
+  }
+>>>>>>> d6e0df6 (Update: description of changes)
 }
