@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
-// আপনার থিম কন্ট্রোলারটি এখানে ইম্পোর্ট করবেন যদি দরকার হয়
-// import 'premium_theme_controller.dart'; 
 
-// আলাদা ফোল্ডার থেকে পেজগুলো ইম্পোর্ট করা হলো
-import '../Pages/home_page.dart';
-import '../Pages/explore_page.dart';
-import '../Pages/profile_page.dart';
+// আপনার প্রোজেক্টের নাম 'vx' হলে নিচের ইম্পোর্টগুলো সঠিক কাজ করবে
+import 'package:vx/Pages/home_page.dart';
+import 'package:vx/Pages/explore_page.dart';
+import 'package:vx/Pages/profile_page.dart';
 
 class MainLayout extends StatefulWidget {
   const MainLayout({super.key});
@@ -15,7 +13,7 @@ class MainLayout extends StatefulWidget {
 }
 
 class _MainLayoutState extends State<MainLayout> {
-  int _selectedIndex = 2; // ডিফল্টভাবে Profile পেজ দেখাবে
+  int _selectedIndex = 0; // সাধারণত Home পেজ দিয়ে শুরু করা ভালো
 
   // ইম্পোর্ট করা পেজগুলোর লিস্ট
   final List<Widget> _pages = [
@@ -34,7 +32,6 @@ class _MainLayoutState extends State<MainLayout> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFF1E1E1E),
-
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -75,7 +72,6 @@ class _MainLayoutState extends State<MainLayout> {
                 ),
               ),
               const Divider(color: Colors.white24),
-
               ListTile(
                 leading: const Icon(Icons.dark_mode, color: Colors.white),
                 title: const Text("Dark Mode", style: TextStyle(color: Colors.white)),
@@ -86,7 +82,6 @@ class _MainLayoutState extends State<MainLayout> {
                 title: const Text("Light Mode", style: TextStyle(color: Colors.white)),
                 onTap: () => Navigator.pop(context),
               ),
-
               const SizedBox(height: 20),
               const Padding(
                 padding: EdgeInsets.symmetric(horizontal: 20.0),
@@ -96,7 +91,6 @@ class _MainLayoutState extends State<MainLayout> {
                 ),
               ),
               const SizedBox(height: 10),
-
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20.0),
                 child: Wrap(
@@ -119,8 +113,11 @@ class _MainLayoutState extends State<MainLayout> {
         ),
       ),
 
-      // _pages লিস্ট থেকে ইনডেক্স অনুযায়ী পেজ দেখাবে
-      body: _pages[_selectedIndex],
+      // বডি পার্ট
+      body: IndexedStack(
+        index: _selectedIndex,
+        children: _pages,
+      ),
 
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
@@ -149,7 +146,7 @@ class _MainLayoutState extends State<MainLayout> {
   Widget _buildColorDot(BuildContext context, Color color) {
     return GestureDetector(
       onTap: () {
-        // PremiumTheme.accentColor.value = color; // আনকমেন্ট করে নিবেন
+        // Theme logic here
       },
       child: Container(
         width: 40,
