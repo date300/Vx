@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-// প্রোজেক্টের নাম যাই হোক (Vx বা vx), এই Relative Import সব জায়গায় কাজ করবে
+// প্রোজেক্টের নামের ঝামেলা এড়াতে সরাসরি পাথ ব্যবহার করা হলো
 import '../Pages/home_page.dart';
 import '../Pages/explore_page.dart';
 import '../Pages/profile_page.dart';
@@ -13,9 +13,10 @@ class MainLayout extends StatefulWidget {
 }
 
 class _MainLayoutState extends State<MainLayout> {
-  int _selectedIndex = 0; // সাধারণত Home পেজ (Index 0) দিয়ে শুরু করা হয়
+  // অ্যাপ ওপেন হলে ডিফল্টভাবে Home (Index 0) দেখাবে
+  int _selectedIndex = 0;
 
-  // পেজগুলোর লিস্ট (নিশ্চিত করুন যে home_page.dart ফাইলে ক্লাসের নাম HomePage-ই আছে)
+  // পেজগুলোর লিস্ট
   final List<Widget> _pages = [
     const HomePage(),
     const ExplorePage(),
@@ -31,19 +32,25 @@ class _MainLayoutState extends State<MainLayout> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF1E1E1E),
+      backgroundColor: const Color(0xFF1E1E1E), // ডার্ক প্রিমিয়াম ব্যাকগ্রাউন্ড
+
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
+        centerTitle: true,
         title: Text(
           _pageTitles[_selectedIndex],
-          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          style: const TextStyle(
+            color: Colors.white, 
+            fontWeight: FontWeight.bold,
+            letterSpacing: 1.2,
+          ),
         ),
         actions: [
           Builder(
             builder: (context) {
               return IconButton(
-                icon: const Icon(Icons.palette, color: Colors.white),
+                icon: const Icon(Icons.palette_outlined, color: Colors.white),
                 tooltip: "Theme Settings",
                 onPressed: () {
                   Scaffold.of(context).openEndDrawer();
@@ -51,61 +58,46 @@ class _MainLayoutState extends State<MainLayout> {
               );
             }
           ),
-          const SizedBox(width: 16),
+          const SizedBox(width: 12),
         ],
       ),
 
+      // থিম সেটিংস ড্রয়ার
       endDrawer: Drawer(
-        backgroundColor: Colors.grey[900],
+        backgroundColor: const Color(0xFF121212),
         shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.horizontal(left: Radius.circular(20)),
+          borderRadius: BorderRadius.horizontal(left: Radius.circular(25)),
         ),
         child: SafeArea(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Padding(
-                padding: EdgeInsets.all(20.0),
+                padding: EdgeInsets.all(25.0),
                 child: Text(
-                  "Theme & Colors",
-                  style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
+                  "Appearance",
+                  style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
                 ),
               ),
-              const Divider(color: Colors.white24),
+              const Divider(color: Colors.white10, thickness: 1),
+              
               ListTile(
-                leading: const Icon(Icons.dark_mode, color: Colors.white),
-                title: const Text("Dark Mode", style: TextStyle(color: Colors.white)),
+                leading: const Icon(Icons.dark_mode_rounded, color: Colors.blueAccent),
+                title: const Text("Dark Theme", style: TextStyle(color: Colors.white)),
+                trailing: const Icon(Icons.check_circle, color: Colors.blueAccent, size: 20),
                 onTap: () => Navigator.pop(context),
               ),
               ListTile(
-                leading: const Icon(Icons.light_mode, color: Colors.white),
-                title: const Text("Light Mode", style: TextStyle(color: Colors.white)),
+                leading: const Icon(Icons.light_mode_rounded, color: Colors.white54),
+                title: const Text("Light Theme", style: TextStyle(color: Colors.white54)),
                 onTap: () => Navigator.pop(context),
               ),
-              const SizedBox(height: 20),
+
+              const Spacer(),
               const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 20.0),
-                child: Text(
-                  "Accent Colors",
-                  style: TextStyle(color: Colors.white54, fontSize: 16),
-                ),
-              ),
-              const SizedBox(height: 10),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                child: Wrap(
-                  spacing: 15,
-                  runSpacing: 15,
-                  children: [
-                    _buildColorDot(context, Colors.blue),
-                    _buildColorDot(context, Colors.green),
-                    _buildColorDot(context, Colors.redAccent),
-                    _buildColorDot(context, Colors.purple),
-                    _buildColorDot(context, Colors.orange),
-                    _buildColorDot(context, Colors.teal),
-                    _buildColorDot(context, Colors.pink),
-                    _buildColorDot(context, Colors.yellow),
-                  ],
+                padding: EdgeInsets.all(20.0),
+                child: Center(
+                  child: Text("Vx Premium v1.0", style: TextStyle(color: Colors.white24, fontSize: 12)),
                 ),
               ),
             ],
@@ -113,7 +105,7 @@ class _MainLayoutState extends State<MainLayout> {
         ),
       ),
 
-      // IndexedStack ব্যবহার করা হয়েছে যাতে পেজ পরিবর্তনের সময় স্টেট বজায় থাকে
+      // IndexedStack ব্যবহার করা হয়েছে যাতে পেজ সুইচ করলে আগের পেজের ডেটা বা স্ক্রল পজিশন ঠিক থাকে
       body: IndexedStack(
         index: _selectedIndex,
         children: _pages,
@@ -121,12 +113,15 @@ class _MainLayoutState extends State<MainLayout> {
 
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
-          border: Border(top: BorderSide(color: Colors.white.withOpacity(0.1), width: 1)),
+          border: Border(top: BorderSide(color: Colors.white.withOpacity(0.05), width: 1)),
         ),
         child: BottomNavigationBar(
           backgroundColor: const Color(0xFF121212),
           selectedItemColor: Colors.blueAccent,
-          unselectedItemColor: Colors.white54,
+          unselectedItemColor: Colors.white38,
+          selectedFontSize: 12,
+          unselectedFontSize: 12,
+          type: BottomNavigationBarType.fixed,
           currentIndex: _selectedIndex,
           onTap: (index) {
             setState(() {
@@ -134,26 +129,22 @@ class _MainLayoutState extends State<MainLayout> {
             });
           },
           items: const [
-            BottomNavigationBarItem(icon: Icon(Icons.home_filled), label: "Home"),
-            BottomNavigationBarItem(icon: Icon(Icons.explore), label: "Explore"),
-            BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profile"),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.home_filled),
+              activeIcon: Icon(Icons.home_filled, color: Colors.blueAccent),
+              label: "Home",
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.explore_outlined),
+              activeIcon: Icon(Icons.explore, color: Colors.blueAccent),
+              label: "Explore",
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.person_outline),
+              activeIcon: Icon(Icons.person, color: Colors.blueAccent),
+              label: "Profile",
+            ),
           ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildColorDot(BuildContext context, Color color) {
-    return GestureDetector(
-      onTap: () {
-        // থিম পরিবর্তনের লজিক এখানে দিন
-      },
-      child: Container(
-        width: 40,
-        height: 40,
-        decoration: BoxDecoration(
-          color: color,
-          shape: BoxShape.circle,
         ),
       ),
     );
