@@ -1,13 +1,12 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-// গুগল এবং এক্স আইকনের জন্য প্যাকেজ ইম্পোর্ট
+// গুগল এবং এক্স আইকনের জন্য প্যাকেজ (আগে কমান্ড দিয়ে অ্যাড করে নিবেন)
 import 'package:flutter_material_design_icons/flutter_material_design_icons.dart';
 
-// এই ফাংশনটি একটি ফুল-স্ক্রিন পপ-আপ ওপেন করবে যা Grok-এর মতো ডিজাইন করা হয়েছে।
+// এই ফাংশনটি কল করলে ফুল-স্ক্রিন পপ-আপ ওপেন হবে
 void showAuthPopup(BuildContext context) {
   showGeneralDialog(
     context: context,
-    // পপ-আপটি ফুল-স্ক্রিন হবে
     barrierDismissible: false,
     barrierColor: Colors.black, // ব্যাকগ্রাউন্ড কালো
     transitionDuration: const Duration(milliseconds: 300),
@@ -22,7 +21,6 @@ class GrokAuthGateContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // প্রিমিয়াম ব্ল্যাক থিম
     return Scaffold(
       backgroundColor: Colors.black,
       body: SafeArea(
@@ -32,12 +30,12 @@ class GrokAuthGateContent extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // ১. উপরের 'Skip' বাটন
+              // ১. উপরের Skip বাটন
               Align(
                 alignment: Alignment.topRight,
                 child: TextButton(
                   onPressed: () {
-                    Navigator.of(context).pop(); // পপ-আপটি বন্ধ করার জন্য
+                    Navigator.of(context).pop();
                   },
                   child: const Text(
                     "Skip",
@@ -49,23 +47,21 @@ class GrokAuthGateContent extends StatelessWidget {
                 ),
               ),
 
-              // ২. মাঝের অংশ (লোগো এবং টেক্সট)
+              // ২. মাঝের অংশ (Logo and Text)
               Expanded(
                 child: Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      // Grok লোগো টেক্সট
                       const Text(
                         "Grok",
                         style: TextStyle(
                           color: Colors.white,
-                          fontSize: 64, // বড় ফন্ট
+                          fontSize: 64,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      const SizedBox(height: 32), // গ্যাপ
-                      // সাব-টেক্সট ১
+                      const SizedBox(height: 32),
                       const Text(
                         "Thanks for trying Grok.",
                         style: TextStyle(
@@ -74,8 +70,8 @@ class GrokAuthGateContent extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 16),
-                      // সাব-টেক্সট ২
-                      const Text(
+                      // এখানে const নেই, তাই withOpacity এরর দিবে না
+                      Text(
                         "You've logged out. We can't wait to\nhave you back to explore the\nuniverse with Grok",
                         textAlign: TextAlign.center,
                         style: TextStyle(
@@ -88,38 +84,35 @@ class GrokAuthGateContent extends StatelessWidget {
                 ),
               ),
 
-              // ৩. নিচের অংশ (লগ-ইন বাটন এবং শর্তাবলী)
+              // ৩. নিচের অংশ (Login Buttons)
               Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // গুগল বাটন
                   _buildAuthButton(
-                    icon: MdiIcons.google, // গুগল আইকন
+                    icon: MdiIcons.google,
                     text: "Continue with Google",
                     onPressed: () {
-                      // গুগলের লগ-ইন লজিক এখানে
+                      // Google Login Logic
                     },
                   ),
                   const SizedBox(height: 16),
-                  // ইমেল বাটন
                   _buildAuthButton(
-                    icon: Icons.email_outlined, // ইমেল আইকন
+                    icon: Icons.email_outlined,
                     text: "Continue with Email",
                     onPressed: () {
-                      // ইমেলের লগ-ইন লজিক এখানে
+                      // Email Login Logic
                     },
                   ),
                   const SizedBox(height: 16),
-                  // এক্স (X) বাটন
                   _buildAuthButton(
-                    icon: MdiIcons.twitter, // এক্স (X) আইকন (টুইটারের লোগো হিসেবে)
+                    icon: MdiIcons.twitter,
                     text: "Continue with X",
                     onPressed: () {
-                      // এক্স-এর লগ-ইন লজিক এখানে
+                      // X Login Logic
                     },
                   ),
                   const SizedBox(height: 32),
-                  // শর্তাবলী এবং প্রাইভেসী পলিসি টেক্সট
+                  // এখানেও withOpacity ঠিক করা হয়েছে
                   Center(
                     child: Text(
                       "By continuing you agree to Terms and\nPrivacy Policy",
@@ -139,7 +132,7 @@ class GrokAuthGateContent extends StatelessWidget {
     );
   }
 
-  // বাটন তৈরির জন্য একটি সাহায্যকারী ফাংশন
+  // বাটন তৈরির হেল্পার ফাংশন
   Widget _buildAuthButton({
     required IconData icon,
     required String text,
@@ -147,8 +140,8 @@ class GrokAuthGateContent extends StatelessWidget {
   }) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFF1E1E1E), // গাঢ় ধূসর রং
-        borderRadius: BorderRadius.circular(30), // গোলাকার কোণা
+        color: const Color(0xFF1E1E1E), // ডার্ক গ্রে ব্যাকগ্রাউন্ড
+        borderRadius: BorderRadius.circular(30),
       ),
       child: CupertinoButton(
         padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
@@ -156,12 +149,8 @@ class GrokAuthGateContent extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              icon,
-              color: Colors.white,
-              size: 24,
-            ),
-            const SizedBox(width: 12), // আইকন এবং টেক্সটের মাঝের গ্যাপ
+            Icon(icon, color: Colors.white, size: 24),
+            const SizedBox(width: 12),
             Text(
               text,
               style: const TextStyle(
