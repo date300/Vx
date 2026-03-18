@@ -143,7 +143,7 @@ class _MainLayoutState extends State<MainLayout> {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) {
-        return const AuthGatePage(); 
+        return  AuthGatePage(); 
       },
     ).then((value) {
       if (value == true) {
