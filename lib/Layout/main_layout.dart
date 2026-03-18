@@ -2,10 +2,9 @@ import 'dart:ui';
 import 'package:flutter/cupertino.dart'; 
 import 'package:flutter/material.dart';
 
-// আপনার প্রজেক্টের পাথ অনুযায়ী ইম্পোর্টগুলো ঠিক আছে কি না দেখে নিন
 import '../Pages/profile_page.dart';
 import '../Pages/home_feed_page.dart';
-import '../Pages/Auth/auth_gate_page.dart'; // পাথটি চেক করুন
+import '../Pages/Auth/auth_gate_page.dart'; 
 import 'premium_theme_controller.dart';
 
 class MainLayout extends StatefulWidget {
@@ -17,15 +16,12 @@ class MainLayout extends StatefulWidget {
 
 class _MainLayoutState extends State<MainLayout> {
   int _currentIndex = 0;
+  bool isLoggedIn = false; 
 
-  // আপনার পেজগুলোর লিস্ট
   final List<Widget> _pages = [
     const HomeFeedPage(),
     const ProfilePage(),
   ];
-
-  // এই ভ্যারিয়েবলটি আপনার আসল লগইন লজিকের সাথে কানেক্ট করবেন
-  bool isLoggedIn = false; 
 
   @override
   Widget build(BuildContext context) {
@@ -36,12 +32,9 @@ class _MainLayoutState extends State<MainLayout> {
           backgroundColor: Colors.black,
           extendBody: true, 
           body: _pages[_currentIndex],
-
           bottomNavigationBar: Container(
-            height: 100, // গ্লো এবং বর্ডারের জন্য একটু জায়গা বাড়ানো হয়েছে
-            decoration: const BoxDecoration(
-              color: Colors.transparent,
-            ),
+            height: 100,
+            color: Colors.transparent,
             child: Stack(
               children: [
                 ClipRRect(
@@ -57,7 +50,6 @@ class _MainLayoutState extends State<MainLayout> {
                     ),
                   ),
                 ),
-
                 Padding(
                   padding: const EdgeInsets.only(top: 12),
                   child: Row(
@@ -76,7 +68,6 @@ class _MainLayoutState extends State<MainLayout> {
     );
   }
 
-  // প্রফেশনাল নেভিগেশন আইটেম ডিজাইন (ProfilePage এর Color Dot এর মত)
   Widget _buildNavItem(int index, IconData icon, String label, Color accentColor) {
     bool isSelected = _currentIndex == index;
     return GestureDetector(
@@ -86,70 +77,51 @@ class _MainLayoutState extends State<MainLayout> {
           _showAuthSheet(context, accentColor);
           return; 
         }
-
-        setState(() {
-          _currentIndex = index;
-        });
+        setState(() => _currentIndex = index);
       },
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // প্রোফাইল পেজের ডটের মতো সার্কুলার বর্ডার ও গ্লো
           AnimatedContainer(
             duration: const Duration(milliseconds: 300),
-            padding: const EdgeInsets.all(12), // আইকনের চারপাশে সুন্দর স্পেস
+            padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              // কোনো সলিড ব্যাকগ্রাউন্ড নেই, শুধু বর্ডার এবং গ্লো
-              border: isSelected
-                  ? Border.all(color: accentColor, width: 2.5) // সিলেক্ট হলে থিম কালারের বর্ডার
-                  : Border.all(color: Colors.transparent, width: 2.5),
-              boxShadow: isSelected
-                  ? [
-                      BoxShadow(
-                        color: accentColor.withOpacity(0.5),
-                        blurRadius: 15,
-                        spreadRadius: 1,
-                      )
-                    ]
-                  : [],
+              border: Border.all(
+                color: isSelected ? accentColor : Colors.transparent, 
+                width: 2.5
+              ),
+              boxShadow: isSelected ? [
+                BoxShadow(color: accentColor.withOpacity(0.4), blurRadius: 15, spreadRadius: 1)
+              ] : [],
             ),
-            child: Icon(
-              icon,
-              size: 26,
-              color: isSelected ? accentColor : Colors.white54,
-            ),
+            child: Icon(icon, size: 26, color: isSelected ? accentColor : Colors.white54),
           ),
           const SizedBox(height: 6),
-          // টেক্সট এনিমেশন (সিলেক্ট হলে একটু বড় এবং বোল্ড হবে)
-          AnimatedDefaultTextStyle(
-            duration: const Duration(milliseconds: 300),
+          Text(
+            label,
             style: TextStyle(
               fontSize: isSelected ? 13 : 12,
               fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
               color: isSelected ? accentColor : Colors.white54,
             ),
-            child: Text(label),
           ),
         ],
       ),
     );
   }
 
-  // অথেন্টিকেশন বটম শিট
   void _showAuthSheet(BuildContext context, Color accentColor) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) {
-        return  AuthGatePage(); 
-      },
+      builder: (context) => const AuthGatePage(), // এখান থেকে const সরানো হয়েছে যদি প্রয়োজন হয়
     ).then((value) {
       if (value == true) {
         setState(() {
           isLoggedIn = true;
-          _currentIndex = 1; 
+          _currentIndex = 1;
         });
       }
     });
