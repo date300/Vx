@@ -1,13 +1,19 @@
 import 'dart:ui';
-import 'package:flutter/cupertino.dart'; // iOS স্টাইল আইকনের জন্য এটি জরুরি
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
-// আপনার নতুন ইম্পোর্ট
+// আপনার তৈরি করা আগের ফাইলটি ইম্পোর্ট করুন
 import '../Pages/Auth/auth_gate_page.dart';
-// আগের ইম্পোর্ট গুলো ঠিক থাকবে
+
+// পেজগুলোর ইম্পোর্ট (আপনার ফাইলের লোকেশন অনুযায়ী)
 import '../Pages/home_page.dart';
 import '../Pages/explore_page.dart';
 import '../Pages/profile_page.dart';
+
+// টেস্টিংয়ের জন্য একটি ডামি AuthService (পরে আপনার আসল লজিক দিয়ে রিপ্লেস করে নিবেন)
+class AuthService {
+  static bool isLoggedIn = false; // এটি true করলে প্রোফাইল পেজে যাওয়া যাবে
+}
 
 class MainLayout extends StatefulWidget {
   const MainLayout({super.key});
@@ -33,12 +39,9 @@ class _MainLayoutState extends State<MainLayout> {
     if (index == 2) {
       // লগ-ইন স্ট্যাটাস চেক করুন
       if (AuthService.isLoggedIn == false) {
-        // লগ-ইন না থাকলে AuthGatePage ওপেন করুন (পপ-আপ হিসেবে)
-        Navigator.of(context).push(
-          MaterialPageRoute(builder: (context) => const AuthGatePage()),
-        );
-        // এই পেজের ইনডেক্স পরিবর্তন করব না
-        return;
+        // লগ-ইন না থাকলে পপ-আপ ফাংশনটি কল করুন
+        showAuthPopup(context); 
+        return; // পেজের ইনডেক্স পরিবর্তন হবে না, তাই এখানেই return করে দিচ্ছি
       }
     }
 
@@ -52,7 +55,7 @@ class _MainLayoutState extends State<MainLayout> {
   Widget build(BuildContext context) {
     // প্রিমিয়াম ব্ল্যাক থিম
     return Scaffold(
-      extendBody: true, 
+      extendBody: true,
       backgroundColor: Colors.black,
 
       body: IndexedStack(
@@ -64,76 +67,72 @@ class _MainLayoutState extends State<MainLayout> {
       bottomNavigationBar: ClipRRect(
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 25.0, sigmaY: 25.0), // হাই-কোয়ালিটি ব্লার
-          child: Container(
-            // SafeArea ব্যবহার করা হয়েছে যাতে আইফোন বা আধুনিক ফোনের 
-            // নিচের বারের সাথে আইকন না মিশে যায়। এটিই প্রিমিয়াম ডিজাইন।
-            child: SafeArea( 
-              bottom: true,
-              child: Container(
-                height: 65, // একটি নির্দিষ্ট হাইট দিলে দেখতে ভালো লাগে
-                decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.5), // স্বচ্ছ ব্যাকগ্রাউন্ড
-                  border: Border(
-                    top: BorderSide(
-                      color: Colors.white.withOpacity(0.1), // উপরে খুবই হালকা একটি বর্ডার
-                      width: 0.5,
-                    ),
+          child: SafeArea(
+            bottom: true,
+            child: Container(
+              height: 65, // একটি নির্দিষ্ট হাইট দিলে দেখতে ভালো লাগে
+              decoration: BoxDecoration(
+                color: Colors.black.withOpacity(0.5), // স্বচ্ছ ব্যাকগ্রাউন্ড
+                border: Border(
+                  top: BorderSide(
+                    color: Colors.white.withOpacity(0.1), // উপরে খুবই হালকা একটি বর্ডার
+                    width: 0.5,
                   ),
                 ),
-                child: Theme(
-                  // ট্যাপ করার সময় যে রিং ইফেক্ট হয়, সেটা বন্ধ করার জন্য (iOS এ রিং হয় না)
-                  data: ThemeData(
-                    splashColor: Colors.transparent,
-                    highlightColor: Colors.transparent,
-                  ),
-                  child: BottomNavigationBar(
-                    elevation: 0,
-                    backgroundColor: Colors.transparent,
-                    type: BottomNavigationBarType.fixed,
-                    selectedItemColor: Colors.white,
-                    unselectedItemColor: Colors.white.withOpacity(0.4),
-                    selectedFontSize: 11,
-                    unselectedFontSize: 11,
-                    currentIndex: _selectedIndex,
-                    onTap: _onItemTapped, // আমাদের নতুন লজিক ফাংশন
-                    items: const [
-                      BottomNavigationBarItem(
-                        // আনসিলেক্ট অবস্থায় আউটলাইন Cupertino আইকন
-                        icon: Padding(
-                          padding: EdgeInsets.only(bottom: 4),
-                          child: Icon(CupertinoIcons.house, size: 24),
-                        ),
-                        // সিলেক্ট অবস্থায় সলিড Cupertino আইকন (iOS স্ট্যান্ডার্ড)
-                        activeIcon: Padding(
-                          padding: EdgeInsets.only(bottom: 4),
-                          child: Icon(CupertinoIcons.house_fill, size: 24),
-                        ),
-                        label: "Home",
+              ),
+              child: Theme(
+                // ট্যাপ করার সময় যে রিং ইফেক্ট হয়, সেটা বন্ধ করার জন্য (iOS এ রিং হয় না)
+                data: ThemeData(
+                  splashColor: Colors.transparent,
+                  highlightColor: Colors.transparent,
+                ),
+                child: BottomNavigationBar(
+                  elevation: 0,
+                  backgroundColor: Colors.transparent,
+                  type: BottomNavigationBarType.fixed,
+                  selectedItemColor: Colors.white,
+                  unselectedItemColor: Colors.white.withOpacity(0.4),
+                  selectedFontSize: 11,
+                  unselectedFontSize: 11,
+                  currentIndex: _selectedIndex,
+                  onTap: _onItemTapped, // আমাদের ঠিক করা লজিক ফাংশন
+                  items: const [
+                    BottomNavigationBarItem(
+                      // আনসিলেক্ট অবস্থায় আউটলাইন Cupertino আইকন
+                      icon: Padding(
+                        padding: EdgeInsets.only(bottom: 4),
+                        child: Icon(CupertinoIcons.house, size: 24),
                       ),
-                      BottomNavigationBarItem(
-                        icon: Padding(
-                          padding: EdgeInsets.only(bottom: 4),
-                          child: Icon(CupertinoIcons.search, size: 24), 
-                        ),
-                        activeIcon: Padding(
-                          padding: EdgeInsets.only(bottom: 4),
-                          child: Icon(CupertinoIcons.search_fill, size: 24), 
-                        ),
-                        label: "Discover",
+                      // সিলেক্ট অবস্থায় সলিড Cupertino আইকন
+                      activeIcon: Padding(
+                        padding: EdgeInsets.only(bottom: 4),
+                        child: Icon(CupertinoIcons.house_fill, size: 24),
                       ),
-                      BottomNavigationBarItem(
-                        icon: Padding(
-                          padding: EdgeInsets.only(bottom: 4),
-                          child: Icon(CupertinoIcons.person, size: 24),
-                        ),
-                        activeIcon: Padding(
-                          padding: EdgeInsets.only(bottom: 4),
-                          child: Icon(CupertinoIcons.person_fill, size: 24),
-                        ),
-                        label: "Profile",
+                      label: "Home",
+                    ),
+                    BottomNavigationBarItem(
+                      icon: Padding(
+                        padding: EdgeInsets.only(bottom: 4),
+                        child: Icon(CupertinoIcons.search, size: 24),
                       ),
-                    ],
-                  ),
+                      activeIcon: Padding(
+                        padding: EdgeInsets.only(bottom: 4),
+                        child: Icon(CupertinoIcons.search_fill, size: 24),
+                      ),
+                      label: "Discover",
+                    ),
+                    BottomNavigationBarItem(
+                      icon: Padding(
+                        padding: EdgeInsets.only(bottom: 4),
+                        child: Icon(CupertinoIcons.person, size: 24),
+                      ),
+                      activeIcon: Padding(
+                        padding: EdgeInsets.only(bottom: 4),
+                        child: Icon(CupertinoIcons.person_fill, size: 24),
+                      ),
+                      label: "Profile",
+                    ),
+                  ],
                 ),
               ),
             ),
