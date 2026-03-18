@@ -12,16 +12,6 @@ class MainLayout extends StatefulWidget {
 }
 
 class _MainLayoutState extends State<MainLayout> {
-<<<<<<< HEAD
-  // অ্যাপ ওপেন হলে ডিফল্টভাবে Home (Index 0) দেখাবে
-  int _selectedIndex = 0;
-
-  // পেজগুলোর লিস্ট
-  final List<Widget> _pages = [
-    const HomePage(),
-    const ExplorePage(),
-    const ProfilePage(),
-=======
   int _selectedIndex = 0;
 
   // পেজগুলোর লিস্ট (const ব্যবহারের মাধ্যমে অপ্টিমাইজ করা হয়েছে)
@@ -29,7 +19,6 @@ class _MainLayoutState extends State<MainLayout> {
     HomePage(),
     ExplorePage(),
     ProfilePage(),
->>>>>>> d6e0df6 (Update: description of changes)
   ];
 
   final List<String> _pageTitles = [
@@ -71,11 +60,7 @@ class _MainLayoutState extends State<MainLayout> {
         ],
       ),
 
-<<<<<<< HEAD
-      // থিম সেটিংস ড্রয়ার
-=======
       // ডান পাশের থিম সেটিংস ড্রয়ার
->>>>>>> d6e0df6 (Update: description of changes)
       endDrawer: Drawer(
         backgroundColor: const Color(0xFF121212),
         shape: const RoundedRectangleBorder(
@@ -118,11 +103,7 @@ class _MainLayoutState extends State<MainLayout> {
         ),
       ),
 
-<<<<<<< HEAD
-      // IndexedStack ব্যবহার করা হয়েছে যাতে পেজ সুইচ করলে আগের পেজের ডেটা বা স্ক্রল পজিশন ঠিক থাকে
-=======
-      // বডি পার্ট (IndexedStack ব্যবহারের ফলে পেজ সুইচ করার সময় ডেটা রিলোড হবে না)
->>>>>>> d6e0df6 (Update: description of changes)
+      // IndexedStack ব্যবহারের ফলে পেজ সুইচ করার সময় ডেটা বা স্ক্রল পজিশন ঠিক থাকবে
       body: IndexedStack(
         index: _selectedIndex,
         children: _pages,
@@ -138,7 +119,6 @@ class _MainLayoutState extends State<MainLayout> {
           unselectedItemColor: Colors.white38,
           selectedFontSize: 12,
           unselectedFontSize: 12,
-          type: BottomNavigationBarType.fixed,
           currentIndex: _selectedIndex,
           type: BottomNavigationBarType.fixed, // তিনটি আইটেমের জন্য ফিক্সড টাইপ ভালো
           onTap: (index) {
@@ -167,13 +147,11 @@ class _MainLayoutState extends State<MainLayout> {
       ),
     );
   }
-<<<<<<< HEAD
-=======
 
+  // কালার ডট উইজেট (ভবিষ্যতে থিম পরিবর্তনের জন্য ব্যবহার করা যাবে)
   Widget _buildColorDot(BuildContext context, Color color) {
     return GestureDetector(
       onTap: () {
-        // এখানে ফিউচারে থিম পরিবর্তনের লজিক অ্যাড করা যাবে
         Navigator.pop(context);
       },
       child: Container(
@@ -187,5 +165,4 @@ class _MainLayoutState extends State<MainLayout> {
       ),
     );
   }
->>>>>>> d6e0df6 (Update: description of changes)
 }
