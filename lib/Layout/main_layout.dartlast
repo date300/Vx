@@ -2,19 +2,17 @@ import 'dart:ui';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
-// লগইন না থাকলে এই পেজে রিডাইরেক্ট করবে
+// আপনার তৈরি করা আগের ফাইলটি ইম্পোর্ট করুন
 import '../Pages/Auth/auth_gate_page.dart';
 
-// নেভিগেশন পেজগুলো
+// পেজগুলোর ইম্পোর্ট (আপনার ফাইলের লোকেশন অনুযায়ী)
 import '../Pages/home_page.dart';
 import '../Pages/explore_page.dart';
-import '../Pages/upload_page.dart';   // নতুন: Upload পেজ
-import '../Pages/inbox_page.dart';    // নতুন: Inbox পেজ
 import '../Pages/profile_page.dart';
 
-// ডামি AuthService (তোমার আসল সার্ভিস দিয়ে রিপ্লেস করো)
+// টেস্টিংয়ের জন্য একটি ডামি AuthService (পরে আপনার আসল লজিক দিয়ে রিপ্লেস করে নিবেন)
 class AuthService {
-  static bool isLoggedIn = false;
+  static bool isLoggedIn = false; // এটি true করলে প্রোফাইল পেজে যাওয়া যাবে
 }
 
 class MainLayout extends StatefulWidget {
@@ -25,32 +23,33 @@ class MainLayout extends StatefulWidget {
 }
 
 class _MainLayoutState extends State<MainLayout> {
-  // ডিফল্ট 'Home' (index 0) সিলেক্টেড থাকবে
+  // শুরুতে 'Home' (0) ইনডেক্স সিলেক্ট থাকবে
   int _selectedIndex = 0;
 
-  // ৫টা পেজ — ক্রম: Home, Discover, Upload, Inbox, Profile
+  // নেভিগেশন পেজগুলোর লিস্ট
   final List<Widget> _pages = const [
-    HomeFeedPage(),   // index 0
-    ExplorePage(),    // index 1
-    UploadPage(),     // index 2 — নতুন
-    InboxPage(),      // index 3 — নতুন
-    ProfilePage(),    // index 4
+    HomeFeedPage(),
+    ExplorePage(),
+    ProfilePage(),
   ];
 
+  // এই ফাংশনটি প্রতিটি ট্যাপ নিয়ন্ত্রণ করবে
   void _onItemTapped(int index) {
+    // ১. প্রথমে যে ট্যাবে ক্লিক করা হয়েছে, সেই পেজটি ওপেন করার জন্য ইনডেক্স সেট করে দিচ্ছি
     setState(() {
       _selectedIndex = index;
     });
 
-    // Upload (2), Inbox (3), Profile (4) — লগইন না থাকলে auth popup দেখাবে
-    if ((index == 2 || index == 3 || index == 4) &&
-        AuthService.isLoggedIn == false) {
+    // ২. এরপর চেক করছি, যদি প্রোফাইল পেজ (ইনডেক্স ২) হয় এবং ইউজার লগ-ইন না থাকে
+    if (index == 2 && AuthService.isLoggedIn == false) {
+      // তাহলে প্রোফাইল পেজের উপরে পপ-আপটি ওপেন হবে
       showAuthPopup(context);
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    // প্রিমিয়াম ব্ল্যাক থিম
     return Scaffold(
       extendBody: true,
       backgroundColor: Colors.black,
@@ -60,24 +59,25 @@ class _MainLayoutState extends State<MainLayout> {
         children: _pages,
       ),
 
-      // Glassmorphic Bottom Navigation Bar
+      // প্রিমিয়াম iOS স্টাইল Glassmorphic Bottom Navigation
       bottomNavigationBar: ClipRRect(
         child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 25.0, sigmaY: 25.0),
+          filter: ImageFilter.blur(sigmaX: 25.0, sigmaY: 25.0), // হাই-কোয়ালিটি ব্লার
           child: SafeArea(
             bottom: true,
             child: Container(
-              height: 65,
+              height: 65, // একটি নির্দিষ্ট হাইট দিলে দেখতে ভালো লাগে
               decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.5),
+                color: Colors.black.withOpacity(0.5), // স্বচ্ছ ব্যাকগ্রাউন্ড
                 border: Border(
                   top: BorderSide(
-                    color: Colors.white.withOpacity(0.1),
+                    color: Colors.white.withOpacity(0.1), // উপরে খুবই হালকা একটি বর্ডার
                     width: 0.5,
                   ),
                 ),
               ),
               child: Theme(
+                // ট্যাপ করার সময় যে রিং ইফেক্ট হয়, সেটা বন্ধ করার জন্য (iOS এ রিং হয় না)
                 data: ThemeData(
                   splashColor: Colors.transparent,
                   highlightColor: Colors.transparent,
@@ -91,21 +91,21 @@ class _MainLayoutState extends State<MainLayout> {
                   selectedFontSize: 11,
                   unselectedFontSize: 11,
                   currentIndex: _selectedIndex,
-                  onTap: _onItemTapped,
+                  onTap: _onItemTapped, // আমাদের ঠিক করা লজিক ফাংশন
                   items: const [
-                    // ১. Home
                     BottomNavigationBarItem(
+                      // আনসিলেক্ট অবস্থায় আউটলাইন Cupertino আইকন
                       icon: Padding(
                         padding: EdgeInsets.only(bottom: 4),
                         child: Icon(CupertinoIcons.house, size: 24),
                       ),
+                      // সিলেক্ট অবস্থায় সলিড Cupertino আইকন
                       activeIcon: Padding(
                         padding: EdgeInsets.only(bottom: 4),
                         child: Icon(CupertinoIcons.house_fill, size: 24),
                       ),
                       label: "Home",
                     ),
-                    // ২. Discover
                     BottomNavigationBarItem(
                       icon: Padding(
                         padding: EdgeInsets.only(bottom: 4),
@@ -113,35 +113,10 @@ class _MainLayoutState extends State<MainLayout> {
                       ),
                       activeIcon: Padding(
                         padding: EdgeInsets.only(bottom: 4),
-                        child: Icon(CupertinoIcons.search, size: 24),
+                        child: Icon(CupertinoIcons.search, size: 24), 
                       ),
                       label: "Discover",
                     ),
-                    // ৩. Upload — নতুন
-                    BottomNavigationBarItem(
-                      icon: Padding(
-                        padding: EdgeInsets.only(bottom: 4),
-                        child: Icon(CupertinoIcons.cloud_upload, size: 24),
-                      ),
-                      activeIcon: Padding(
-                        padding: EdgeInsets.only(bottom: 4),
-                        child: Icon(CupertinoIcons.cloud_upload_fill, size: 24),
-                      ),
-                      label: "Upload",
-                    ),
-                    // ৪. Inbox — নতুন
-                    BottomNavigationBarItem(
-                      icon: Padding(
-                        padding: EdgeInsets.only(bottom: 4),
-                        child: Icon(CupertinoIcons.tray, size: 24),
-                      ),
-                      activeIcon: Padding(
-                        padding: EdgeInsets.only(bottom: 4),
-                        child: Icon(CupertinoIcons.tray_fill, size: 24),
-                      ),
-                      label: "Inbox",
-                    ),
-                    // ৫. Profile
                     BottomNavigationBarItem(
                       icon: Padding(
                         padding: EdgeInsets.only(bottom: 4),
