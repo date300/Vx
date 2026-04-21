@@ -3,14 +3,15 @@ import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'dart:math' as math;
 
-class TikTokUploadPage extends StatefulWidget {
-  const TikTokUploadPage({super.key});
+// ক্লাসের নাম পরিবর্তন করে UploadPage রাখা হয়েছে যাতে main_layout.dart এ কোনো পরিবর্তন না লাগে
+class UploadPage extends StatefulWidget {
+  const UploadPage({super.key});
 
   @override
-  State<TikTokUploadPage> createState() => _TikTokUploadPageState();
+  State<UploadPage> createState() => _UploadPageState();
 }
 
-class _TikTokUploadPageState extends State<TikTokUploadPage> with TickerProviderStateMixin {
+class _UploadPageState extends State<UploadPage> with TickerProviderStateMixin {
   CameraController? _controller;
   List<CameraDescription>? cameras;
   bool _isInitialized = false;
@@ -22,13 +23,13 @@ class _TikTokUploadPageState extends State<TikTokUploadPage> with TickerProvider
     _initializeCamera();
   }
 
-  // ক্যামেরা সেটআপ করার লজিক
+  // ক্যামেরা সেটআপ লজিক
   Future<void> _initializeCamera() async {
     try {
       cameras = await availableCameras();
       if (cameras != null && cameras!.isNotEmpty) {
         _controller = CameraController(
-          cameras![0], // পেছনের ক্যামেরা
+          cameras![0], // ব্যাক ক্যামেরা
           ResolutionPreset.high,
         );
 
@@ -51,7 +52,7 @@ class _TikTokUploadPageState extends State<TikTokUploadPage> with TickerProvider
 
   @override
   Widget build(BuildContext context) {
-    // ক্যামেরা লোড না হওয়া পর্যন্ত লোডিং দেখাবে
+    // ক্যামেরা লোড না হওয়া পর্যন্ত একটি ব্ল্যাক স্ক্রিন বা লোডিং দেখাবে
     if (!_isInitialized || _controller == null) {
       return const Scaffold(
         backgroundColor: Colors.black,
@@ -63,12 +64,12 @@ class _TikTokUploadPageState extends State<TikTokUploadPage> with TickerProvider
       backgroundColor: Colors.black,
       body: Stack(
         children: [
-          // ১. লাইভ ক্যামেরা প্রিভিউ
+          // ১. ফুল স্ক্রিন ক্যামেরা প্রিভিউ
           SizedBox.expand(
             child: CameraPreview(_controller!),
           ),
 
-          // ২. উপরের কন্ট্রোল বাটন (Close & Vx Logo)
+          // ২. উপরের কন্ট্রোল বাটন ও Vx লোগো
           Positioned(
             top: 50,
             left: 20,
@@ -78,7 +79,7 @@ class _TikTokUploadPageState extends State<TikTokUploadPage> with TickerProvider
             ),
           ),
 
-          // মাঝখানে Vx অ্যানিমেটেড লোগো
+          // স্ক্রিনের উপরে মাঝখানে Vx অ্যানিমেটেড লোগো
           Positioned(
             top: 50,
             left: 0,
@@ -86,7 +87,7 @@ class _TikTokUploadPageState extends State<TikTokUploadPage> with TickerProvider
             child: Center(child: VxSmallAnimatedLogo()),
           ),
 
-          // ৩. ডান পাশের সাইডবার (Flip, Flash, Filters)
+          // ৩. ডান পাশের মেনু (Flip, Flash, Filters)
           Positioned(
             top: 60,
             right: 15,
@@ -95,20 +96,20 @@ class _TikTokUploadPageState extends State<TikTokUploadPage> with TickerProvider
                 _buildSideIcon(CupertinoIcons.switch_camera, "Flip"),
                 _buildSideIcon(CupertinoIcons.bolt_fill, "Flash"),
                 _buildSideIcon(CupertinoIcons.speedometer, "Speed"),
-                _buildSideIcon(Icons.filter_vintage_outlined, "Filters"), // আইকন ফিক্সড
+                _buildSideIcon(Icons.filter_vintage_outlined, "Filters"), 
                 _buildSideIcon(CupertinoIcons.timer, "Timer"),
               ],
             ),
           ),
 
-          // ৪. নিচের রেকর্ড সেকশন
+          // ৪. নিচের রেকর্ড এবং আপলোড সেকশন
           Positioned(
             bottom: 40,
             left: 0,
             right: 0,
             child: Column(
               children: [
-                // মোড সিলেকশন
+                // মোড সিলেক্টর
                 const SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   child: Row(
@@ -128,10 +129,10 @@ class _TikTokUploadPageState extends State<TikTokUploadPage> with TickerProvider
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
-                    // ইফেক্ট বাটন (Error fixed icon)
+                    // ইফেক্ট বাটন
                     _buildBottomAction(Icons.sentiment_satisfied_alt, "Effects"),
 
-                    // মেইন রেকর্ড বাটন
+                    // মেইন রেকর্ড বাটন (অ্যানিমেটেড)
                     GestureDetector(
                       onTap: () {
                         setState(() {
@@ -162,7 +163,7 @@ class _TikTokUploadPageState extends State<TikTokUploadPage> with TickerProvider
                       ),
                     ),
 
-                    // গ্যালারি/আপলোড বাটন
+                    // গ্যালারি থেকে আপলোড করার বাটন
                     _buildBottomAction(CupertinoIcons.photo, "Upload"),
                   ],
                 ),
@@ -174,6 +175,7 @@ class _TikTokUploadPageState extends State<TikTokUploadPage> with TickerProvider
     );
   }
 
+  // সাইড আইকন তৈরির হেল্পার উইজেট
   Widget _buildSideIcon(IconData icon, String label) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 22),
@@ -187,6 +189,7 @@ class _TikTokUploadPageState extends State<TikTokUploadPage> with TickerProvider
     );
   }
 
+  // নিচের একশন বাটন তৈরির হেল্পার উইজেট
   Widget _buildBottomAction(IconData icon, String label) {
     return Column(
       children: [
@@ -205,8 +208,10 @@ class _TikTokUploadPageState extends State<TikTokUploadPage> with TickerProvider
   }
 }
 
-// উপরের ছোট Vx অ্যানিমেটেড লোগো
+// ছোট অ্যানিমেটেড Vx লোগো উইজেট
 class VxSmallAnimatedLogo extends StatefulWidget {
+  const VxSmallAnimatedLogo({super.key});
+
   @override
   State<VxSmallAnimatedLogo> createState() => _VxSmallAnimatedLogoState();
 }
@@ -237,7 +242,7 @@ class _VxSmallAnimatedLogoState extends State<VxSmallAnimatedLogo> with SingleTi
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             gradient: SweepGradient(
-              colors: [Colors.blueAccent, Colors.pinkAccent, Colors.blueAccent],
+              colors: const [Colors.blueAccent, Colors.pinkAccent, Colors.blueAccent],
               transform: GradientRotation(_controller.value * 2 * math.pi),
             ),
           ),
