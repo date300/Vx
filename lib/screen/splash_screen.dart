@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
+import 'dart:math' as math;
 import '../Layout/main_layout.dart';
 import '../Layout/premium_theme_controller.dart';
 
@@ -10,32 +11,46 @@ class SplashScreen extends StatefulWidget {
   State<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen> {
-  double _opacity = 0.0;
-  double _scale = 0.8;
-  bool _startShine = false; // shine sweep trigger
+class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderStateMixin {
+  // এনিমেশন কন্ট্রোলার (Visualizer এর জন্য)
+  late AnimationController _animationController;
+  late Animation<double> _animation;
+
+  // এন্ট্রেন্স এনিমেশনের জন্য (Vx টেক্সট এর জন্য)
+  double _textOpacity = 0.0;
+  double _textScale = 0.5;
 
   @override
   void initState() {
     super.initState();
 
-    // Logo pop animation
-    Future.delayed(const Duration(milliseconds: 100), () {
+    // ১. Visualizer এনিমেশন সেটআপ (লুপ চলবে)
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1500), // একপাক ঘুরতে সময়
+    );
+
+    _animation = Tween<double>(begin: 0.0, end: 2 * math.pi).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.linear),
+    );
+
+    // এনিমেশন শুরু এবং লুপ করা
+    _animationController.repeat();
+
+    // ২. Vx টেক্সট এন্ট্রেন্স এনিমেশন
+    Future.delayed(const Duration(milliseconds: 300), () {
       if (mounted) {
         setState(() {
-          _opacity = 1.0;
-          _scale = 1.0;
+          _textOpacity = 1.0;
+          _textScale = 1.0;
         });
       }
     });
 
-    // Shine sweep শুরু হবে logo pop-এর পর (প্রিমিয়াম টাইমিং)
-    Future.delayed(const Duration(milliseconds: 600), () {
-      if (mounted) setState(() => _startShine = true);
-    });
+    // ৩. Navigation logic with safety check (৩ সেকেন্ড পর)
+    Future.delayed(const Duration(seconds: 4), () {
+      if (!mounted) return;
 
-    // ৩ সেকেন্ড পর মেইন পেজে যাবে
-    Future.delayed(const Duration(seconds: 3), () {
       Navigator.pushReplacement(
         context,
         PageRouteBuilder(
@@ -50,106 +65,145 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   @override
+  void dispose() {
+    _animationController.dispose(); // কন্ট্রোলার মেমোরি থেকে রিমুভ করা
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    // থিম কালার গেট করা
+    final accentColor = PremiumTheme.accentColor.value; 
+
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: Colors.black, // টিকটক বা মিউজিক অ্যাপের জন্য ব্ল্যাক ব্যাকগ্রাউন্ড বেস্ট
       body: Center(
-        child: AnimatedOpacity(
-          duration: const Duration(milliseconds: 1500),
-          opacity: _opacity,
-          curve: Curves.easeIn,
-          child: AnimatedScale(
-            duration: const Duration(milliseconds: 1500),
-            scale: _scale,
-            curve: Curves.easeOutBack, // iOS elastic pop
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                // === Vx LOGO + LIQUID GLASS SHINE + GLOW ===
-                ValueListenableBuilder<Color>(
-                  valueListenable: PremiumTheme.accentColor,
-                  builder: (context, accentColor, child) {
-                    return Container(
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        boxShadow: [
-                          BoxShadow(
-                            color: accentColor.withOpacity(0.35),
-                            blurRadius: 50,
-                            spreadRadius: 15,
-                          ),
-                          BoxShadow(
-                            color: accentColor.withOpacity(0.15),
-                            blurRadius: 80,
-                            spreadRadius: 25,
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            // === ১. প্লে স্টোর + মিউজিক স্টাইল বৃত্তাকার Visualizer ===
+            AnimatedBuilder(
+              animation: _animation,
+              builder: (context, child) {
+                return Transform.rotate(
+                  angle: _animation.value, // পুরো সার্কেলটি আস্তে আস্তে ঘুরবে
+                  child: SizedBox(
+                    width: 200, // Visualizer এর এরিয়া
+                    height: 200,
+                    child: CustomPaint(
+                      painter: PlayStoreMusicVisualizerPainter(
+                        color: accentColor,
+                        // এনিমেশন ভ্যালু পাস করা হচ্ছে বারগুলোর আপ-ডাউনের জন্য
+                        animValue: _animationController.value, 
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+
+            // === ২. মাঝখানে Vx টেক্সট (Animated) ===
+            AnimatedOpacity(
+              duration: const Duration(milliseconds: 1000),
+              opacity: _textOpacity,
+              curve: Curves.easeOut,
+              child: AnimatedScale(
+                duration: const Duration(milliseconds: 1200),
+                scale: _textScale,
+                curve: Curves.easeOutBack, // হালকা ইলাস্টিক ইফেক্ট
+                child: Column(
+                  mainAxisSize: MainAxisSize.min, // সেন্টারে রাখার জন্য
+                  children: [
+                    // মূল "Vx" টেক্সট
+                    Text(
+                      "Vx",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 60, // বড় সাইজ
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: -2.0, // টিকটক স্টাইলে কাছাকাছি অক্ষর
+                        fontFamily: 'BebasNeue', // যদি এই ফন্ট থাকে, নতুবা ডিফল্ট bold হবে
+                        shadows: [
+                          // টেক্সটের পিছনে হালকা গ্লো
+                          Shadow(
+                            color: accentColor.withOpacity(0.8),
+                            blurRadius: 15,
                           ),
                         ],
                       ),
-                      child: ClipRect(
-                        child: SizedBox(
-                          width: 160,
-                          height: 160,
-                          child: Stack(
-                            children: [
-                              // আসল লোগো
-                              Center(
-                                child: Image.asset(
-                                  'assets/vx_logo.png',
-                                  width: 160,
-                                ),
-                              ),
-
-                              // === Premium Shine Sweep (Video-like effect) ===
-                              if (_startShine)
-                                TweenAnimationBuilder<double>(
-                                  tween: Tween<double>(begin: -200.0, end: 320.0),
-                                  duration: const Duration(milliseconds: 1100),
-                                  curve: Curves.fastOutSlowIn,
-                                  builder: (context, value, child) {
-                                    return Positioned(
-                                      left: value,
-                                      top: 0,
-                                      child: Container(
-                                        width: 65,
-                                        height: 160,
-                                        decoration: BoxDecoration(
-                                          gradient: LinearGradient(
-                                            colors: [
-                                              Colors.transparent,
-                                              accentColor.withOpacity(0.85),
-                                              Colors.transparent,
-                                            ],
-                                            stops: const [0.0, 0.5, 1.0],
-                                          ),
-                                        ),
-                                      ),
-                                    );
-                                  },
-                                ),
-                            ],
-                          ),
-                        ),
+                    ),
+                    // ছোট করে একটা সাব-টেক্সট (ঐচ্ছিক)
+                    Text(
+                      "SHORT VIDEO",
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.6),
+                        fontSize: 10,
+                        fontWeight: FontWeight.normal,
+                        letterSpacing: 4.0,
                       ),
-                    );
-                  },
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 30),
-
-                // অ্যাপ নাম (চাইলে ডিলিট করুন)
-                const Text(
-                  "V X",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 34,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 12.0,
-                  ),
-                ),
-              ],
+              ),
             ),
-          ),
+          ],
         ),
       ),
     );
+  }
+}
+
+// === Custom Painter: মিউজিক ভিজ্যুয়ালাইজার সার্কেল তৈরির জন্য ===
+class PlayStoreMusicVisualizerPainter extends CustomPainter {
+  final Color color;
+  final double animValue;
+
+  PlayStoreMusicVisualizerPainter({required this.color, required this.animValue});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final Paint paint = Paint()
+      ..color = color
+      ..strokeWidth = 4.0 // বারগুলোর প্রস্থ
+      ..strokeCap = StrokeCap.round; // বারের মাথা গোল হবে
+
+    final double centerX = size.width / 2;
+    final double centerY = size.height / 2;
+    final double baseRadius = size.width * 0.40; // মূল বৃত্তের ব্যাসার্ধ
+
+    const int barCount = 40; // মোট কয়টি বার হবে
+
+    for (int i = 0; i < barCount; i++) {
+      // প্রতিটি বারের এঙ্গেল ক্যালকুলেশন
+      final double angle = (i * 2 * math.pi / barCount);
+
+      // মিউজিক ইফেক্ট তৈরির মূল লজিক (Sin wave ব্যবহার করে আপ-ডাউন)
+      // animValue এবং i (index) ব্যবহার করে একেক বার একেক সময়ে আপ ডাউন করবে
+      double waveEffect = math.sin((animValue * 2 * math.pi) + (i * 0.8));
+      
+      // waveEffect কে positive range এ আনা (০ থেকে ১)
+      waveEffect = (waveEffect + 1) / 2;
+
+      // বারের উচ্চতা (মিনিমাম ৫, ম্যাক্সিমাম ২৫)
+      final double barHeight = 5 + (waveEffect * 20); 
+
+      // বারের শুরু এবং শেষ পয়েন্ট (বৃত্তাকার পথে)
+      // শুরু হবে baseRadius থেকে
+      final double startX = centerX + baseRadius * math.cos(angle);
+      final double startY = centerY + baseRadius * math.sin(angle);
+
+      // শেষ হবে baseRadius + barHeight এ
+      final double endX = centerX + (baseRadius + barHeight) * math.cos(angle);
+      final double endY = centerY + (baseRadius + barHeight) * math.sin(angle);
+
+      // লাইন ড্র করা
+      canvas.drawLine(Offset(startX, startY), Offset(endX, endY), paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant PlayStoreMusicVisualizerPainter oldDelegate) {
+    // এনিমেশন চলছে তাই সবসময় রিপেইন্ট হবে
+    return oldDelegate.animValue != animValue || oldDelegate.color != color;
   }
 }
