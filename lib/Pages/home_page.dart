@@ -16,24 +16,36 @@ class _HomeFeedPageState extends State<HomeFeedPage>
     with SingleTickerProviderStateMixin {
   late final TabController _tabController;
 
-  // For You feed - 7 test videos (খুব দ্রুত লোড হবে)
+  // For You feed - 12 test videos
   final List<String> forYouUrls = const [
-    "https://flutter.github.io/assets-for-api-docs/assets/videos/butterfly.mp4", 
-    "https://flutter.github.io/assets-for-api-docs/assets/videos/bee.mp4",       
     "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
     "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
-    "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4",
     "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
+    "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4",
+    "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4",
+    "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4",
+    "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltdowns.mp4",
+    "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4",
+    "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/SubaruOutbackOnStreetAndDirt.mp4",
     "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4",
+    "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/VolkswagenGTIReview.mp4",
+    "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/WeAreGoingOnBullrun.mp4",
   ];
 
-  // Following feed - 5 test videos
+  // Following feed - 12 test videos (Shuffled for variety)
   final List<String> followingUrls = const [
+    "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/WeAreGoingOnBullrun.mp4",
+    "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/VolkswagenGTIReview.mp4",
+    "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4",
+    "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/SubaruOutbackOnStreetAndDirt.mp4",
+    "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4",
+    "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltdowns.mp4",
+    "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4",
     "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4",
     "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4",
-    "https://flutter.github.io/assets-for-api-docs/assets/videos/bee.mp4",
+    "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
+    "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
     "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
-    "https://flutter.github.io/assets-for-api-docs/assets/videos/butterfly.mp4",
   ];
 
   @override
@@ -117,6 +129,7 @@ class _HomeFeedPageState extends State<HomeFeedPage>
   Widget _buildVideoFeed(List<String> urls, {required Color accentColor}) {
     return PageView.builder(
       scrollDirection: Axis.vertical,
+      allowImplicitScrolling: true, // ব্যাকগ্রাউন্ডে আগের এবং পরের ভিডিও লোড করে রাখবে
       itemCount: urls.length,
       itemBuilder: (context, index) {
         return FeedVideoItem(
@@ -140,8 +153,9 @@ class FeedVideoItem extends StatefulWidget {
   State<FeedVideoItem> createState() => _FeedVideoItemState();
 }
 
+// AutomaticKeepAliveClientMixin যোগ করা হয়েছে যাতে সোয়াইপ করলে ভিডিও আবার নতুন করে লোড না হয়
 class _FeedVideoItemState extends State<FeedVideoItem>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, AutomaticKeepAliveClientMixin {
   late final VideoPlayerController _videoController;
   late final AnimationController _likeAnimationController;
 
@@ -150,14 +164,17 @@ class _FeedVideoItemState extends State<FeedVideoItem>
 
   // Actions state
   bool _isLiked = false;
-  int _likeCount = 45000; // start like count
-  int _commentCount = 1200; // start comment count
+  int _likeCount = 45000; 
+  int _commentCount = 1200; 
+
+  // KeepAlive কে true করে দেওয়া হয়েছে
+  @override
+  bool get wantKeepAlive => true;
 
   @override
   void initState() {
     super.initState();
 
-    // Like animation controller for heart pop effect
     _likeAnimationController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 400),
@@ -209,7 +226,6 @@ class _FeedVideoItemState extends State<FeedVideoItem>
       _likeCount += _isLiked ? 1 : -1;
     });
 
-    // Play like animation
     if (_isLiked) {
       _likeAnimationController.forward().then((_) {
         _likeAnimationController.reverse();
@@ -218,7 +234,6 @@ class _FeedVideoItemState extends State<FeedVideoItem>
   }
 
   void _onDoubleTap() {
-    // Double tap to like (like Instagram/TikTok)
     if (!_isLiked) {
       _onLike();
     }
@@ -335,9 +350,11 @@ class _FeedVideoItemState extends State<FeedVideoItem>
 
   @override
   Widget build(BuildContext context) {
+    super.build(context); // KeepAlive এর জন্য এটি কল করা বাধ্যতামূলক
+
     return GestureDetector(
       onTap: _togglePlay,
-      onDoubleTap: _onDoubleTap, // Double tap to like
+      onDoubleTap: _onDoubleTap, 
       child: Stack(
         fit: StackFit.expand,
         children: [
@@ -349,7 +366,9 @@ class _FeedVideoItemState extends State<FeedVideoItem>
             child: _isInitialized
                 ? SizedBox.expand(
                     child: FittedBox(
-                      fit: BoxFit.cover,
+                      // BoxFit.cover দিলে রিলস বা টিকটকের মতো ফুল স্ক্রিন হবে। 
+                      // পুরো ভিডিও দেখতে চাইলে BoxFit.contain ব্যবহার করতে পারেন।
+                      fit: BoxFit.cover, 
                       child: SizedBox(
                         width: _videoController.value.size.width,
                         height: _videoController.value.size.height,
@@ -365,7 +384,6 @@ class _FeedVideoItemState extends State<FeedVideoItem>
                   ),
           ),
 
-          // Play icon when paused
           if (_isInitialized && !_isPlaying)
             const Center(
               child: Icon(
@@ -375,7 +393,6 @@ class _FeedVideoItemState extends State<FeedVideoItem>
               ),
             ),
 
-          // Double tap heart animation
           Center(
             child: ScaleTransition(
               scale: Tween<double>(begin: 0.0, end: 1.2).animate(
@@ -392,7 +409,6 @@ class _FeedVideoItemState extends State<FeedVideoItem>
             ),
           ),
 
-          // Bottom gradient
           Positioned(
             left: 0,
             right: 0,
@@ -412,7 +428,6 @@ class _FeedVideoItemState extends State<FeedVideoItem>
             ),
           ),
 
-          // Right actions (Like, Comment, Share)
           Positioned(
             right: 16,
             bottom: 120,
@@ -439,7 +454,6 @@ class _FeedVideoItemState extends State<FeedVideoItem>
                   active: false,
                 ),
                 const SizedBox(height: 24),
-                // Profile picture
                 Container(
                   width: 48,
                   height: 48,
@@ -456,7 +470,6 @@ class _FeedVideoItemState extends State<FeedVideoItem>
             ),
           ),
 
-          // Left caption and user info
           Positioned(
             left: 24,
             bottom: 120,
@@ -475,7 +488,6 @@ class _FeedVideoItemState extends State<FeedVideoItem>
                       ),
                     ),
                     const SizedBox(width: 8),
-                    // Follow button
                     Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 12,
