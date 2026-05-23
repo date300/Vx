@@ -102,7 +102,7 @@ class _VxAuthGateContentState extends State<VxAuthGateContent> {
                 ),
               ),
 
-              // লোগো এবং টেক্সট সেকশন (Design Unchanged)
+              // লোগো এবং টেক্সট সেকশন
               Expanded(
                 child: Center(
                   child: SingleChildScrollView(
@@ -394,8 +394,8 @@ class _VxAuthGateContentState extends State<VxAuthGateContent> {
                 fontSize: 17,
                 fontWeight: FontWeight.w600,
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
