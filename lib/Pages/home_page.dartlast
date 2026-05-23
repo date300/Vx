@@ -16,19 +16,39 @@ class _HomeFeedPageState extends State<HomeFeedPage>
     with SingleTickerProviderStateMixin {
   late final TabController _tabController;
 
-  // For You & Following separate feeds (test)
+  // For You feed - 15 test videos
   final List<String> forYouUrls = const [
     "https://flutter.github.io/assets-for-api-docs/assets/videos/butterfly.mp4",
     "https://flutter.github.io/assets-for-api-docs/assets/videos/bee.mp4",
     "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
     "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4",
+    "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+    "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4",
+    "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4",
+    "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
+    "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4",
+    "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4",
+    "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltdowns.mp4",
+    "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/SubaruOutbackOnStreetAndDirt.mp4",
+    "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/VolkswagenGTIReview.mp4",
+    "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/WeAreGoingOnBullrun.mp4",
+    "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/WhatCarCanYouGetForAGrand.mp4",
   ];
 
+  // Following feed - 12 test videos
   final List<String> followingUrls = const [
     "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4",
     "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4",
     "https://flutter.github.io/assets-for-api-docs/assets/videos/butterfly.mp4",
     "https://flutter.github.io/assets-for-api-docs/assets/videos/bee.mp4",
+    "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+    "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
+    "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
+    "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4",
+    "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4",
+    "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4",
+    "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltdowns.mp4",
+    "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/SubaruOutbackOnStreetAndDirt.mp4",
   ];
 
   @override
@@ -87,7 +107,6 @@ class _HomeFeedPageState extends State<HomeFeedPage>
                   IconButton(
                     icon: const Icon(Icons.search, color: Colors.white, size: 30),
                     onPressed: () {
-                      // Search page placeholder (no break)
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(content: Text("Search coming soon")),
                       );
@@ -104,9 +123,6 @@ class _HomeFeedPageState extends State<HomeFeedPage>
 
   Color _getAccentColor() {
     try {
-      // If premium_theme_controller.dart exists and works, you will get a nice accent.
-      // Otherwise return default.
-      // This is a simple fallback to avoid build breaks.
       return Colors.pinkAccent;
     } catch (_) {
       return Colors.pinkAccent;
@@ -128,7 +144,7 @@ class _HomeFeedPageState extends State<HomeFeedPage>
   }
 }
 
-/// Single video item with Like/Comment/Share working
+/// Single video item with Like/Comment/Share working + Enhanced animations
 class FeedVideoItem extends StatefulWidget {
   final String videoUrl;
   final int index;
@@ -139,20 +155,28 @@ class FeedVideoItem extends StatefulWidget {
   State<FeedVideoItem> createState() => _FeedVideoItemState();
 }
 
-class _FeedVideoItemState extends State<FeedVideoItem> {
+class _FeedVideoItemState extends State<FeedVideoItem>
+    with SingleTickerProviderStateMixin {
   late final VideoPlayerController _videoController;
+  late final AnimationController _likeAnimationController;
 
   bool _isInitialized = false;
   bool _isPlaying = true;
 
   // Actions state
   bool _isLiked = false;
-  int _likeCount = 45000; // start like
-  int _commentCount = 1200; // start comment
+  int _likeCount = 45000; // start like count
+  int _commentCount = 1200; // start comment count
 
   @override
   void initState() {
     super.initState();
+
+    // Like animation controller for heart pop effect
+    _likeAnimationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 400),
+    );
 
     _videoController = VideoPlayerController.networkUrl(Uri.parse(widget.videoUrl))
       ..initialize().then((_) {
@@ -165,7 +189,6 @@ class _FeedVideoItemState extends State<FeedVideoItem> {
           ..play();
         _isPlaying = true;
       }).catchError((e) {
-        // If video fails, still show UI.
         if (!mounted) return;
         setState(() {
           _isInitialized = false;
@@ -177,6 +200,7 @@ class _FeedVideoItemState extends State<FeedVideoItem> {
   @override
   void dispose() {
     _videoController.dispose();
+    _likeAnimationController.dispose();
     super.dispose();
   }
 
@@ -199,10 +223,23 @@ class _FeedVideoItemState extends State<FeedVideoItem> {
       _isLiked = !_isLiked;
       _likeCount += _isLiked ? 1 : -1;
     });
+
+    // Play like animation
+    if (_isLiked) {
+      _likeAnimationController.forward().then((_) {
+        _likeAnimationController.reverse();
+      });
+    }
+  }
+
+  void _onDoubleTap() {
+    // Double tap to like (like Instagram/TikTok)
+    if (!_isLiked) {
+      _onLike();
+    }
   }
 
   void _onComment() {
-    // Simple working comment UI (local). Replace later with backend if needed.
     final textController = TextEditingController();
 
     showModalBottomSheet(
@@ -230,7 +267,11 @@ class _FeedVideoItemState extends State<FeedVideoItem> {
                   const SizedBox(width: 10),
                   Text(
                     "Comments ($_commentCount)",
-                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 16,
+                    ),
                   ),
                   const Spacer(),
                   IconButton(
@@ -259,7 +300,6 @@ class _FeedVideoItemState extends State<FeedVideoItem> {
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: () {
-                    // no backend; just local increase
                     if (textController.text.trim().isEmpty) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(content: Text("Type something to comment")),
@@ -270,16 +310,25 @@ class _FeedVideoItemState extends State<FeedVideoItem> {
                       _commentCount += 1;
                     });
                     Navigator.of(ctx).pop();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text("Comment added!"),
+                        duration: Duration(seconds: 1),
+                      ),
+                    );
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    foregroundColor: Colors.black,
+                    backgroundColor: Colors.pinkAccent,
+                    foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  child: const Text("Send"),
+                  child: const Text(
+                    "Send",
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
                 ),
               ),
               const SizedBox(height: 8),
@@ -291,10 +340,11 @@ class _FeedVideoItemState extends State<FeedVideoItem> {
   }
 
   void _onShare() {
-    // Working share mock (no external packages).
-    // Replace with share_plus later if you want real share sheet.
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Share link copied (demo)")),
+      const SnackBar(
+        content: Text("Share link copied! 📋"),
+        duration: Duration(seconds: 2),
+      ),
     );
   }
 
@@ -302,11 +352,15 @@ class _FeedVideoItemState extends State<FeedVideoItem> {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: _togglePlay,
+      onDoubleTap: _onDoubleTap, // Double tap to like
       child: Stack(
         fit: StackFit.expand,
         children: [
+          // Video player
           Container(
-            color: widget.index % 2 == 0 ? const Color(0xFF0F0F0F) : const Color(0xFF141414),
+            color: widget.index % 2 == 0
+                ? const Color(0xFF0F0F0F)
+                : const Color(0xFF141414),
             child: _isInitialized
                 ? SizedBox.expand(
                     child: FittedBox(
@@ -319,15 +373,39 @@ class _FeedVideoItemState extends State<FeedVideoItem> {
                     ),
                   )
                 : const Center(
-                    child: CircularProgressIndicator(color: Colors.white),
+                    child: CircularProgressIndicator(
+                      color: Colors.pinkAccent,
+                      strokeWidth: 3,
+                    ),
                   ),
           ),
 
           // Play icon when paused
           if (_isInitialized && !_isPlaying)
             const Center(
-              child: Icon(Icons.play_arrow_rounded, size: 80, color: Colors.white54),
+              child: Icon(
+                Icons.play_arrow_rounded,
+                size: 80,
+                color: Colors.white54,
+              ),
             ),
+
+          // Double tap heart animation
+          Center(
+            child: ScaleTransition(
+              scale: Tween<double>(begin: 0.0, end: 1.2).animate(
+                CurvedAnimation(
+                  parent: _likeAnimationController,
+                  curve: Curves.elasticOut,
+                ),
+              ),
+              child: const Icon(
+                Icons.favorite,
+                size: 120,
+                color: Colors.pinkAccent,
+              ),
+            ),
+          ),
 
           // Bottom gradient
           Positioned(
@@ -349,7 +427,7 @@ class _FeedVideoItemState extends State<FeedVideoItem> {
             ),
           ),
 
-          // Right actions
+          // Right actions (Like, Comment, Share)
           Positioned(
             right: 16,
             bottom: 120,
@@ -375,30 +453,90 @@ class _FeedVideoItemState extends State<FeedVideoItem> {
                   onTap: _onShare,
                   active: false,
                 ),
+                const SizedBox(height: 24),
+                // Profile picture
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white, width: 2),
+                    gradient: const LinearGradient(
+                      colors: [Colors.pinkAccent, Colors.purpleAccent],
+                    ),
+                  ),
+                  child: const Icon(Icons.person, color: Colors.white, size: 28),
+                ),
               ],
             ),
           ),
 
-          // Left caption
+          // Left caption and user info
           Positioned(
             left: 24,
             bottom: 120,
-            width: MediaQuery.of(context).size.width * 0.7,
+            width: MediaQuery.of(context).size.width * 0.65,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  "@Sohan_Dev",
-                  style: TextStyle(
-                    color: const Color(0xFFFF4FB3),
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
+                Row(
+                  children: [
+                    Text(
+                      "@Sohan_Dev",
+                      style: TextStyle(
+                        color: const Color(0xFFFF4FB3),
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    // Follow button
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.white, width: 1.5),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: const Text(
+                        "Follow",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 8),
                 const Text(
-                  "Building the ultimate premium UI. This feels like a billion-dollar app! #Flutter #UIUX",
-                  style: TextStyle(color: Colors.white, fontSize: 14, height: 1.4),
+                  "Building the ultimate premium UI 🔥 This feels like a billion-dollar app! #Flutter #UIUX #Premium",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 14,
+                    height: 1.4,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Row(
+                  children: [
+                    const Icon(Icons.music_note, color: Colors.white70, size: 14),
+                    const SizedBox(width: 4),
+                    Expanded(
+                      child: Text(
+                        "Original Sound - Sohan Dev • Trending",
+                        style: TextStyle(
+                          color: Colors.white70,
+                          fontSize: 12,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -419,15 +557,22 @@ class _FeedVideoItemState extends State<FeedVideoItem> {
       onTap: onTap,
       child: Column(
         children: [
-          Icon(
-            icon,
-            color: active ? Colors.pinkAccent : Colors.white,
-            size: 36,
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            child: Icon(
+              icon,
+              color: active ? Colors.pinkAccent : Colors.white,
+              size: active ? 38 : 36,
+            ),
           ),
           const SizedBox(height: 4),
           Text(
             label,
-            style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600),
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ],
       ),
@@ -435,8 +580,12 @@ class _FeedVideoItemState extends State<FeedVideoItem> {
   }
 
   String _formatCount(int n) {
-    if (n >= 1000000) return "${(n / 1000000).toStringAsFixed(1)}M".replaceAll(".0", "");
-    if (n >= 1000) return "${(n / 1000).toStringAsFixed(1)}K".replaceAll(".0", "");
+    if (n >= 1000000) {
+      return "${(n / 1000000).toStringAsFixed(1)}M".replaceAll(".0", "");
+    }
+    if (n >= 1000) {
+      return "${(n / 1000).toStringAsFixed(1)}K".replaceAll(".0", "");
+    }
     return n.toString();
   }
 }

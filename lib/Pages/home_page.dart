@@ -16,39 +16,24 @@ class _HomeFeedPageState extends State<HomeFeedPage>
     with SingleTickerProviderStateMixin {
   late final TabController _tabController;
 
-  // For You feed - 15 test videos
+  // For You feed - 7 test videos (খুব দ্রুত লোড হবে)
   final List<String> forYouUrls = const [
-    "https://flutter.github.io/assets-for-api-docs/assets/videos/butterfly.mp4",
-    "https://flutter.github.io/assets-for-api-docs/assets/videos/bee.mp4",
+    "https://flutter.github.io/assets-for-api-docs/assets/videos/butterfly.mp4", 
+    "https://flutter.github.io/assets-for-api-docs/assets/videos/bee.mp4",       
+    "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
     "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
     "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4",
-    "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
-    "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4",
-    "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4",
     "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
-    "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4",
-    "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4",
-    "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltdowns.mp4",
-    "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/SubaruOutbackOnStreetAndDirt.mp4",
-    "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/VolkswagenGTIReview.mp4",
-    "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/WeAreGoingOnBullrun.mp4",
-    "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/WhatCarCanYouGetForAGrand.mp4",
+    "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4",
   ];
 
-  // Following feed - 12 test videos
+  // Following feed - 5 test videos
   final List<String> followingUrls = const [
-    "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4",
-    "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4",
-    "https://flutter.github.io/assets-for-api-docs/assets/videos/butterfly.mp4",
+    "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4",
+    "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4",
     "https://flutter.github.io/assets-for-api-docs/assets/videos/bee.mp4",
     "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
-    "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
-    "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
-    "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4",
-    "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4",
-    "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4",
-    "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltdowns.mp4",
-    "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/SubaruOutbackOnStreetAndDirt.mp4",
+    "https://flutter.github.io/assets-for-api-docs/assets/videos/butterfly.mp4",
   ];
 
   @override
@@ -342,7 +327,7 @@ class _FeedVideoItemState extends State<FeedVideoItem>
   void _onShare() {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
-        content: Text("Share link copied! 📋"),
+        content: Text("Share link copied! 🔗"),
         duration: Duration(seconds: 2),
       ),
     );
@@ -481,10 +466,10 @@ class _FeedVideoItemState extends State<FeedVideoItem>
               children: [
                 Row(
                   children: [
-                    Text(
+                    const Text(
                       "@Sohan_Dev",
                       style: TextStyle(
-                        color: const Color(0xFFFF4FB3),
+                        color: Color(0xFFFF4FB3),
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
                       ),
@@ -525,9 +510,9 @@ class _FeedVideoItemState extends State<FeedVideoItem>
                   children: [
                     const Icon(Icons.music_note, color: Colors.white70, size: 14),
                     const SizedBox(width: 4),
-                    Expanded(
+                    const Expanded(
                       child: Text(
-                        "Original Sound - Sohan Dev • Trending",
+                        "Original Sound - Sohan Dev 🎵 Trending",
                         style: TextStyle(
                           color: Colors.white70,
                           fontSize: 12,
