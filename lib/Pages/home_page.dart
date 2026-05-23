@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:video_player/video_player.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 // ══════════════════════════════════════════════════════════
 //  MODEL
@@ -1253,22 +1254,67 @@ class _CommentTile extends StatelessWidget {
 }
 
 // ══════════════════════════════════════════════════════════
-//  SHARE SHEET
+//  SHARE SHEET  (font_awesome_flutter icons)
 // ══════════════════════════════════════════════════════════
+class _ShareOption {
+  final dynamic icon; // IconData works for both
+  final String label;
+  final Color bgColor;
+  final bool isFa;
+
+  const _ShareOption({
+    required this.icon,
+    required this.label,
+    required this.bgColor,
+    this.isFa = true,
+  });
+}
+
 class _ShareSheet extends StatelessWidget {
   const _ShareSheet();
 
+  static final _options = [
+    _ShareOption(
+      icon: Icons.link_rounded,
+      label: "Copy Link",
+      bgColor: const Color(0xFF333333),
+      isFa: false,
+    ),
+    _ShareOption(
+      icon: FontAwesomeIcons.whatsapp,
+      label: "WhatsApp",
+      bgColor: const Color(0xFF25D366),
+    ),
+    _ShareOption(
+      icon: FontAwesomeIcons.telegram,
+      label: "Telegram",
+      bgColor: const Color(0xFF0088CC),
+    ),
+    _ShareOption(
+      icon: FontAwesomeIcons.facebook,
+      label: "Facebook",
+      bgColor: const Color(0xFF1877F2),
+    ),
+    _ShareOption(
+      icon: FontAwesomeIcons.instagram,
+      label: "Instagram",
+      bgColor: const Color(0xFFE1306C),
+    ),
+    _ShareOption(
+      icon: FontAwesomeIcons.xTwitter,
+      label: "X (Twitter)",
+      bgColor: const Color(0xFF000000),
+    ),
+    _ShareOption(
+      icon: Icons.more_horiz_rounded,
+      label: "More",
+      bgColor: const Color(0xFF444444),
+      isFa: false,
+    ),
+  ];
+
   @override
   Widget build(BuildContext context) {
-    final options = [
-      (Icons.link_rounded, "Copy Link"),
-      (Icons.whatsapp, "WhatsApp"),
-      (Icons.telegram, "Telegram"),
-      (Icons.facebook, "Facebook"),
-      (Icons.messenger_outline_rounded, "Messenger"),
-      (Icons.more_horiz_rounded, "More"),
-    ];
-
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
       decoration: const BoxDecoration(
@@ -1279,7 +1325,8 @@ class _ShareSheet extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            width: 38, height: 4,
+            width: 38,
+            height: 4,
             decoration: BoxDecoration(
               color: Colors.white24,
               borderRadius: BorderRadius.circular(2),
@@ -1299,39 +1346,44 @@ class _ShareSheet extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           SizedBox(
-            height: 90,
+            height: 92,
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
-              itemCount: options.length,
-              separatorBuilder: (_, __) => const SizedBox(width: 20),
+              itemCount: _options.length,
+              separatorBuilder: (_, __) => const SizedBox(width: 18),
               itemBuilder: (_, i) {
-                final (icon, label) = options[i];
+                final opt = _options[i];
                 return GestureDetector(
                   onTap: () {
                     Navigator.pop(context);
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        content: Text("Shared via $label 🔗"),
+                        content: Text("Shared via ${opt.label} 🔗"),
                         duration: const Duration(seconds: 1),
-                        backgroundColor: Colors.pinkAccent,
+                        backgroundColor: opt.bgColor == const Color(0xFF333333)
+                            ? Colors.pinkAccent
+                            : opt.bgColor,
                       ),
                     );
                   },
                   child: Column(
                     children: [
                       Container(
-                        width: 54,
-                        height: 54,
+                        width: 56,
+                        height: 56,
                         decoration: BoxDecoration(
-                          color: Colors.white10,
+                          color: opt.bgColor,
                           shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white12),
                         ),
-                        child: Icon(icon, color: Colors.white, size: 26),
+                        child: Center(
+                          child: opt.isFa
+                              ? FaIcon(opt.icon as IconData, color: Colors.white, size: 24)
+                              : Icon(opt.icon as IconData, color: Colors.white, size: 26),
+                        ),
                       ),
                       const SizedBox(height: 6),
                       Text(
-                        label,
+                        opt.label,
                         style: const TextStyle(
                           color: Colors.white70,
                           fontSize: 11,
@@ -1349,3 +1401,4 @@ class _ShareSheet extends StatelessWidget {
     );
   }
 }
+
