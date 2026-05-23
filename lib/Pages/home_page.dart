@@ -370,9 +370,9 @@ class _TikTokScrollPhysics extends PageScrollPhysics {
   // Tight spring = snappy snap like TikTok
   @override
   SpringDescription get spring => const SpringDescription(
-        mass: 50,
-        stiffness: 600,
-        damping: 1.0,
+        mass: 80,
+        stiffness: 250,
+        damping: 1.2,
       );
 }
 
