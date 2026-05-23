@@ -342,8 +342,8 @@ class _VideoFeedListState extends State<_VideoFeedList> {
       scrollDirection: Axis.vertical,
       itemCount: widget.videos.length,
       onPageChanged: _onPageChanged,
-      // ★ TikTok-style: snappy, no bounce, no over-scroll
-      physics: const _TikTokScrollPhysics(),
+
+      physics: const PageScrollPhysics(parent: ClampingScrollPhysics()),
       itemBuilder: (context, index) {
         return FeedVideoItem(
           key: ValueKey('${widget.feedKey}_$index'),
@@ -355,25 +355,6 @@ class _VideoFeedListState extends State<_VideoFeedList> {
       },
     );
   }
-}
-
-// ══════════════════════════════════════════════════════════
-//  TIKTOK SCROLL PHYSICS — snappy, no bounce
-// ══════════════════════════════════════════════════════════
-class _TikTokScrollPhysics extends PageScrollPhysics {
-  const _TikTokScrollPhysics() : super(parent: const ClampingScrollPhysics());
-
-  @override
-  _TikTokScrollPhysics applyTo(ScrollPhysics? ancestor) =>
-      const _TikTokScrollPhysics();
-
-  // Tight spring = snappy snap like TikTok
-  @override
-  SpringDescription get spring => const SpringDescription(
-        mass: 80,
-        stiffness: 250,
-        damping: 1.2,
-      );
 }
 
 // ══════════════════════════════════════════════════════════
