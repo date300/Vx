@@ -1,8 +1,8 @@
-import 'package:flutter/cupertino.dart';
+ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_material_design_icons/flutter_material_design_icons.dart';
 
-// Auth Popup কল করার ফাংশন
+// Auth Popup দেখানোর জন্য এই function call করুন
 void showAuthPopup(BuildContext context) {
   showGeneralDialog(
     context: context,
@@ -47,7 +47,7 @@ class VxAuthGateContent extends StatelessWidget {
                 ),
               ),
 
-              // লোগো এবং টেক্সট (Logo and Text)
+              // মাঝখানের অংশ (Logo and Text)
               Expanded(
                 child: Center(
                   child: Column(
@@ -96,7 +96,7 @@ class VxAuthGateContent extends StatelessWidget {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          _buildFeatureChip("✨ Create"),
+                          _buildFeatureChip("📹 Create"),
                           const SizedBox(width: 12),
                           _buildFeatureChip("❤️ Like"),
                           const SizedBox(width: 12),
@@ -108,7 +108,7 @@ class VxAuthGateContent extends StatelessWidget {
                 ),
               ),
 
-              // লগইন বাটন সেকশন (Login Buttons)
+              // নিচের অংশ (Login Buttons)
               Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
@@ -139,6 +139,21 @@ class VxAuthGateContent extends StatelessWidget {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
                           content: Text("Email login coming soon"),
+                        ),
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  _buildAuthButton(
+                    icon: Icons.phone_android,
+                    text: "Continue with Phone",
+                    gradient: null,
+                    onPressed: () {
+                      // Phone Login Logic
+                      Navigator.of(context).pop();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text("Phone login coming soon"),
                         ),
                       );
                     },
@@ -231,3 +246,4 @@ class VxAuthGateContent extends StatelessWidget {
     );
   }
 }
+
