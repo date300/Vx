@@ -1587,7 +1587,7 @@ class _CommentTile extends StatelessWidget {
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: Colors.white12,
-              border: Border.all(color: Colors.white16),
+              border: Border.all(color: Colors.white.withOpacity(0.16)),
             ),
             child: const Icon(Icons.person, color: Colors.white54, size: 20),
           ),
