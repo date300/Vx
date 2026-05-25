@@ -1,8 +1,23 @@
 import 'package:flutter/material.dart';
-import 'screen/splash_screen.dart'; // স্প্ল্যাশ স্ক্রিন ইমপোর্ট করা হলো
-import 'Layout/premium_theme_controller.dart'; 
+import 'package:flutter/services.dart'; // ← নতুন
+import 'screen/splash_screen.dart';
+import 'Layout/premium_theme_controller.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized(); // ← নতুন
+
+  // TikTok-style true full screen
+  SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+  SystemChrome.setSystemUIOverlayStyle(
+    const SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: Brightness.light,
+      systemNavigationBarColor: Colors.transparent,
+      systemNavigationBarDividerColor: Colors.transparent,
+      systemNavigationBarIconBrightness: Brightness.light,
+    ),
+  );
+
   runApp(const MyApp());
 }
 
@@ -11,34 +26,28 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // এখানে ValueListenableBuilder থিম মোড (Dark/Light) লিসেন করবে
     return ValueListenableBuilder<ThemeMode>(
       valueListenable: PremiumTheme.themeMode,
       builder: (context, currentMode, child) {
         return MaterialApp(
           debugShowCheckedModeBanner: false,
-          title: 'SKYTHOR', // আপনার অ্যাপের প্রিমিয়াম নাম
-
-          // থিম মোড সেট করা (ডার্ক বা লাইট)
+          title: 'SKYTHOR',
           themeMode: currentMode,
 
-          // লাইট থিম কনফিগারেশন
           theme: ThemeData(
             brightness: Brightness.light,
-            primaryColor: Colors.blue, // primarySwatch এর বদলে primaryColor ব্যবহার করা ভালো
+            primaryColor: Colors.blue,
             fontFamily: 'Inter',
             scaffoldBackgroundColor: Colors.white,
           ),
 
-          // ডার্ক থিম কনফিগারেশন (OLED Black)
           darkTheme: ThemeData(
             brightness: Brightness.dark,
-            scaffoldBackgroundColor: Colors.black, // ট্রু ব্ল্যাক
+            scaffoldBackgroundColor: Colors.black,
             fontFamily: 'Inter',
           ),
 
-          // অ্যাপ ওপেন হলে প্রথমে আপনার ইউটিউবের মতো স্প্ল্যাশ অ্যানিমেশন আসবে
-          home: const SplashScreen(), 
+          home: const SplashScreen(),
         );
       },
     );
