@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart'; // ← নতুন import
 
 import '../Pages/Auth/auth_gate_page.dart';
 import '../Pages/home_page.dart';
@@ -24,6 +25,23 @@ class _MainLayoutState extends State<MainLayout>
     with SingleTickerProviderStateMixin {
   int _selectedIndex = 0;
 
+  @override
+  void initState() {
+    super.initState();
+
+    // ─── TikTok-style true full screen ───────────────────────────────────
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    SystemChrome.setSystemUIOverlayStyle(
+      const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.light,
+        systemNavigationBarColor: Colors.transparent,
+        systemNavigationBarDividerColor: Colors.transparent,
+        systemNavigationBarIconBrightness: Brightness.light,
+      ),
+    );
+  }
+
   final List<Widget> _pages = const [
     HomeFeedPage(),
     ExplorePage(),
@@ -33,11 +51,9 @@ class _MainLayoutState extends State<MainLayout>
   ];
 
   void _onItemTapped(int index) {
-    // Auth check BEFORE switching — restricted pages don't switch
-    if ((index == 2 || index == 3 || index == 4) &&
-        !AuthService.isLoggedIn) {
+    if ((index == 2 || index == 3 || index == 4) && !AuthService.isLoggedIn) {
       showAuthPopup(context);
-      return; // ← early return, page stays same
+      return;
     }
     setState(() => _selectedIndex = index);
   }
@@ -46,6 +62,7 @@ class _MainLayoutState extends State<MainLayout>
   Widget build(BuildContext context) {
     return Scaffold(
       extendBody: true,
+      extendBodyBehindAppBar: true, // ← status bar এর পেছনেও body extend
       backgroundColor: Colors.black,
       body: IndexedStack(
         index: _selectedIndex,
@@ -76,10 +93,22 @@ class _MainLayoutState extends State<MainLayout>
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                _buildNavItem(index: 0, icon: CupertinoIcons.house, activeIcon: CupertinoIcons.house_fill),
-                _buildNavItem(index: 1, icon: CupertinoIcons.search, activeIcon: CupertinoIcons.search),
+                _buildNavItem(
+                  index: 0,
+                  icon: CupertinoIcons.house,
+                  activeIcon: CupertinoIcons.house_fill,
+                ),
+                _buildNavItem(
+                  index: 1,
+                  icon: CupertinoIcons.search,
+                  activeIcon: CupertinoIcons.search,
+                ),
                 _buildUploadButton(),
-                _buildNavItem(index: 3, icon: CupertinoIcons.heart, activeIcon: CupertinoIcons.heart_fill),
+                _buildNavItem(
+                  index: 3,
+                  icon: CupertinoIcons.bell,         // ← নতুন Inbox icon
+                  activeIcon: CupertinoIcons.bell_fill, // ← active state
+                ),
                 _buildProfileItem(),
               ],
             ),
@@ -89,7 +118,6 @@ class _MainLayoutState extends State<MainLayout>
     );
   }
 
-  // ─── Standard Nav Icon ────────────────────────────────────────────────────
   Widget _buildNavItem({
     required int index,
     required IconData icon,
@@ -107,21 +135,16 @@ class _MainLayoutState extends State<MainLayout>
           children: [
             AnimatedSwitcher(
               duration: const Duration(milliseconds: 180),
-              transitionBuilder: (child, anim) => ScaleTransition(
-                scale: anim,
-                child: child,
-              ),
+              transitionBuilder: (child, anim) =>
+                  ScaleTransition(scale: anim, child: child),
               child: Icon(
                 isActive ? activeIcon : icon,
                 key: ValueKey('${index}_$isActive'),
                 size: 26,
-                color: isActive
-                    ? Colors.white
-                    : Colors.white.withOpacity(0.42),
+                color: isActive ? Colors.white : Colors.white.withOpacity(0.42),
               ),
             ),
             const SizedBox(height: 5),
-            // Active dot — Instagram's signature
             AnimatedContainer(
               duration: const Duration(milliseconds: 220),
               curve: Curves.easeOut,
@@ -138,7 +161,6 @@ class _MainLayoutState extends State<MainLayout>
     );
   }
 
-  // ─── Center Upload Button (Instagram + style) ─────────────────────────────
   Widget _buildUploadButton() {
     final isActive = _selectedIndex == 2;
 
@@ -174,16 +196,13 @@ class _MainLayoutState extends State<MainLayout>
                 ),
               ),
             ),
-            const SizedBox(height: 5),
-            // Dot placeholder to align vertically with others
-            const SizedBox(height: 4),
+            const SizedBox(height: 9),
           ],
         ),
       ),
     );
   }
 
-  // ─── Profile with ring on active ─────────────────────────────────────────
   Widget _buildProfileItem() {
     final isActive = _selectedIndex == 4;
 
