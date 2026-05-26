@@ -111,12 +111,12 @@ const List<VideoData> kVideoList = [
 //  POPUP ENTRY POINTS (Fast Popup Style)
 // ????????????????????????????????????????????????????????????????
 
-void showCommentPopup(BuildContext context, {
+Future<void> showCommentPopup(BuildContext context, {
   required List<_CommentItem> comments,
   required int commentCount,
   required void Function(String) onPost,
 }) {
-  showGeneralDialog(
+  return showGeneralDialog(
     context: context,
     barrierDismissible: true,
     barrierColor: Colors.black.withOpacity(0.6),
@@ -139,8 +139,8 @@ void showCommentPopup(BuildContext context, {
   );
 }
 
-void showNotificationPopup(BuildContext context) {
-  showGeneralDialog(
+Future<void> showNotificationPopup(BuildContext context) {
+  return showGeneralDialog(
     context: context,
     barrierDismissible: true,
     barrierColor: Colors.black.withOpacity(0.6),
