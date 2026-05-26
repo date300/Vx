@@ -68,23 +68,14 @@ class _SplashScreenState extends State<SplashScreen>
               opacity: _fadeAnim.value,
               child: Transform.scale(
                 scale: _scaleAnim.value,
-                child: ShaderMask(
-                  shaderCallback: (bounds) => const LinearGradient(
-                    colors: [
-                      Color(0xFFFF4FB3), // Pink
-                      Color(0xFFB24FF3), // Purple
-                      Color(0xFF4F9DFF), // Blue
-                    ],
-                  ).createShader(bounds),
-                  child: const Text(
-                    "Vx",
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 64,
-                      fontWeight: FontWeight.w800,
-                      fontFamily: 'BebasNeue',
-                      letterSpacing: -2.0,
-                    ),
+                child: const Text(
+                  "Vx",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 64,
+                    fontWeight: FontWeight.w800,
+                    fontFamily: 'BebasNeue',
+                    letterSpacing: -2.0,
                   ),
                 ),
               ),
