@@ -1,3 +1,5 @@
+import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:video_player/video_player.dart';
@@ -606,20 +608,11 @@ class _FeedVideoItemState extends State<FeedVideoItem>
         fit: StackFit.expand,
         children: [
 
-          // ── Video ──────────────────────────────────────────────
+          // ── Video (smart ratio-aware rendering) ───────────────
           const ColoredBox(color: Colors.black),
           if (ready)
             RepaintBoundary(
-              child: SizedBox.expand(
-                child: FittedBox(
-                  fit: BoxFit.cover,
-                  child: SizedBox(
-                    width:  ctrl.value.size.width,
-                    height: ctrl.value.size.height,
-                    child: VideoPlayer(ctrl),
-                  ),
-                ),
-              ),
+              child: _SmartVideoPlayer(controller: ctrl),
             )
           else
             const Center(
@@ -833,6 +826,79 @@ class _FeedVideoItemState extends State<FeedVideoItem>
     final m = d.inMinutes.remainder(60).toString().padLeft(2, '0');
     final s = d.inSeconds.remainder(60).toString().padLeft(2, '0');
     return "$m:$s";
+  }
+}
+
+// ════════════════════════════════════════════════════════════════
+//  SMART VIDEO PLAYER — ratio অনুযায়ী best fit
+//
+//  Portrait  9:16  → full screen cover  (TikTok standard)
+//  Near-portrait   → full screen cover
+//  Square    1:1   → center crop with slight zoom
+//  Landscape 16:9  → contain with blurred bg (cinematic)
+// ════════════════════════════════════════════════════════════════
+class _SmartVideoPlayer extends StatelessWidget {
+  final VideoPlayerController controller;
+  const _SmartVideoPlayer({required this.controller});
+
+  @override
+  Widget build(BuildContext context) {
+    final vSize  = controller.value.size;
+    final screen = MediaQuery.of(context).size;
+
+    // video ratio নির্ণয় (rotation সহ)
+    final double videoRatio = vSize.width > 0 && vSize.height > 0
+        ? vSize.width / vSize.height
+        : 9 / 16;
+    final double screenRatio = screen.width / screen.height;
+
+    // Portrait বা Near-portrait (ratio <= 1.0): full cover
+    // Square (0.9–1.1): cover
+    // Landscape (ratio > 1.2): contain + blurred bg
+    if (videoRatio > 1.2) {
+      // ── Landscape: blurred background + contained video ──────
+      return Stack(
+        fit: StackFit.expand,
+        children: [
+          // Blurred background
+          ImageFiltered(
+            imageFilter: ui.ImageFilter.blur(sigmaX: 28, sigmaY: 28),
+            child: Transform.scale(
+              scale: 1.4,
+              child: FittedBox(
+                fit: BoxFit.cover,
+                child: SizedBox(
+                  width:  vSize.width,
+                  height: vSize.height,
+                  child: VideoPlayer(controller),
+                ),
+              ),
+            ),
+          ),
+          // Dark overlay on blurred bg
+          Container(color: Colors.black.withOpacity(0.35)),
+          // Main video contained
+          Center(
+            child: AspectRatio(
+              aspectRatio: videoRatio,
+              child: VideoPlayer(controller),
+            ),
+          ),
+        ],
+      );
+    } else {
+      // ── Portrait / Square: full cover (TikTok standard) ──────
+      return SizedBox.expand(
+        child: FittedBox(
+          fit: BoxFit.cover,
+          child: SizedBox(
+            width:  vSize.width,
+            height: vSize.height,
+            child: VideoPlayer(controller),
+          ),
+        ),
+      );
+    }
   }
 }
 
