@@ -1,8 +1,7 @@
- 
 import 'dart:ui';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:flutter/services.dart'; // ← নতুন import
 
 import '../Pages/Auth/auth_gate_page.dart';
 import '../Pages/home_page.dart';
@@ -19,10 +18,10 @@ class MainLayout extends StatefulWidget {
   const MainLayout({super.key});
 
   @override
-  State<<MainLayout> createState() => _MainLayoutState();
+  State<MainLayout> createState() => _MainLayoutState();
 }
 
-class _MainLayoutState extends State<<MainLayout>
+class _MainLayoutState extends State<MainLayout>
     with SingleTickerProviderStateMixin {
   int _selectedIndex = 0;
 
@@ -30,6 +29,7 @@ class _MainLayoutState extends State<<MainLayout>
   void initState() {
     super.initState();
 
+    // ─── TikTok-style true full screen ───────────────────────────────────
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     SystemChrome.setSystemUIOverlayStyle(
       const SystemUiOverlayStyle(
@@ -42,7 +42,7 @@ class _MainLayoutState extends State<<MainLayout>
     );
   }
 
-  final List<<Widget> _pages = const [
+  final List<Widget> _pages = const [
     HomeFeedPage(),
     ExplorePage(),
     UploadPage(),
@@ -51,11 +51,10 @@ class _MainLayoutState extends State<<MainLayout>
   ];
 
   void _onItemTapped(int index) {
-    // TODO: পরে Auth gate ফেরত যোগ করতে হবে
-    // if ((index == 2 || index == 3 || index == 4) && !AuthService.isLoggedIn) {
-    //   showAuthPopup(context);
-    //   return;
-    // }
+    if ((index == 2 || index == 3 || index == 4) && !AuthService.isLoggedIn) {
+      showAuthPopup(context);
+      return;
+    }
     setState(() => _selectedIndex = index);
   }
 
@@ -63,7 +62,7 @@ class _MainLayoutState extends State<<MainLayout>
   Widget build(BuildContext context) {
     return Scaffold(
       extendBody: true,
-      extendBodyBehindAppBar: true,
+      extendBodyBehindAppBar: true, // ← status bar এর পেছনেও body extend
       backgroundColor: Colors.black,
       body: IndexedStack(
         index: _selectedIndex,
@@ -107,8 +106,8 @@ class _MainLayoutState extends State<<MainLayout>
                 _buildUploadButton(),
                 _buildNavItem(
                   index: 3,
-                  icon: CupertinoIcons.bell,
-                  activeIcon: CupertinoIcons.bell_fill,
+                  icon: CupertinoIcons.bell,         // ← নতুন Inbox icon
+                  activeIcon: CupertinoIcons.bell_fill, // ← active state
                 ),
                 _buildProfileItem(),
               ],
