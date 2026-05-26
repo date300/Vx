@@ -612,7 +612,17 @@ class _FeedVideoItemState extends State<FeedVideoItem>
           const ColoredBox(color: Colors.black),
           if (ready)
             RepaintBoundary(
-              child: _SmartVideoPlayer(controller: ctrl),
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 120),
+                transitionBuilder: (child, anim) => FadeTransition(
+                  opacity: anim,
+                  child: child,
+                ),
+                child: _SmartVideoPlayer(
+                  key: ValueKey(widget.data.url),
+                  controller: ctrl,
+                ),
+              ),
             )
           else
             const Center(
@@ -839,45 +849,45 @@ class _FeedVideoItemState extends State<FeedVideoItem>
 // ════════════════════════════════════════════════════════════════
 class _SmartVideoPlayer extends StatelessWidget {
   final VideoPlayerController controller;
-  const _SmartVideoPlayer({required this.controller});
+  const _SmartVideoPlayer({super.key, required this.controller});
 
   @override
   Widget build(BuildContext context) {
-    final vSize  = controller.value.size;
-    final screen = MediaQuery.of(context).size;
+    final vSize = controller.value.size;
 
-    // video ratio নির্ণয় (rotation সহ)
-    final double videoRatio = vSize.width > 0 && vSize.height > 0
-        ? vSize.width / vSize.height
-        : 9 / 16;
-    final double screenRatio = screen.width / screen.height;
+    // size শূন্য হলে black দেখাও
+    if (vSize.width == 0 || vSize.height == 0) {
+      return const ColoredBox(color: Colors.black);
+    }
 
-    // Portrait বা Near-portrait (ratio <= 1.0): full cover
-    // Square (0.9–1.1): cover
-    // Landscape (ratio > 1.2): contain + blurred bg
-    if (videoRatio > 1.2) {
-      // ── Landscape: blurred background + contained video ──────
+    // rotation correction (90/270 হলে width-height উল্টে যায়)
+    final int rotation   = controller.value.rotationCorrection;
+    final bool isRotated = rotation == 90 || rotation == 270;
+    final double vW      = isRotated ? vSize.height : vSize.width;
+    final double vH      = isRotated ? vSize.width  : vSize.height;
+    final double videoRatio = vW / vH;
+
+    // Truly landscape (16:9=1.78, 4:3=1.33): ratio > 1.3
+    // Portrait / Square / Near-portrait: ratio <= 1.3
+    if (videoRatio > 1.3) {
+      // ── Landscape: blurred bg + contained video (cinematic) ──
       return Stack(
         fit: StackFit.expand,
         children: [
-          // Blurred background
           ImageFiltered(
-            imageFilter: ui.ImageFilter.blur(sigmaX: 28, sigmaY: 28),
+            imageFilter: ui.ImageFilter.blur(sigmaX: 30, sigmaY: 30),
             child: Transform.scale(
-              scale: 1.4,
+              scale: 1.5,
               child: FittedBox(
                 fit: BoxFit.cover,
                 child: SizedBox(
-                  width:  vSize.width,
-                  height: vSize.height,
+                  width: vW, height: vH,
                   child: VideoPlayer(controller),
                 ),
               ),
             ),
           ),
-          // Dark overlay on blurred bg
-          Container(color: Colors.black.withOpacity(0.35)),
-          // Main video contained
+          ColoredBox(color: Colors.black.withOpacity(0.4)),
           Center(
             child: AspectRatio(
               aspectRatio: videoRatio,
@@ -887,13 +897,13 @@ class _SmartVideoPlayer extends StatelessWidget {
         ],
       );
     } else {
-      // ── Portrait / Square: full cover (TikTok standard) ──────
-      return SizedBox.expand(
+      // ── Portrait/Square: pure black bg + full cover ───────────
+      return ColoredBox(
+        color: Colors.black,
         child: FittedBox(
           fit: BoxFit.cover,
           child: SizedBox(
-            width:  vSize.width,
-            height: vSize.height,
+            width: vW, height: vH,
             child: VideoPlayer(controller),
           ),
         ),
