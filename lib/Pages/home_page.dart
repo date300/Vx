@@ -2058,4 +2058,3 @@ class _NotifTile extends StatelessWidget {
     );
   }
 }
-
