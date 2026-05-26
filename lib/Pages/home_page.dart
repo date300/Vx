@@ -4,6 +4,13 @@ import 'package:video_player/video_player.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 // ════════════════════════════════════════════════════════════════
+//  CONSTANTS
+// ════════════════════════════════════════════════════════════════
+const double kNavBarHeight = 58.0;
+const int    kPreloadAhead  = 3;
+const int    kPreloadBehind = 1;
+
+// ════════════════════════════════════════════════════════════════
 //  MODEL
 // ════════════════════════════════════════════════════════════════
 class VideoData {
@@ -101,12 +108,6 @@ const List<VideoData> kVideoList = [
 ];
 
 // ════════════════════════════════════════════════════════════════
-//  PRELOAD CONSTANTS  ← increased for faster switching
-// ════════════════════════════════════════════════════════════════
-const int kPreloadAhead  = 3; // ← was 2
-const int kPreloadBehind = 1;
-
-// ════════════════════════════════════════════════════════════════
 //  HOME FEED PAGE
 // ════════════════════════════════════════════════════════════════
 class HomeFeedPage extends StatefulWidget {
@@ -124,8 +125,7 @@ class _HomeFeedPageState extends State<HomeFeedPage>
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this, initialIndex: 1);
-
-    // ✅ Fixed: edgeToEdge (consistent with main.dart, no immersiveSticky conflict)
+    // ✅ edgeToEdge — main.dart এর সাথে consistent, no conflict
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
@@ -178,7 +178,6 @@ class _TopBarState extends State<_TopBar> {
   bool _hasUnread = true;
 
   void _showNotifications(BuildContext context) {
-    // ✅ setState BEFORE showing sheet — instant dot removal
     if (_hasUnread) setState(() => _hasUnread = false);
     showModalBottomSheet(
       context: context,
@@ -213,8 +212,7 @@ class _TopBarState extends State<_TopBar> {
                         child: Container(
                           width: 9, height: 9,
                           decoration: const BoxDecoration(
-                            color: Colors.pinkAccent,
-                            shape: BoxShape.circle,
+                            color: Colors.pinkAccent, shape: BoxShape.circle,
                           ),
                         ),
                       ),
@@ -251,7 +249,7 @@ class _TopBarState extends State<_TopBar> {
 }
 
 // ════════════════════════════════════════════════════════════════
-//  VIDEO FEED LIST — optimized controller pool
+//  VIDEO FEED LIST
 // ════════════════════════════════════════════════════════════════
 class _VideoFeedList extends StatefulWidget {
   final List<VideoData> videos;
@@ -265,8 +263,8 @@ class _VideoFeedList extends StatefulWidget {
 class _VideoFeedListState extends State<_VideoFeedList>
     with WidgetsBindingObserver {
   final PageController _pageCtrl = PageController();
-  final Map<int, VideoPlayerController> _pool   = {};
-  final Map<int, bool>                 _ready  = {};
+  final Map<int, VideoPlayerController> _pool  = {};
+  final Map<int, bool>                 _ready = {};
   int _current = 0;
 
   @override
@@ -293,14 +291,12 @@ class _VideoFeedListState extends State<_VideoFeedList>
     }
   }
 
-  // ✅ Fire-and-forget — no await blocking UI thread
   void _initAround(int index) {
     final keep = <int>{};
     for (int i = index - kPreloadBehind; i <= index + kPreloadAhead; i++) {
       if (i >= 0 && i < widget.videos.length) keep.add(i);
     }
 
-    // Dispose out-of-range controllers synchronously
     final toRemove = _pool.keys.where((k) => !keep.contains(k)).toList();
     for (final k in toRemove) {
       _pool[k]?.pause();
@@ -309,19 +305,17 @@ class _VideoFeedListState extends State<_VideoFeedList>
       _ready.remove(k);
     }
 
-    // Init new controllers
     for (final i in keep) {
       if (_pool.containsKey(i)) continue;
       final ctrl = VideoPlayerController.networkUrl(
         Uri.parse(widget.videos[i].url),
         videoPlayerOptions: VideoPlayerOptions(mixWithOthers: false),
       );
-      _pool[i] = ctrl;
+      _pool[i]  = ctrl;
       _ready[i] = false;
 
       ctrl.initialize().then((_) {
         if (!mounted) return;
-        // ✅ setLooping before marking ready — no extra setState round-trip
         ctrl.setLooping(true);
         ctrl.setVolume(1.0);
         if (i == _current) ctrl.play();
@@ -331,13 +325,9 @@ class _VideoFeedListState extends State<_VideoFeedList>
   }
 
   void _onPageChanged(int index) {
-    // ✅ Immediate pause + play — no seek delay unless needed
     _pool[_current]?.pause();
     _current = index;
-
-    // Play immediately if ready, else it plays when init completes
     if (_ready[index] == true) _pool[index]?.play();
-
     _initAround(index);
     if (mounted) setState(() {});
   }
@@ -349,10 +339,9 @@ class _VideoFeedListState extends State<_VideoFeedList>
       scrollDirection: Axis.vertical,
       itemCount: widget.videos.length,
       onPageChanged: _onPageChanged,
-      // ✅ Snappier scroll feel
       physics: const PageScrollPhysics(parent: ClampingScrollPhysics()),
       itemBuilder: (context, index) {
-        return RepaintBoundary( // ✅ Isolate each video item's repaint
+        return RepaintBoundary(
           child: FeedVideoItem(
             key: ValueKey('${widget.feedKey}_$index'),
             data: widget.videos[index],
@@ -389,21 +378,20 @@ class FeedVideoItem extends StatefulWidget {
 
 class _FeedVideoItemState extends State<FeedVideoItem>
     with SingleTickerProviderStateMixin {
-  // ✅ ValueNotifier for like/save → avoids full widget rebuild
-  late final ValueNotifier<bool>  _likedNotifier;
-  late final ValueNotifier<int>   _likeCountNotifier;
-  late final ValueNotifier<bool>  _savedNotifier;
+  late final ValueNotifier<bool> _likedNotifier;
+  late final ValueNotifier<int>  _likeCountNotifier;
+  late final ValueNotifier<bool> _savedNotifier;
 
   late final AnimationController _heartCtrl;
   late final Animation<double>   _heartScale;
   late final Animation<double>   _heartOpacity;
 
-  Offset _tapPosition = Offset.zero;
-  bool   _isPlaying   = true;
-  bool   _showHeart   = false;
-  bool   _isFollowing = false;
+  Offset _tapPosition     = Offset.zero;
+  bool   _isPlaying       = true;
+  bool   _showHeart       = false;
+  bool   _isFollowing     = false;
   bool   _captionExpanded = false;
-  bool   _isHolding   = false;
+  bool   _isHolding       = false;
   late int _commentCount;
   late int _shareCount;
 
@@ -412,13 +400,12 @@ class _FeedVideoItemState extends State<FeedVideoItem>
   @override
   void initState() {
     super.initState();
-    _likedNotifier     = ValueNotifier(false);
-    _likeCountNotifier = ValueNotifier(widget.data.likes);
-    _savedNotifier     = ValueNotifier(false);
-    _commentCount      = widget.data.comments;
-    _shareCount        = widget.data.shares;
+    _likedNotifier      = ValueNotifier(false);
+    _likeCountNotifier  = ValueNotifier(widget.data.likes);
+    _savedNotifier      = ValueNotifier(false);
+    _commentCount       = widget.data.comments;
+    _shareCount         = widget.data.shares;
 
-    // ✅ Faster heart animation — 500ms instead of 700ms
     _heartCtrl = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 500),
@@ -435,9 +422,9 @@ class _FeedVideoItemState extends State<FeedVideoItem>
     ]).animate(_heartCtrl);
 
     _comments.addAll([
-      _CommentItem("@user_1", "This is amazing! 🔥", 342),
-      _CommentItem("@flutter_dev", "Smooth af bro 💯", 120),
-      _CommentItem("@creative_soul", "Love this content 😍", 87),
+      _CommentItem("@user_1",       "This is amazing! 🔥", 342),
+      _CommentItem("@flutter_dev",  "Smooth af bro 💯",    120),
+      _CommentItem("@creative_soul","Love this content 😍",  87),
     ]);
   }
 
@@ -458,12 +445,11 @@ class _FeedVideoItemState extends State<FeedVideoItem>
     super.dispose();
   }
 
-  // ── Interactions ─────────────────────────────────────────────
+  // ── Interactions ──────────────────────────────────────────────
 
   void _togglePlay() {
     final ctrl = widget.controller;
     if (ctrl == null || !widget.isReady) return;
-    // ✅ Haptic FIRST — feels instant to user
     HapticFeedback.selectionClick();
     setState(() => _isPlaying = !_isPlaying);
     _isPlaying ? ctrl.play() : ctrl.pause();
@@ -487,7 +473,6 @@ class _FeedVideoItemState extends State<FeedVideoItem>
   void _onDoubleTapDown(TapDownDetails d) => _tapPosition = d.localPosition;
 
   void _onDoubleTap() {
-    // ✅ Haptic + state update simultaneously
     HapticFeedback.mediumImpact();
     if (!_likedNotifier.value) {
       _likedNotifier.value     = true;
@@ -497,8 +482,8 @@ class _FeedVideoItemState extends State<FeedVideoItem>
   }
 
   void _onLike() {
-    HapticFeedback.lightImpact(); // ✅ immediate feedback
-    final wasLiked = _likedNotifier.value;
+    HapticFeedback.lightImpact();
+    final wasLiked           = _likedNotifier.value;
     _likedNotifier.value     = !wasLiked;
     _likeCountNotifier.value = _likeCountNotifier.value + (wasLiked ? -1 : 1);
     if (!wasLiked) {
@@ -524,20 +509,13 @@ class _FeedVideoItemState extends State<FeedVideoItem>
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      // ✅ Faster sheet animation
-      transitionAnimationController: AnimationController(
-        vsync: Navigator.of(context),
-        duration: const Duration(milliseconds: 280),
-      ),
       builder: (_) => _CommentSheet(
         comments: _comments,
         commentCount: _commentCount,
-        onPost: (text) {
-          setState(() {
-            _comments.insert(0, _CommentItem("@you", text, 0));
-            _commentCount += 1;
-          });
-        },
+        onPost: (text) => setState(() {
+          _comments.insert(0, _CommentItem("@you", text, 0));
+          _commentCount += 1;
+        }),
       ),
     ).whenComplete(() {
       if (wasPlaying && mounted) {
@@ -561,7 +539,7 @@ class _FeedVideoItemState extends State<FeedVideoItem>
     _savedNotifier.value = !_savedNotifier.value;
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
       content: Text(_savedNotifier.value ? "Saved to collection 🔖" : "Removed from collection"),
-      duration: const Duration(milliseconds: 900), // ✅ shorter snackbar
+      duration: const Duration(milliseconds: 900),
       backgroundColor: _savedNotifier.value ? Colors.pinkAccent : Colors.grey[800],
       behavior: SnackBarBehavior.floating,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -574,13 +552,17 @@ class _FeedVideoItemState extends State<FeedVideoItem>
     setState(() => _isFollowing = !_isFollowing);
   }
 
-  // ── Build ─────────────────────────────────────────────────────
+  // ── Build ──────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
     final ctrl  = widget.controller;
     final ready = widget.isReady && ctrl != null;
+
+    // ✅ TikTok exact fix: dynamic bottom padding
+    final safeBottom = MediaQuery.of(context).padding.bottom;
+    final bottomPad  = safeBottom + kNavBarHeight;
 
     return GestureDetector(
       onTap: _togglePlay,
@@ -591,11 +573,11 @@ class _FeedVideoItemState extends State<FeedVideoItem>
       child: Stack(
         fit: StackFit.expand,
         children: [
-          // ── Video ──────────────────────────────────────────
-          const ColoredBox(color: Colors.black),
 
+          // ── Video: true full screen ──────────────────────────
+          const ColoredBox(color: Colors.black),
           if (ready)
-            RepaintBoundary( // ✅ video repaints don't affect overlays
+            RepaintBoundary(
               child: SizedBox.expand(
                 child: FittedBox(
                   fit: BoxFit.cover,
@@ -610,26 +592,27 @@ class _FeedVideoItemState extends State<FeedVideoItem>
           else
             const Center(
               child: CircularProgressIndicator(
-                color: Colors.pinkAccent,
-                strokeWidth: 2.5,
+                color: Colors.pinkAccent, strokeWidth: 2.5,
               ),
             ),
 
-          // ── Gradients ──────────────────────────────────────
+          // ── Bottom gradient: nav bar পর্যন্ত কভার ───────────
           Positioned(
             bottom: 0, left: 0, right: 0,
-            height: size.height * 0.55,
+            height: size.height * 0.60,
             child: const DecoratedBox(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.bottomCenter,
                   end: Alignment.topCenter,
-                  colors: [Color(0xD9000000), Color(0x80000000), Colors.transparent],
+                  colors: [Color(0xE6000000), Color(0x80000000), Colors.transparent],
                   stops: [0.0, 0.5, 1.0],
                 ),
               ),
             ),
           ),
+
+          // ── Top gradient ─────────────────────────────────────
           Positioned(
             top: 0, left: 0, right: 0,
             height: size.height * 0.25,
@@ -644,7 +627,7 @@ class _FeedVideoItemState extends State<FeedVideoItem>
             ),
           ),
 
-          // ── Hold overlay ───────────────────────────────────
+          // ── Hold overlay ─────────────────────────────────────
           if (_isHolding)
             ColoredBox(
               color: Colors.black.withOpacity(0.3),
@@ -661,13 +644,14 @@ class _FeedVideoItemState extends State<FeedVideoItem>
                       child: const Icon(Icons.pause_rounded, size: 52, color: Colors.white),
                     ),
                     const SizedBox(height: 12),
-                    const Text("Hold to pause", style: TextStyle(color: Colors.white70, fontSize: 13)),
+                    const Text("Hold to pause",
+                      style: TextStyle(color: Colors.white70, fontSize: 13)),
                   ],
                 ),
               ),
             ),
 
-          // ── Paused icon ────────────────────────────────────
+          // ── Paused icon ──────────────────────────────────────
           if (!_isPlaying && !_isHolding)
             Center(
               child: Container(
@@ -680,7 +664,7 @@ class _FeedVideoItemState extends State<FeedVideoItem>
               ),
             ),
 
-          // ── Double-tap heart ───────────────────────────────
+          // ── Double-tap heart ─────────────────────────────────
           if (_showHeart)
             Positioned(
               left: _tapPosition.dx - 55,
@@ -693,8 +677,7 @@ class _FeedVideoItemState extends State<FeedVideoItem>
                     child: Transform.scale(
                       scale: _heartScale.value,
                       child: const Icon(
-                        Icons.favorite_rounded,
-                        size: 110,
+                        Icons.favorite_rounded, size: 110,
                         color: Colors.pinkAccent,
                         shadows: [Shadow(color: Colors.black54, blurRadius: 20)],
                       ),
@@ -704,28 +687,29 @@ class _FeedVideoItemState extends State<FeedVideoItem>
               ),
             ),
 
-          // ── Progress bar ───────────────────────────────────
+          // ── Progress bar: nav bar এর ঠিক উপরে ───────────────
           if (ready)
             Positioned(
-              left: 0, right: 0, bottom: 0,
+              left: 0, right: 0,
+              bottom: bottomPad,
               child: RepaintBoundary(
                 child: _VideoProgressBar(controller: ctrl),
               ),
             ),
 
-          // ── Right actions ──────────────────────────────────
+          // ── Right actions: nav bar এর উপরে ──────────────────
           Positioned(
             right: 8,
-            bottom: 90,
+            bottom: bottomPad + 16,
             child: RepaintBoundary(
               child: _RightActions(
-                username:     widget.data.username,
+                username:          widget.data.username,
                 likedNotifier:     _likedNotifier,
                 likeCountNotifier: _likeCountNotifier,
                 savedNotifier:     _savedNotifier,
-                commentCount:  _commentCount,
-                shareCount:    _shareCount,
-                isFollowing:   _isFollowing,
+                commentCount:      _commentCount,
+                shareCount:        _shareCount,
+                isFollowing:       _isFollowing,
                 onLike:    _onLike,
                 onComment: _onComment,
                 onShare:   _onShare,
@@ -735,14 +719,16 @@ class _FeedVideoItemState extends State<FeedVideoItem>
             ),
           ),
 
-          // ── Bottom info ────────────────────────────────────
+          // ── Bottom info: nav bar এর উপরে ─────────────────────
           Positioned(
-            left: 14, right: 80, bottom: 28,
+            left: 14, right: 80,
+            bottom: bottomPad + 12,
             child: _BottomInfo(
               data: widget.data,
               isFollowing: _isFollowing,
               expanded: _captionExpanded,
-              onToggleCaption: () => setState(() => _captionExpanded = !_captionExpanded),
+              onToggleCaption: () =>
+                  setState(() => _captionExpanded = !_captionExpanded),
               onFollow: _onFollow,
             ),
           ),
@@ -805,7 +791,7 @@ class _VideoProgressBarState extends State<_VideoProgressBar> {
         child: Align(
           alignment: Alignment.bottomCenter,
           child: AnimatedContainer(
-            duration: const Duration(milliseconds: 100), // ✅ faster
+            duration: const Duration(milliseconds: 100),
             height: _dragging ? 4 : 2,
             child: LinearProgressIndicator(
               value: _progress,
@@ -820,16 +806,16 @@ class _VideoProgressBarState extends State<_VideoProgressBar> {
 }
 
 // ════════════════════════════════════════════════════════════════
-//  RIGHT ACTIONS  — ValueNotifier-aware (no full rebuild)
+//  RIGHT ACTIONS
 // ════════════════════════════════════════════════════════════════
 class _RightActions extends StatelessWidget {
-  final String username;
+  final String              username;
   final ValueNotifier<bool> likedNotifier;
   final ValueNotifier<int>  likeCountNotifier;
   final ValueNotifier<bool> savedNotifier;
-  final int          commentCount;
-  final int          shareCount;
-  final bool         isFollowing;
+  final int                 commentCount;
+  final int                 shareCount;
+  final bool                isFollowing;
   final VoidCallback onLike;
   final VoidCallback onComment;
   final VoidCallback onShare;
@@ -877,14 +863,16 @@ class _RightActions extends StatelessWidget {
                   shape: BoxShape.circle,
                   gradient: const LinearGradient(
                     colors: [Colors.pinkAccent, Colors.deepPurpleAccent],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
+                    begin: Alignment.topLeft, end: Alignment.bottomRight,
                   ),
                   border: Border.all(color: Colors.white, width: 2.5),
-                  boxShadow: [BoxShadow(color: Colors.pinkAccent.withOpacity(0.4), blurRadius: 10, spreadRadius: 1)],
+                  boxShadow: [
+                    BoxShadow(color: Colors.pinkAccent.withOpacity(0.4), blurRadius: 10, spreadRadius: 1),
+                  ],
                 ),
                 alignment: Alignment.center,
-                child: Text(initial, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 22)),
+                child: Text(initial,
+                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 22)),
               ),
               if (!isFollowing)
                 Positioned(
@@ -905,7 +893,7 @@ class _RightActions extends StatelessWidget {
 
         const SizedBox(height: 28),
 
-        // ✅ Like — ValueListenableBuilder: only this widget rebuilds on like
+        // Like — ValueListenableBuilder: only icon rebuilds
         ValueListenableBuilder<bool>(
           valueListenable: likedNotifier,
           builder: (_, liked, __) => ValueListenableBuilder<int>(
@@ -922,11 +910,15 @@ class _RightActions extends StatelessWidget {
 
         const SizedBox(height: 20),
 
-        _ActionBtn(icon: Icons.chat_bubble_outline_rounded, label: _fmt(commentCount), onTap: onComment),
+        _ActionBtn(
+          icon: Icons.chat_bubble_outline_rounded,
+          label: _fmt(commentCount),
+          onTap: onComment,
+        ),
 
         const SizedBox(height: 20),
 
-        // ✅ Save — ValueListenableBuilder
+        // Save — ValueListenableBuilder
         ValueListenableBuilder<bool>(
           valueListenable: savedNotifier,
           builder: (_, saved, __) => _AnimatedActionBtn(
@@ -940,7 +932,12 @@ class _RightActions extends StatelessWidget {
 
         const SizedBox(height: 20),
 
-        _ActionBtn(icon: Icons.reply_rounded, label: _fmt(shareCount), onTap: onShare, flip: true),
+        _ActionBtn(
+          icon: Icons.reply_rounded,
+          label: _fmt(shareCount),
+          onTap: onShare,
+          flip: true,
+        ),
 
         const SizedBox(height: 20),
 
@@ -951,14 +948,14 @@ class _RightActions extends StatelessWidget {
 }
 
 // ════════════════════════════════════════════════════════════════
-//  ANIMATED ACTION BUTTON  — faster press animation
+//  ANIMATED ACTION BUTTON
 // ════════════════════════════════════════════════════════════════
 class _AnimatedActionBtn extends StatefulWidget {
-  final IconData   icon;
-  final String     label;
-  final Color      color;
+  final IconData     icon;
+  final String       label;
+  final Color        color;
   final VoidCallback onTap;
-  final Color?     glowColor;
+  final Color?       glowColor;
 
   const _AnimatedActionBtn({
     required this.icon,
@@ -981,7 +978,7 @@ class _AnimatedActionBtnState extends State<_AnimatedActionBtn>
     super.initState();
     _ctrl = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 80), // ✅ faster press
+      duration: const Duration(milliseconds: 80),
       lowerBound: 0.82,
       upperBound: 1.0,
       value: 1.0,
@@ -1017,15 +1014,10 @@ class _AnimatedActionBtnState extends State<_AnimatedActionBtn>
               ),
               if (widget.label.isNotEmpty) ...[
                 const SizedBox(height: 4),
-                Text(
-                  widget.label,
-                  style: TextStyle(
-                    color: widget.color,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                    shadows: const [Shadow(color: Colors.black87, blurRadius: 6)],
-                  ),
-                ),
+                Text(widget.label, style: TextStyle(
+                  color: widget.color, fontSize: 12, fontWeight: FontWeight.w700,
+                  shadows: const [Shadow(color: Colors.black87, blurRadius: 6)],
+                )),
               ],
             ],
           ),
@@ -1041,7 +1033,12 @@ class _ActionBtn extends StatelessWidget {
   final VoidCallback onTap;
   final bool         flip;
 
-  const _ActionBtn({required this.icon, required this.label, required this.onTap, this.flip = false});
+  const _ActionBtn({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    this.flip = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -1150,14 +1147,11 @@ class _BottomInfo extends StatelessWidget {
         Row(
           children: [
             Flexible(
-              child: Text(
-                data.username,
-                style: const TextStyle(
-                  color: Colors.white, fontSize: 16, fontWeight: FontWeight.w800,
-                  letterSpacing: 0.2, shadows: [Shadow(color: Colors.black87, blurRadius: 8)],
-                ),
-                overflow: TextOverflow.ellipsis,
-              ),
+              child: Text(data.username, style: const TextStyle(
+                color: Colors.white, fontSize: 16, fontWeight: FontWeight.w800,
+                letterSpacing: 0.2,
+                shadows: [Shadow(color: Colors.black87, blurRadius: 8)],
+              ), overflow: TextOverflow.ellipsis),
             ),
             const SizedBox(width: 10),
             if (!isFollowing)
@@ -1170,8 +1164,8 @@ class _BottomInfo extends StatelessWidget {
                     border: Border.all(color: Colors.white60),
                     borderRadius: BorderRadius.circular(5),
                   ),
-                  child: const Text("Follow",
-                    style: TextStyle(color: Colors.white, fontSize: 12.5, fontWeight: FontWeight.w700)),
+                  child: const Text("Follow", style: TextStyle(
+                    color: Colors.white, fontSize: 12.5, fontWeight: FontWeight.w700)),
                 ),
               ),
           ],
@@ -1180,7 +1174,7 @@ class _BottomInfo extends StatelessWidget {
         GestureDetector(
           onTap: onToggleCaption,
           child: AnimatedSize(
-            duration: const Duration(milliseconds: 180), // ✅ faster expand
+            duration: const Duration(milliseconds: 180),
             curve: Curves.easeOut,
             child: RichText(
               maxLines: expanded ? null : 2,
@@ -1210,7 +1204,7 @@ class _BottomInfo extends StatelessWidget {
 }
 
 // ════════════════════════════════════════════════════════════════
-//  ✅ FIXED SMOOTH MARQUEE TICKER
+//  SMOOTH MARQUEE SOUND TICKER
 // ════════════════════════════════════════════════════════════════
 class _SoundTicker extends StatefulWidget {
   final String sound;
@@ -1227,10 +1221,7 @@ class _SoundTickerState extends State<_SoundTicker>
   @override
   void initState() {
     super.initState();
-    _ctrl = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 8),
-    )..repeat();
+    _ctrl = AnimationController(vsync: this, duration: const Duration(seconds: 8))..repeat();
   }
 
   @override
@@ -1239,7 +1230,6 @@ class _SoundTickerState extends State<_SoundTicker>
   @override
   Widget build(BuildContext context) {
     final text = "${widget.sound}          ${widget.sound}";
-
     return Row(
       children: [
         const Icon(Icons.music_note_rounded, color: Colors.white70, size: 13),
@@ -1249,8 +1239,7 @@ class _SoundTickerState extends State<_SoundTicker>
             child: AnimatedBuilder(
               animation: _ctrl,
               builder: (ctx, _) {
-                // ✅ Proper marquee: translate left by 50% of total text width
-                final w = ctx.size?.width ?? 200;
+                final w      = ctx.size?.width ?? 200;
                 final offset = -_ctrl.value * w;
                 return Transform.translate(
                   offset: Offset(offset, 0),
@@ -1272,7 +1261,7 @@ class _SoundTickerState extends State<_SoundTicker>
 }
 
 // ════════════════════════════════════════════════════════════════
-//  COMMENT DATA MODEL
+//  COMMENT MODEL
 // ════════════════════════════════════════════════════════════════
 class _CommentItem {
   final String username;
@@ -1286,11 +1275,15 @@ class _CommentItem {
 //  COMMENT SHEET
 // ════════════════════════════════════════════════════════════════
 class _CommentSheet extends StatefulWidget {
-  final List<_CommentItem> comments;
-  final int                commentCount;
+  final List<_CommentItem>    comments;
+  final int                   commentCount;
   final void Function(String) onPost;
 
-  const _CommentSheet({required this.comments, required this.commentCount, required this.onPost});
+  const _CommentSheet({
+    required this.comments,
+    required this.commentCount,
+    required this.onPost,
+  });
 
   @override
   State<_CommentSheet> createState() => _CommentSheetState();
@@ -1317,7 +1310,6 @@ class _CommentSheetState extends State<_CommentSheet> {
     setState(() {});
     _ctrl.clear();
     _focus.unfocus();
-    // ✅ Scroll immediately — no delay
     if (_scroll.hasClients) {
       _scroll.animateTo(0,
         duration: const Duration(milliseconds: 250),
@@ -1339,7 +1331,8 @@ class _CommentSheetState extends State<_CommentSheet> {
           const SizedBox(height: 10),
           Container(
             width: 38, height: 4,
-            decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(2)),
+            decoration: BoxDecoration(
+              color: Colors.white24, borderRadius: BorderRadius.circular(2)),
           ),
           const SizedBox(height: 12),
           Padding(
@@ -1452,8 +1445,7 @@ class _CommentTile extends StatelessWidget {
           Container(
             width: 38, height: 38,
             decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: Colors.white12,
+              shape: BoxShape.circle, color: Colors.white12,
               border: Border.all(color: Colors.white.withOpacity(0.16)),
             ),
             child: const Icon(Icons.person, color: Colors.white54, size: 20),
@@ -1463,9 +1455,11 @@ class _CommentTile extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(item.username, style: const TextStyle(color: Colors.white70, fontSize: 12.5, fontWeight: FontWeight.w600)),
+                Text(item.username, style: const TextStyle(
+                  color: Colors.white70, fontSize: 12.5, fontWeight: FontWeight.w600)),
                 const SizedBox(height: 3),
-                Text(item.text, style: const TextStyle(color: Colors.white, fontSize: 14, height: 1.4)),
+                Text(item.text, style: const TextStyle(
+                  color: Colors.white, fontSize: 14, height: 1.4)),
                 const SizedBox(height: 5),
                 const Text("Reply", style: TextStyle(color: Colors.white38, fontSize: 12)),
               ],
@@ -1478,8 +1472,9 @@ class _CommentTile extends StatelessWidget {
               child: Column(
                 children: [
                   AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 150), // ✅ faster
-                    transitionBuilder: (child, anim) => ScaleTransition(scale: anim, child: child),
+                    duration: const Duration(milliseconds: 150),
+                    transitionBuilder: (child, anim) =>
+                        ScaleTransition(scale: anim, child: child),
                     child: Icon(
                       item.liked ? Icons.favorite_rounded : Icons.favorite_border_rounded,
                       key: ValueKey(item.liked),
@@ -1510,20 +1505,23 @@ class _ShareOption {
   final String  label;
   final Color   bgColor;
   final bool    isFa;
-  const _ShareOption({required this.icon, required this.label, required this.bgColor, this.isFa = true});
+  const _ShareOption({
+    required this.icon, required this.label,
+    required this.bgColor, this.isFa = true,
+  });
 }
 
 class _ShareSheet extends StatelessWidget {
   const _ShareSheet();
 
   static const _options = [
-    _ShareOption(icon: Icons.link_rounded,         label: "Copy Link",    bgColor: Color(0xFF333333), isFa: false),
-    _ShareOption(icon: FontAwesomeIcons.whatsapp,  label: "WhatsApp",     bgColor: Color(0xFF25D366)),
-    _ShareOption(icon: FontAwesomeIcons.telegram,  label: "Telegram",     bgColor: Color(0xFF0088CC)),
-    _ShareOption(icon: FontAwesomeIcons.facebook,  label: "Facebook",     bgColor: Color(0xFF1877F2)),
-    _ShareOption(icon: FontAwesomeIcons.instagram, label: "Instagram",    bgColor: Color(0xFFE1306C)),
-    _ShareOption(icon: FontAwesomeIcons.xTwitter,  label: "X (Twitter)",  bgColor: Color(0xFF000000)),
-    _ShareOption(icon: Icons.more_horiz_rounded,   label: "More",         bgColor: Color(0xFF444444), isFa: false),
+    _ShareOption(icon: Icons.link_rounded,         label: "Copy Link",   bgColor: Color(0xFF333333), isFa: false),
+    _ShareOption(icon: FontAwesomeIcons.whatsapp,  label: "WhatsApp",    bgColor: Color(0xFF25D366)),
+    _ShareOption(icon: FontAwesomeIcons.telegram,  label: "Telegram",    bgColor: Color(0xFF0088CC)),
+    _ShareOption(icon: FontAwesomeIcons.facebook,  label: "Facebook",    bgColor: Color(0xFF1877F2)),
+    _ShareOption(icon: FontAwesomeIcons.instagram, label: "Instagram",   bgColor: Color(0xFFE1306C)),
+    _ShareOption(icon: FontAwesomeIcons.xTwitter,  label: "X (Twitter)", bgColor: Color(0xFF000000)),
+    _ShareOption(icon: Icons.more_horiz_rounded,   label: "More",        bgColor: Color(0xFF444444), isFa: false),
   ];
 
   @override
@@ -1539,12 +1537,14 @@ class _ShareSheet extends StatelessWidget {
         children: [
           Container(
             width: 38, height: 4,
-            decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(2)),
+            decoration: BoxDecoration(
+              color: Colors.white24, borderRadius: BorderRadius.circular(2)),
           ),
           const SizedBox(height: 16),
           const Align(
             alignment: Alignment.centerLeft,
-            child: Text("Share to", style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 16)),
+            child: Text("Share to", style: TextStyle(
+              color: Colors.white, fontWeight: FontWeight.w700, fontSize: 16)),
           ),
           const SizedBox(height: 16),
           SizedBox(
@@ -1561,7 +1561,8 @@ class _ShareSheet extends StatelessWidget {
                     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                       content: Text("Shared via ${opt.label} ✓"),
                       duration: const Duration(milliseconds: 900),
-                      backgroundColor: opt.bgColor == const Color(0xFF333333) ? Colors.pinkAccent : opt.bgColor,
+                      backgroundColor: opt.bgColor == const Color(0xFF333333)
+                          ? Colors.pinkAccent : opt.bgColor,
                       behavior: SnackBarBehavior.floating,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
@@ -1574,7 +1575,9 @@ class _ShareSheet extends StatelessWidget {
                         decoration: BoxDecoration(
                           color: opt.bgColor,
                           shape: BoxShape.circle,
-                          boxShadow: [BoxShadow(color: opt.bgColor.withOpacity(0.4), blurRadius: 10)],
+                          boxShadow: [
+                            BoxShadow(color: opt.bgColor.withOpacity(0.4), blurRadius: 10),
+                          ],
                         ),
                         child: Center(
                           child: opt.isFa
@@ -1583,7 +1586,8 @@ class _ShareSheet extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 7),
-                      Text(opt.label, style: const TextStyle(color: Colors.white70, fontSize: 11)),
+                      Text(opt.label, style: const TextStyle(
+                        color: Colors.white70, fontSize: 11)),
                     ],
                   ),
                 );
@@ -1609,8 +1613,10 @@ class _NotifData {
   final Color      avatarColor;
   bool             isRead;
 
-  _NotifData({required this.username, required this.type, this.extra,
-    required this.time, required this.avatarColor, this.isRead = false});
+  _NotifData({
+    required this.username, required this.type, this.extra,
+    required this.time, required this.avatarColor, this.isRead = false,
+  });
 
   String get message {
     switch (type) {
@@ -1625,6 +1631,7 @@ class _NotifData {
 
 class _NotificationSheet extends StatefulWidget {
   const _NotificationSheet();
+
   @override
   State<_NotificationSheet> createState() => _NotificationSheetState();
 }
@@ -1638,11 +1645,11 @@ class _NotificationSheetState extends State<_NotificationSheet> {
   ];
 
   final List<_NotifData> _weekNotifs = [
-    _NotifData(username: "@blender_art",   type: _NotifType.duet,                                          time: "2d ago", avatarColor: Colors.tealAccent,       isRead: true),
-    _NotifData(username: "@road_warrior",  type: _NotifType.like,    extra: "Street & dirt 💪",            time: "3d ago", avatarColor: Colors.redAccent,        isRead: true),
+    _NotifData(username: "@blender_art",   type: _NotifType.duet,                                           time: "2d ago", avatarColor: Colors.tealAccent,       isRead: true),
+    _NotifData(username: "@road_warrior",  type: _NotifType.like,    extra: "Street & dirt 💪",             time: "3d ago", avatarColor: Colors.redAccent,        isRead: true),
     _NotifData(username: "@fun_factory",   type: _NotifType.follow,                                         time: "4d ago", avatarColor: Colors.amberAccent,      isRead: true),
-    _NotifData(username: "@bull_run_crew", type: _NotifType.comment,  extra: "Bro this slaps 🔥",          time: "5d ago", avatarColor: Colors.lightBlueAccent,  isRead: true),
-    _NotifData(username: "@car_review_bd", type: _NotifType.like,    extra: "VW GTI Review 🚗",            time: "6d ago", avatarColor: Colors.greenAccent,      isRead: true),
+    _NotifData(username: "@bull_run_crew", type: _NotifType.comment,  extra: "Bro this slaps 🔥",           time: "5d ago", avatarColor: Colors.lightBlueAccent,  isRead: true),
+    _NotifData(username: "@car_review_bd", type: _NotifType.like,    extra: "VW GTI Review 🚗",             time: "6d ago", avatarColor: Colors.greenAccent,      isRead: true),
   ];
 
   final Set<String> _followingBack = {};
@@ -1660,15 +1667,16 @@ class _NotificationSheetState extends State<_NotificationSheet> {
           const SizedBox(height: 10),
           Container(
             width: 40, height: 4,
-            decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(2)),
+            decoration: BoxDecoration(
+              color: Colors.white24, borderRadius: BorderRadius.circular(2)),
           ),
           const SizedBox(height: 14),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 18),
             child: Row(
               children: [
-                const Text("Activity",
-                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 20, letterSpacing: 0.2)),
+                const Text("Activity", style: TextStyle(
+                  color: Colors.white, fontWeight: FontWeight.w800, fontSize: 20, letterSpacing: 0.2)),
                 const Spacer(),
                 GestureDetector(
                   onTap: () => Navigator.pop(context),
@@ -1688,12 +1696,12 @@ class _NotificationSheetState extends State<_NotificationSheet> {
                   item: e,
                   isFollowing: _followingBack.contains(e.username),
                   onFollowBack: e.type == _NotifType.follow
-                    ? () => setState(() {
-                        _followingBack.contains(e.username)
-                            ? _followingBack.remove(e.username)
-                            : _followingBack.add(e.username);
-                      })
-                    : null,
+                      ? () => setState(() {
+                            _followingBack.contains(e.username)
+                                ? _followingBack.remove(e.username)
+                                : _followingBack.add(e.username);
+                          })
+                      : null,
                 )),
                 const SizedBox(height: 6),
                 _sectionHeader("This Week"),
@@ -1701,12 +1709,12 @@ class _NotificationSheetState extends State<_NotificationSheet> {
                   item: e,
                   isFollowing: _followingBack.contains(e.username),
                   onFollowBack: e.type == _NotifType.follow
-                    ? () => setState(() {
-                        _followingBack.contains(e.username)
-                            ? _followingBack.remove(e.username)
-                            : _followingBack.add(e.username);
-                      })
-                    : null,
+                      ? () => setState(() {
+                            _followingBack.contains(e.username)
+                                ? _followingBack.remove(e.username)
+                                : _followingBack.add(e.username);
+                          })
+                      : null,
                 )),
               ],
             ),
@@ -1716,12 +1724,11 @@ class _NotificationSheetState extends State<_NotificationSheet> {
     );
   }
 
-  Widget _sectionHeader(String title) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(18, 14, 18, 4),
-      child: Text(title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 14)),
-    );
-  }
+  Widget _sectionHeader(String title) => Padding(
+    padding: const EdgeInsets.fromLTRB(18, 14, 18, 4),
+    child: Text(title, style: const TextStyle(
+      color: Colors.white, fontWeight: FontWeight.w700, fontSize: 14)),
+  );
 }
 
 class _NotifTile extends StatelessWidget {
@@ -1795,11 +1802,13 @@ class _NotifTile extends StatelessWidget {
               text: TextSpan(
                 style: const TextStyle(color: Colors.white70, fontSize: 13.5, height: 1.4),
                 children: [
-                  TextSpan(text: item.username, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+                  TextSpan(text: item.username,
+                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
                   const TextSpan(text: " "),
                   TextSpan(text: item.message),
                   const TextSpan(text: "  "),
-                  TextSpan(text: item.time, style: const TextStyle(color: Colors.white38, fontSize: 12)),
+                  TextSpan(text: item.time,
+                    style: const TextStyle(color: Colors.white38, fontSize: 12)),
                 ],
               ),
             ),
@@ -1809,23 +1818,28 @@ class _NotifTile extends StatelessWidget {
             GestureDetector(
               onTap: onFollowBack,
               child: AnimatedContainer(
-                duration: const Duration(milliseconds: 180), // ✅ faster
+                duration: const Duration(milliseconds: 180),
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                 decoration: BoxDecoration(
                   color: isFollowing ? Colors.transparent : Colors.pinkAccent,
-                  border: Border.all(color: isFollowing ? Colors.white30 : Colors.pinkAccent),
+                  border: Border.all(
+                    color: isFollowing ? Colors.white30 : Colors.pinkAccent),
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(
                   isFollowing ? "Following" : "Follow",
-                  style: TextStyle(color: isFollowing ? Colors.white54 : Colors.white, fontSize: 12, fontWeight: FontWeight.w700),
+                  style: TextStyle(
+                    color: isFollowing ? Colors.white54 : Colors.white,
+                    fontSize: 12, fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
             )
           else if (!item.isRead)
             Container(
               width: 8, height: 8,
-              decoration: const BoxDecoration(color: Colors.pinkAccent, shape: BoxShape.circle),
+              decoration: const BoxDecoration(
+                color: Colors.pinkAccent, shape: BoxShape.circle),
             ),
         ],
       ),
