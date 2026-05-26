@@ -1,5 +1,3 @@
-import 'dart:ui' as ui;
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:video_player/video_player.dart';
@@ -265,8 +263,7 @@ class _VideoFeedListState extends State<_VideoFeedList>
   final PageController _pageCtrl = PageController();
   final Map<int, VideoPlayerController> _pool  = {};
   final Map<int, bool>                 _ready = {};
-  int  _current    = 0;
-  bool _flashing   = false;   // ← flash transition flag
+  int _current = 0;
 
   @override
   void initState() {
@@ -327,45 +324,28 @@ class _VideoFeedListState extends State<_VideoFeedList>
     _current = index;
     if (_ready[index] == true) _pool[index]?.play();
     _initAround(index);
-    // চোখের পলকের মতো flash transition
-    if (mounted) {
-      setState(() => _flashing = true);
-      Future.delayed(const Duration(milliseconds: 80), () {
-        if (mounted) setState(() => _flashing = false);
-      });
-    }
+    if (mounted) setState(() {});
   }
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        PageView.builder(
-          controller: _pageCtrl,
-          scrollDirection: Axis.vertical,
-          itemCount: widget.videos.length,
-          onPageChanged: _onPageChanged,
-          physics: const PageScrollPhysics(parent: ClampingScrollPhysics()),
-          itemBuilder: (context, index) {
-            return RepaintBoundary(
-              child: FeedVideoItem(
-                key: ValueKey('${widget.feedKey}_$index'),
-                data: widget.videos[index],
-                controller: _pool[index],
-                isReady: _ready[index] ?? false,
-                isCurrent: index == _current,
-              ),
-            );
-          },
-        ),
-        // চোখের পলকের flash overlay
-        AnimatedOpacity(
-          opacity: _flashing ? 1.0 : 0.0,
-          duration: Duration(milliseconds: _flashing ? 0 : 150),
-          child: const ColoredBox(color: Colors.black),
-        ),
-      ],
+    return PageView.builder(
+      controller: _pageCtrl,
+      scrollDirection: Axis.vertical,
+      itemCount: widget.videos.length,
+      onPageChanged: _onPageChanged,
+      physics: const PageScrollPhysics(parent: ClampingScrollPhysics()),
+      itemBuilder: (context, index) {
+        return RepaintBoundary(
+          child: FeedVideoItem(
+            key: ValueKey('${widget.feedKey}_$index'),
+            data: widget.videos[index],
+            controller: _pool[index],
+            isReady: _ready[index] ?? false,
+            isCurrent: index == _current,
+          ),
+        );
+      },
     );
   }
 }
@@ -411,9 +391,9 @@ class _FeedVideoItemState extends State<FeedVideoItem>
   late int _shareCount;
 
   // TikTok-style horizontal drag to seek
-  bool   _isSeeking       = false;
-  double _seekProgress    = 0.0;
-  double _dragStartX      = 0.0;
+  bool   _isSeeking         = false;
+  double _seekProgress      = 0.0;
+  double _dragStartX        = 0.0;
   double _seekStartProgress = 0.0;
 
   final List<_CommentItem> _comments = [];
@@ -466,11 +446,10 @@ class _FeedVideoItemState extends State<FeedVideoItem>
     super.dispose();
   }
 
-  // ── Toggle play/pause (NO haptic — কাঁপা বন্ধ) ──────────────
+  // ── Toggle play/pause — HapticFeedback নেই (ভাইব্রেশন বন্ধ) ──
   void _togglePlay() {
     final ctrl = widget.controller;
     if (ctrl == null || !widget.isReady) return;
-    // HapticFeedback removed — ভাইব্রেশন বন্ধ
     setState(() => _isPlaying = !_isPlaying);
     _isPlaying ? ctrl.play() : ctrl.pause();
   }
@@ -581,18 +560,16 @@ class _FeedVideoItemState extends State<FeedVideoItem>
     _dragStartX = d.localPosition.dx;
     _seekStartProgress = ctrl.value.position.inMilliseconds / dur;
     setState(() {
-      _isSeeking = true;
+      _isSeeking    = true;
       _seekProgress = _seekStartProgress;
     });
     ctrl.pause();
   }
 
   void _onSeekDragUpdate(DragUpdateDetails d) {
-    final ctrl = widget.controller;
-    if (ctrl == null || !_isSeeking) return;
+    if (!_isSeeking) return;
     final screenW = MediaQuery.of(context).size.width;
     final delta   = (d.localPosition.dx - _dragStartX) / screenW;
-    // sensitivity: full screen swipe = 100% video
     final newProg = (_seekStartProgress + delta * 1.5).clamp(0.0, 1.0);
     setState(() => _seekProgress = newProg);
   }
@@ -607,9 +584,9 @@ class _FeedVideoItemState extends State<FeedVideoItem>
 
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
-    final ctrl  = widget.controller;
-    final ready = widget.isReady && ctrl != null;
+    final size      = MediaQuery.of(context).size;
+    final ctrl      = widget.controller;
+    final ready     = widget.isReady && ctrl != null;
     final bottomPad = MediaQuery.of(context).padding.bottom;
 
     return GestureDetector(
@@ -618,7 +595,6 @@ class _FeedVideoItemState extends State<FeedVideoItem>
       onDoubleTap: _onDoubleTap,
       onLongPressStart: _onLongPressStart,
       onLongPressEnd: _onLongPressEnd,
-      // TikTok drag-to-seek (horizontal)
       onHorizontalDragStart: _onSeekDragStart,
       onHorizontalDragUpdate: _onSeekDragUpdate,
       onHorizontalDragEnd: _onSeekDragEnd,
@@ -626,13 +602,19 @@ class _FeedVideoItemState extends State<FeedVideoItem>
         fit: StackFit.expand,
         children: [
 
-          // ── Video (smart ratio-aware rendering) ───────────────
+          // ── Video ──────────────────────────────────────────────
           const ColoredBox(color: Colors.black),
           if (ready)
             RepaintBoundary(
-              child: _SmartVideoPlayer(
-                key: ValueKey(widget.data.url),
-                controller: ctrl,
+              child: SizedBox.expand(
+                child: FittedBox(
+                  fit: BoxFit.cover,
+                  child: SizedBox(
+                    width:  ctrl.value.size.width,
+                    height: ctrl.value.size.height,
+                    child: VideoPlayer(ctrl),
+                  ),
+                ),
               ),
             )
           else
@@ -740,7 +722,6 @@ class _FeedVideoItemState extends State<FeedVideoItem>
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    // কালো ব্যাকগ্রাউন্ড ছাড়া শুধু আইকন
                     const Icon(
                       Icons.pause_rounded,
                       size: 72,
@@ -757,7 +738,7 @@ class _FeedVideoItemState extends State<FeedVideoItem>
               ),
             ),
 
-          // ── Paused icon (কালো ব্যাকগ্রাউন্ড ছাড়া শুধু আইকন) ──
+          // ── Paused icon — কালো background নেই, শুধু icon ──────
           if (!_isPlaying && !_isHolding && !_isSeeking)
             const Center(
               child: Icon(
@@ -851,85 +832,7 @@ class _FeedVideoItemState extends State<FeedVideoItem>
 }
 
 // ════════════════════════════════════════════════════════════════
-//  SMART VIDEO PLAYER — ratio অনুযায়ী best fit
-//
-//  Portrait  9:16  → full screen cover  (TikTok standard)
-//  Near-portrait   → full screen cover
-//  Square    1:1   → center crop with slight zoom
-//  Landscape 16:9  → contain with blurred bg (cinematic)
-// ════════════════════════════════════════════════════════════════
-class _SmartVideoPlayer extends StatelessWidget {
-  final VideoPlayerController controller;
-  const _SmartVideoPlayer({super.key, required this.controller});
-
-  @override
-  Widget build(BuildContext context) {
-    final vSize = controller.value.size;
-
-    // size শূন্য হলে black দেখাও
-    if (vSize.width == 0 || vSize.height == 0) {
-      return const ColoredBox(color: Colors.black);
-    }
-
-    // rotation correction (90/270 হলে width-height উল্টে যায়)
-    final int rotation   = controller.value.rotationCorrection;
-    final bool isRotated = rotation == 90 || rotation == 270;
-    final double vW      = isRotated ? vSize.height : vSize.width;
-    final double vH      = isRotated ? vSize.width  : vSize.height;
-    final double videoRatio = vW / vH;
-
-    // Truly landscape (16:9=1.78, 4:3=1.33): ratio > 1.3
-    // Portrait / Square / Near-portrait: ratio <= 1.3
-    if (videoRatio > 1.3) {
-      // ── Landscape: blurred bg + contained video (cinematic) ──
-      return Stack(
-        fit: StackFit.expand,
-        children: [
-          ImageFiltered(
-            imageFilter: ui.ImageFilter.blur(sigmaX: 30, sigmaY: 30),
-            child: Transform.scale(
-              scale: 1.5,
-              child: FittedBox(
-                fit: BoxFit.cover,
-                child: SizedBox(
-                  width: vW, height: vH,
-                  child: VideoPlayer(controller),
-                ),
-              ),
-            ),
-          ),
-          ColoredBox(color: Colors.black.withOpacity(0.4)),
-          Center(
-            child: AspectRatio(
-              aspectRatio: videoRatio,
-              child: VideoPlayer(controller),
-            ),
-          ),
-        ],
-      );
-    } else {
-      // ── Portrait/Square: pure black bg + full cover ───────────
-      return Stack(
-        fit: StackFit.expand,
-        children: [
-          // Pure black background — nav bar color এর সাথে match করে
-          const ColoredBox(color: Colors.black),
-          // Video full cover
-          FittedBox(
-            fit: BoxFit.cover,
-            child: SizedBox(
-              width: vW, height: vH,
-              child: VideoPlayer(controller),
-            ),
-          ),
-        ],
-      );
-    }
-  }
-}
-
-// ════════════════════════════════════════════════════════════════
-//  SEEK PROGRESS BAR (drag করার সময় দেখায়)
+//  SEEK PROGRESS BAR
 // ════════════════════════════════════════════════════════════════
 class _SeekProgressBar extends StatelessWidget {
   final double progress;
@@ -955,7 +858,7 @@ class _SeekProgressBar extends StatelessWidget {
 }
 
 // ════════════════════════════════════════════════════════════════
-//  PROGRESS BAR (normal playback)
+//  PROGRESS BAR
 // ════════════════════════════════════════════════════════════════
 class _VideoProgressBar extends StatefulWidget {
   final VideoPlayerController controller;
@@ -1415,7 +1318,7 @@ class _BottomInfo extends StatelessWidget {
 }
 
 // ════════════════════════════════════════════════════════════════
-//  SMOOTH MARQUEE TICKER
+//  SOUND TICKER
 // ════════════════════════════════════════════════════════════════
 class _SoundTicker extends StatefulWidget {
   final String sound;
@@ -1684,9 +1587,7 @@ class _CommentTile extends StatelessWidget {
                     transitionBuilder: (child, anim) =>
                         ScaleTransition(scale: anim, child: child),
                     child: Icon(
-                      item.liked
-                          ? Icons.favorite_rounded
-                          : Icons.favorite_border_rounded,
+                      item.liked ? Icons.favorite_rounded : Icons.favorite_border_rounded,
                       key: ValueKey(item.liked),
                       color: item.liked ? Colors.pinkAccent : Colors.white54,
                       size: 18,
