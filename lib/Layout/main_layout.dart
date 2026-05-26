@@ -1,4 +1,3 @@
- 
 import 'dart:ui';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -19,10 +18,10 @@ class MainLayout extends StatefulWidget {
   const MainLayout({super.key});
 
   @override
-  State<<MainLayout> createState() => _MainLayoutState();
+  State<MainLayout> createState() => _MainLayoutState();
 }
 
-class _MainLayoutState extends State<<MainLayout>
+class _MainLayoutState extends State<MainLayout>
     with SingleTickerProviderStateMixin {
   int _selectedIndex = 0;
 
@@ -42,7 +41,7 @@ class _MainLayoutState extends State<<MainLayout>
     );
   }
 
-  final List<<Widget> _pages = const [
+  final List<Widget> _pages = const [
     HomeFeedPage(),
     ExplorePage(),
     UploadPage(),
