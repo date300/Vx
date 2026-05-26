@@ -1,3 +1,4 @@
+
 name: Flutter Build & Deploy
 
 permissions:
@@ -18,22 +19,20 @@ env:
 jobs:
   build-apk:
     name: Build APK
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
+    runs-on: ubuntu-22.04
+    timeout-minutes: 25
 
     steps:
       - name: Checkout source
         uses: actions/checkout@v4
 
-      # Java + Gradle cache
       - name: Setup Java
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v4.2.1
         with:
           distribution: temurin
           java-version: "17"
           cache: gradle
 
-      # Flutter SDK + Pub cache
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
@@ -41,29 +40,26 @@ jobs:
           channel: stable
           cache: true
 
-      # Smart cleanup
-      - name: Smart cleanup
-        run: |
-          rm -rf build
-          rm -rf .dart_tool/flutter_build
+      - name: Fix Gradle permissions
+        run: chmod +x android/gradlew
 
-      # Install dependencies
+      - name: Clean project
+        run: |
+          flutter clean
+          rm -rf build
+          rm -rf .dart_tool
+
       - name: Install dependencies
         run: flutter pub get
 
-      # Precache Android artifacts
       - name: Precache Android
         run: flutter precache --android
 
-      # Build universal APK for all phones
-      - name: Build APK
+      - name: Build APK (release)
         run: |
-          flutter build apk \
-          --release \
-          --tree-shake-icons
+          flutter build apk --release --tree-shake-icons
 
-      # Upload APK
-      - name: Upload APK
+      - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: release-apk
@@ -73,14 +69,13 @@ jobs:
 
   build-web:
     name: Build & Deploy Web
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
+    runs-on: ubuntu-22.04
+    timeout-minutes: 25
 
     steps:
       - name: Checkout source
         uses: actions/checkout@v4
 
-      # Flutter cache
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
@@ -88,44 +83,32 @@ jobs:
           channel: stable
           cache: true
 
-      # Smart cleanup
-      - name: Smart cleanup
+      - name: Clean project
         run: |
+          flutter clean
           rm -rf build
-          rm -rf .dart_tool/flutter_build
+          rm -rf .dart_tool
 
-      # Install dependencies
       - name: Install dependencies
         run: flutter pub get
 
-      # Precache Web artifacts
       - name: Precache Web
         run: flutter precache --web
 
-      # Disable old service worker cache issue
       - name: Remove old service worker
-        run: |
-          rm -f web/flutter_service_worker.js
+        run: rm -f web/flutter_service_worker.js
 
-      # Build Web
-      - name: Build Web
+      - name: Build Web (optimized)
         run: |
-          flutter build web \
-          --release \
-          --wasm \
-          --pwa-strategy=none \
-          --tree-shake-icons \
-          --base-href=/mine_matrix/
+          flutter build web --release --tree-shake-icons --pwa-strategy=none --base-href=/mine_matrix/
 
-      # Deploy GitHub Pages
       - name: Deploy GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./build/web
 
-      # Upload Web artifact
-      - name: Upload Web
+      - name: Upload Web artifact
         uses: actions/upload-artifact@v4
         with:
           name: release-web
