@@ -265,7 +265,8 @@ class _VideoFeedListState extends State<_VideoFeedList>
   final PageController _pageCtrl = PageController();
   final Map<int, VideoPlayerController> _pool  = {};
   final Map<int, bool>                 _ready = {};
-  int _current = 0;
+  int  _current    = 0;
+  bool _flashing   = false;   // ← flash transition flag
 
   @override
   void initState() {
@@ -326,28 +327,45 @@ class _VideoFeedListState extends State<_VideoFeedList>
     _current = index;
     if (_ready[index] == true) _pool[index]?.play();
     _initAround(index);
-    if (mounted) setState(() {});
+    // চোখের পলকের মতো flash transition
+    if (mounted) {
+      setState(() => _flashing = true);
+      Future.delayed(const Duration(milliseconds: 80), () {
+        if (mounted) setState(() => _flashing = false);
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return PageView.builder(
-      controller: _pageCtrl,
-      scrollDirection: Axis.vertical,
-      itemCount: widget.videos.length,
-      onPageChanged: _onPageChanged,
-      physics: const PageScrollPhysics(parent: ClampingScrollPhysics()),
-      itemBuilder: (context, index) {
-        return RepaintBoundary(
-          child: FeedVideoItem(
-            key: ValueKey('${widget.feedKey}_$index'),
-            data: widget.videos[index],
-            controller: _pool[index],
-            isReady: _ready[index] ?? false,
-            isCurrent: index == _current,
-          ),
-        );
-      },
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        PageView.builder(
+          controller: _pageCtrl,
+          scrollDirection: Axis.vertical,
+          itemCount: widget.videos.length,
+          onPageChanged: _onPageChanged,
+          physics: const PageScrollPhysics(parent: ClampingScrollPhysics()),
+          itemBuilder: (context, index) {
+            return RepaintBoundary(
+              child: FeedVideoItem(
+                key: ValueKey('${widget.feedKey}_$index'),
+                data: widget.videos[index],
+                controller: _pool[index],
+                isReady: _ready[index] ?? false,
+                isCurrent: index == _current,
+              ),
+            );
+          },
+        ),
+        // চোখের পলকের flash overlay
+        AnimatedOpacity(
+          opacity: _flashing ? 1.0 : 0.0,
+          duration: Duration(milliseconds: _flashing ? 0 : 150),
+          child: const ColoredBox(color: Colors.black),
+        ),
+      ],
     );
   }
 }
@@ -612,16 +630,9 @@ class _FeedVideoItemState extends State<FeedVideoItem>
           const ColoredBox(color: Colors.black),
           if (ready)
             RepaintBoundary(
-              child: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 120),
-                transitionBuilder: (child, anim) => FadeTransition(
-                  opacity: anim,
-                  child: child,
-                ),
-                child: _SmartVideoPlayer(
-                  key: ValueKey(widget.data.url),
-                  controller: ctrl,
-                ),
+              child: _SmartVideoPlayer(
+                key: ValueKey(widget.data.url),
+                controller: ctrl,
               ),
             )
           else
@@ -898,15 +909,20 @@ class _SmartVideoPlayer extends StatelessWidget {
       );
     } else {
       // ── Portrait/Square: pure black bg + full cover ───────────
-      return ColoredBox(
-        color: Colors.black,
-        child: FittedBox(
-          fit: BoxFit.cover,
-          child: SizedBox(
-            width: vW, height: vH,
-            child: VideoPlayer(controller),
+      return Stack(
+        fit: StackFit.expand,
+        children: [
+          // Pure black background — nav bar color এর সাথে match করে
+          const ColoredBox(color: Colors.black),
+          // Video full cover
+          FittedBox(
+            fit: BoxFit.cover,
+            child: SizedBox(
+              width: vW, height: vH,
+              child: VideoPlayer(controller),
+            ),
           ),
-        ),
+        ],
       );
     }
   }
@@ -2042,3 +2058,4 @@ class _NotifTile extends StatelessWidget {
     );
   }
 }
+
