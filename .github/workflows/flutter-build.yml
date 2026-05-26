@@ -41,34 +41,33 @@ jobs:
           channel: stable
           cache: true
 
-      # Smart clean (full clean না করে fast build)
+      # Smart cleanup
       - name: Smart cleanup
         run: |
           rm -rf build
           rm -rf .dart_tool/flutter_build
 
-      # Dependency install
+      # Install dependencies
       - name: Install dependencies
         run: flutter pub get
 
-      # Precache only android artifacts
+      # Precache Android artifacts
       - name: Precache Android
         run: flutter precache --android
 
-      # Build optimized APK
+      # Build universal APK for all phones
       - name: Build APK
         run: |
           flutter build apk \
           --release \
-          --split-per-abi \
           --tree-shake-icons
 
-      # Upload artifact faster
+      # Upload APK
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: release-apk
-          path: build/app/outputs/flutter-apk/*.apk
+          path: build/app/outputs/flutter-apk/app-release.apk
           compression-level: 0
           if-no-files-found: error
 
@@ -99,16 +98,22 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      # Precache only web artifacts
+      # Precache Web artifacts
       - name: Precache Web
         run: flutter precache --web
 
-      # Faster web build
+      # Disable old service worker cache issue
+      - name: Remove old service worker
+        run: |
+          rm -f web/flutter_service_worker.js
+
+      # Build Web
       - name: Build Web
         run: |
           flutter build web \
           --release \
           --wasm \
+          --pwa-strategy=none \
           --tree-shake-icons \
           --base-href=/mine_matrix/
 
@@ -119,7 +124,7 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./build/web
 
-      # Upload web artifact
+      # Upload Web artifact
       - name: Upload Web
         uses: actions/upload-artifact@v4
         with:
