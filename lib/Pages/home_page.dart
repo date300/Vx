@@ -122,11 +122,19 @@ Future<void> showCommentPopup(BuildContext context, {
     barrierColor: Colors.black.withOpacity(0.6),
     transitionDuration: const Duration(milliseconds: 250),
     pageBuilder: (context, animation, secondaryAnimation) {
-      return _CommentSheet(
-        comments: comments,
-        commentCount: commentCount,
-        onPost: onPost,
-        isPopup: true,
+      return Scaffold(
+        backgroundColor: Colors.transparent,
+        body: Column(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            _CommentSheet(
+              comments: comments,
+              commentCount: commentCount,
+              onPost: onPost,
+              isPopup: true,
+            ),
+          ],
+        ),
       );
     },
     transitionBuilder: (context, animation, secondaryAnimation, child) {
@@ -1474,12 +1482,10 @@ class _CommentSheetState extends State<_CommentSheet> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: widget.isPopup ? MediaQuery.of(context).size.height : MediaQuery.of(context).size.height * 0.78,
-      decoration: BoxDecoration(
-        color: const Color(0xFF111111),
-        borderRadius: widget.isPopup
-            ? null
-            : const BorderRadius.vertical(top: Radius.circular(20)),
+      height: MediaQuery.of(context).size.height * 0.78,
+      decoration: const BoxDecoration(
+        color: Color(0xFF111111),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       child: Column(
         children: [
