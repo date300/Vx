@@ -6,9 +6,9 @@ import 'package:flutter/services.dart';
 import '../Pages/Auth/auth_gate_page.dart';
 import '../Pages/home_page.dart';
 import '../Pages/explore_page.dart';
+import '../Pages/upload_page.dart';
 import '../Pages/inbox_page.dart';
 import '../Pages/profile_page.dart';
-import '../Pages/upload_popup.dart'; // Popup import
 
 class AuthService {
   static bool isLoggedIn = false;
@@ -41,20 +41,20 @@ class _MainLayoutState extends State<MainLayout>
     );
   }
 
-  // UploadPage বাদ দিয়ে শুধু ৪টি পেজ রাখা হলো
   final List<Widget> _pages = const [
     HomeFeedPage(),
     ExplorePage(),
+    UploadPage(),
     InboxPage(),
     ProfilePage(),
   ];
 
   void _onItemTapped(int index) {
-    // Auth gate check
-    if ((index == 2 || index == 3) && !AuthService.isLoggedIn) {
-      showAuthPopup(context);
-      return;
-    }
+    // TODO: পরে Auth gate ফেরত যোগ করতে হবে
+    // if ((index == 2 || index == 3 || index == 4) && !AuthService.isLoggedIn) {
+    //   showAuthPopup(context);
+    //   return;
+    // }
     setState(() => _selectedIndex = index);
   }
 
@@ -103,13 +103,13 @@ class _MainLayoutState extends State<MainLayout>
                   icon: CupertinoIcons.search,
                   activeIcon: CupertinoIcons.search,
                 ),
-                _buildUploadButton(), // Popup ওপেন করবে
+                _buildUploadButton(),
                 _buildNavItem(
-                  index: 2, // Inbox এখন index 2
+                  index: 3,
                   icon: CupertinoIcons.bell,
                   activeIcon: CupertinoIcons.bell_fill,
                 ),
-                _buildProfileItem(), // Profile এখন index 3
+                _buildProfileItem(),
               ],
             ),
           ),
@@ -161,13 +161,11 @@ class _MainLayoutState extends State<MainLayout>
     );
   }
 
-  // ==================== UPLOAD POPUP BUTTON ====================
   Widget _buildUploadButton() {
+    final isActive = _selectedIndex == 2;
+
     return GestureDetector(
-      onTap: () {
-        // পপআপ ওপেন — কোনো পেজ চেঞ্জ হবে না
-        showUploadPopup(context);
-      },
+      onTap: () => _onItemTapped(2),
       behavior: HitTestBehavior.opaque,
       child: SizedBox(
         width: 52,
@@ -182,7 +180,9 @@ class _MainLayoutState extends State<MainLayout>
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(9),
                 border: Border.all(
-                  color: Colors.white.withOpacity(0.38),
+                  color: isActive
+                      ? Colors.white
+                      : Colors.white.withOpacity(0.38),
                   width: 1.6,
                 ),
               ),
@@ -190,7 +190,9 @@ class _MainLayoutState extends State<MainLayout>
                 child: Icon(
                   CupertinoIcons.add,
                   size: 19,
-                  color: Colors.white.withOpacity(0.42),
+                  color: isActive
+                      ? Colors.white
+                      : Colors.white.withOpacity(0.42),
                 ),
               ),
             ),
@@ -202,10 +204,10 @@ class _MainLayoutState extends State<MainLayout>
   }
 
   Widget _buildProfileItem() {
-    final isActive = _selectedIndex == 3; // Profile এখন index 3
+    final isActive = _selectedIndex == 4;
 
     return GestureDetector(
-      onTap: () => _onItemTapped(3),
+      onTap: () => _onItemTapped(4),
       behavior: HitTestBehavior.opaque,
       child: SizedBox(
         width: 52,
