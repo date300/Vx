@@ -53,19 +53,19 @@ const List<VideoData> kVideoList = [
   VideoData(
     url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
     username: "@animation_hub", displayName: "Animation Hub",
-    caption: "Big Buck Bunny is an absolute legend 🎬 Open source cinema at its finest! #animation #3d #blender",
+    caption: "Big Buck Bunny is an absolute legend 🐰 Open source cinema at its finest! #animation #3d #blender",
     sound: "Big Buck Bunny OST", likes: 245000, comments: 9800, shares: 4200,
   ),
   VideoData(
     url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
     username: "@blender_art", displayName: "Blender Art",
-    caption: "Elephants Dream — a timeless open-source classic 🎨 #blender #art #animation",
+    caption: "Elephants Dream — a timeless open-source classic 🎬 #blender #art #animation",
     sound: "Elephants Dream OST", likes: 196000, comments: 7600, shares: 3100,
   ),
   VideoData(
     url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4",
     username: "@adrenaline_rush", displayName: "Adrenaline Rush",
-    caption: "When life gives you roads, take the joyride 🚀 Feel the speed! #joyride #fun #thrill",
+    caption: "When life gives you roads, take the joyride 🚗 Feel the speed! #joyride #fun #thrill",
     sound: "Speed Demon - Turbo Mix", likes: 312000, comments: 11200, shares: 7800,
   ),
   VideoData(
@@ -89,7 +89,7 @@ const List<VideoData> kVideoList = [
   VideoData(
     url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/SubaruOutbackOnStreetAndDirt.mp4",
     username: "@road_warrior", displayName: "Road Warrior",
-    caption: "Street & dirt — no road is too tough 💪 Built for anything! #offroad #car #adventure",
+    caption: "Street & dirt — no road is too tough 🚙 Built for anything! #offroad #car #adventure",
     sound: "Dirt Road Anthem", likes: 221000, comments: 8400, shares: 5100,
   ),
   VideoData(
@@ -101,7 +101,7 @@ const List<VideoData> kVideoList = [
   VideoData(
     url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/VolkswagenGTIReview.mp4",
     username: "@car_review_bd", displayName: "Car Review BD",
-    caption: "VW GTI Review — smooth like butter 🚗 This car is a beast! #car #review #gti #volkswagen",
+    caption: "VW GTI Review 🔥 smooth like butter — This car is a beast! #car #review #gti #volkswagen",
     sound: "GTI Vibes - Engine Roar", likes: 267000, comments: 12300, shares: 6700,
   ),
 ];
@@ -390,6 +390,12 @@ class _FeedVideoItemState extends State<FeedVideoItem>
   late int _commentCount;
   late int _shareCount;
 
+  // TikTok-style horizontal drag to seek
+  bool   _isSeeking       = false;
+  double _seekProgress    = 0.0;
+  double _dragStartX      = 0.0;
+  double _seekStartProgress = 0.0;
+
   final List<_CommentItem> _comments = [];
 
   @override
@@ -418,8 +424,8 @@ class _FeedVideoItemState extends State<FeedVideoItem>
 
     _comments.addAll([
       _CommentItem("@user_1",        "This is amazing! 🔥", 342),
-      _CommentItem("@flutter_dev",   "Smooth af bro 💯",    120),
-      _CommentItem("@creative_soul", "Love this content 😍",  87),
+      _CommentItem("@flutter_dev",   "Smooth af bro 👌",    120),
+      _CommentItem("@creative_soul", "Love this content 💖",  87),
     ]);
   }
 
@@ -440,10 +446,11 @@ class _FeedVideoItemState extends State<FeedVideoItem>
     super.dispose();
   }
 
+  // ── Toggle play/pause (NO haptic — কাঁপা বন্ধ) ──────────────
   void _togglePlay() {
     final ctrl = widget.controller;
     if (ctrl == null || !widget.isReady) return;
-    HapticFeedback.selectionClick();
+    // HapticFeedback removed — ভাইব্রেশন বন্ধ
     setState(() => _isPlaying = !_isPlaying);
     _isPlaying ? ctrl.play() : ctrl.pause();
   }
@@ -545,14 +552,44 @@ class _FeedVideoItemState extends State<FeedVideoItem>
     setState(() => _isFollowing = !_isFollowing);
   }
 
+  // ── TikTok-style horizontal drag seek ────────────────────────
+  void _onSeekDragStart(DragStartDetails d) {
+    final ctrl = widget.controller;
+    if (ctrl == null || !widget.isReady) return;
+    final dur = ctrl.value.duration.inMilliseconds;
+    if (dur == 0) return;
+    _dragStartX = d.localPosition.dx;
+    _seekStartProgress = ctrl.value.position.inMilliseconds / dur;
+    setState(() {
+      _isSeeking = true;
+      _seekProgress = _seekStartProgress;
+    });
+    ctrl.pause();
+  }
+
+  void _onSeekDragUpdate(DragUpdateDetails d) {
+    final ctrl = widget.controller;
+    if (ctrl == null || !_isSeeking) return;
+    final screenW = MediaQuery.of(context).size.width;
+    final delta   = (d.localPosition.dx - _dragStartX) / screenW;
+    // sensitivity: full screen swipe = 100% video
+    final newProg = (_seekStartProgress + delta * 1.5).clamp(0.0, 1.0);
+    setState(() => _seekProgress = newProg);
+  }
+
+  void _onSeekDragEnd(DragEndDetails d) {
+    final ctrl = widget.controller;
+    if (ctrl == null || !_isSeeking) return;
+    ctrl.seekTo(ctrl.value.duration * _seekProgress);
+    setState(() => _isSeeking = false);
+    if (_isPlaying) ctrl.play();
+  }
+
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
     final ctrl  = widget.controller;
     final ready = widget.isReady && ctrl != null;
-
-    // ✅ THE FIX: extendBody:true হলে Flutter নিজেই padding.bottom এ
-    // nav bar height যোগ করে — তাই আর manually kNavBarHeight যোগ করতে হবে না
     final bottomPad = MediaQuery.of(context).padding.bottom;
 
     return GestureDetector(
@@ -561,11 +598,15 @@ class _FeedVideoItemState extends State<FeedVideoItem>
       onDoubleTap: _onDoubleTap,
       onLongPressStart: _onLongPressStart,
       onLongPressEnd: _onLongPressEnd,
+      // TikTok drag-to-seek (horizontal)
+      onHorizontalDragStart: _onSeekDragStart,
+      onHorizontalDragUpdate: _onSeekDragUpdate,
+      onHorizontalDragEnd: _onSeekDragEnd,
       child: Stack(
         fit: StackFit.expand,
         children: [
 
-          // ── Video: true full screen ──────────────────────────
+          // ── Video ──────────────────────────────────────────────
           const ColoredBox(color: Colors.black),
           if (ready)
             RepaintBoundary(
@@ -587,7 +628,7 @@ class _FeedVideoItemState extends State<FeedVideoItem>
               ),
             ),
 
-          // ── Bottom gradient ──────────────────────────────────
+          // ── Bottom gradient ────────────────────────────────────
           Positioned(
             bottom: 0, left: 0, right: 0,
             height: size.height * 0.60,
@@ -603,7 +644,7 @@ class _FeedVideoItemState extends State<FeedVideoItem>
             ),
           ),
 
-          // ── Top gradient ─────────────────────────────────────
+          // ── Top gradient ───────────────────────────────────────
           Positioned(
             top: 0, left: 0, right: 0,
             height: size.height * 0.25,
@@ -618,7 +659,66 @@ class _FeedVideoItemState extends State<FeedVideoItem>
             ),
           ),
 
-          // ── Hold overlay ─────────────────────────────────────
+          // ── TikTok seek overlay ────────────────────────────────
+          if (_isSeeking)
+            Positioned.fill(
+              child: ColoredBox(
+                color: Colors.black.withOpacity(0.35),
+                child: Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        _formatDuration(
+                          ready
+                              ? ctrl.value.duration * _seekProgress
+                              : Duration.zero,
+                        ),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 32,
+                          fontWeight: FontWeight.w700,
+                          shadows: [Shadow(color: Colors.black54, blurRadius: 12)],
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      SizedBox(
+                        width: size.width * 0.7,
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(4),
+                          child: LinearProgressIndicator(
+                            value: _seekProgress,
+                            backgroundColor: Colors.white30,
+                            valueColor: const AlwaysStoppedAnimation<Color>(Colors.pinkAccent),
+                            minHeight: 4,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            _seekProgress > _seekStartProgress
+                                ? Icons.fast_forward_rounded
+                                : Icons.fast_rewind_rounded,
+                            color: Colors.white70,
+                            size: 22,
+                          ),
+                          const SizedBox(width: 6),
+                          const Text(
+                            "Slide to seek",
+                            style: TextStyle(color: Colors.white54, fontSize: 13),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+
+          // ── Hold overlay ───────────────────────────────────────
           if (_isHolding)
             ColoredBox(
               color: Colors.black.withOpacity(0.3),
@@ -626,36 +726,35 @@ class _FeedVideoItemState extends State<FeedVideoItem>
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Container(
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.6),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(Icons.pause_rounded, size: 52, color: Colors.white),
+                    // কালো ব্যাকগ্রাউন্ড ছাড়া শুধু আইকন
+                    const Icon(
+                      Icons.pause_rounded,
+                      size: 72,
+                      color: Colors.white,
+                      shadows: [Shadow(color: Colors.black54, blurRadius: 20)],
                     ),
                     const SizedBox(height: 12),
-                    const Text("Hold to pause",
-                      style: TextStyle(color: Colors.white70, fontSize: 13)),
+                    const Text(
+                      "Hold to pause",
+                      style: TextStyle(color: Colors.white70, fontSize: 13),
+                    ),
                   ],
                 ),
               ),
             ),
 
-          // ── Paused icon ──────────────────────────────────────
-          if (!_isPlaying && !_isHolding)
-            Center(
-              child: Container(
-                padding: const EdgeInsets.all(18),
-                decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.45),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(Icons.play_arrow_rounded, size: 54, color: Colors.white),
+          // ── Paused icon (কালো ব্যাকগ্রাউন্ড ছাড়া শুধু আইকন) ──
+          if (!_isPlaying && !_isHolding && !_isSeeking)
+            const Center(
+              child: Icon(
+                Icons.play_arrow_rounded,
+                size: 72,
+                color: Colors.white,
+                shadows: [Shadow(color: Colors.black54, blurRadius: 20)],
               ),
             ),
 
-          // ── Double-tap heart ─────────────────────────────────
+          // ── Double-tap heart ───────────────────────────────────
           if (_showHeart)
             Positioned(
               left: _tapPosition.dx - 55,
@@ -678,20 +777,22 @@ class _FeedVideoItemState extends State<FeedVideoItem>
               ),
             ),
 
-          // ── Progress bar: nav bar এর ঠিক উপরে ───────────────
+          // ── Progress bar ───────────────────────────────────────
           if (ready)
             Positioned(
               left: 0, right: 0,
-              bottom: bottomPad,  // ✅ fixed
+              bottom: bottomPad,
               child: RepaintBoundary(
-                child: _VideoProgressBar(controller: ctrl),
+                child: _isSeeking
+                    ? _SeekProgressBar(progress: _seekProgress)
+                    : _VideoProgressBar(controller: ctrl),
               ),
             ),
 
-          // ── Right actions ────────────────────────────────────
+          // ── Right actions ──────────────────────────────────────
           Positioned(
             right: 8,
-            bottom: bottomPad + 16, // ✅ fixed
+            bottom: bottomPad + 16,
             child: RepaintBoundary(
               child: _RightActions(
                 username:          widget.data.username,
@@ -710,10 +811,10 @@ class _FeedVideoItemState extends State<FeedVideoItem>
             ),
           ),
 
-          // ── Bottom info ──────────────────────────────────────
+          // ── Bottom info ────────────────────────────────────────
           Positioned(
             left: 14, right: 80,
-            bottom: bottomPad + 12, // ✅ fixed
+            bottom: bottomPad + 12,
             child: _BottomInfo(
               data: widget.data,
               isFollowing: _isFollowing,
@@ -727,10 +828,42 @@ class _FeedVideoItemState extends State<FeedVideoItem>
       ),
     );
   }
+
+  String _formatDuration(Duration d) {
+    final m = d.inMinutes.remainder(60).toString().padLeft(2, '0');
+    final s = d.inSeconds.remainder(60).toString().padLeft(2, '0');
+    return "$m:$s";
+  }
 }
 
 // ════════════════════════════════════════════════════════════════
-//  PROGRESS BAR
+//  SEEK PROGRESS BAR (drag করার সময় দেখায়)
+// ════════════════════════════════════════════════════════════════
+class _SeekProgressBar extends StatelessWidget {
+  final double progress;
+  const _SeekProgressBar({required this.progress});
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 28,
+      child: Align(
+        alignment: Alignment.bottomCenter,
+        child: SizedBox(
+          height: 4,
+          child: LinearProgressIndicator(
+            value: progress,
+            backgroundColor: Colors.white24,
+            valueColor: const AlwaysStoppedAnimation<Color>(Colors.pinkAccent),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ════════════════════════════════════════════════════════════════
+//  PROGRESS BAR (normal playback)
 // ════════════════════════════════════════════════════════════════
 class _VideoProgressBar extends StatefulWidget {
   final VideoPlayerController controller;
@@ -1624,15 +1757,15 @@ class _NotificationSheet extends StatefulWidget {
 class _NotificationSheetState extends State<_NotificationSheet> {
   final List<_NotifData> _newNotifs = [
     _NotifData(username: "@nature_vibes",  type: _NotifType.like,    extra: "Butterfly in slow motion 🦋", time: "2m ago",  avatarColor: Colors.pinkAccent,       isRead: false),
-    _NotifData(username: "@wild_lens",     type: _NotifType.follow,                                         time: "10m ago", avatarColor: Colors.deepPurpleAccent, isRead: false),
+    _NotifData(username: "@wild_lens",     type: _NotifType.follow,                                          time: "10m ago", avatarColor: Colors.deepPurpleAccent, isRead: false),
     _NotifData(username: "@animation_hub", type: _NotifType.comment,  extra: "This is insane quality 🔥",  time: "25m ago", avatarColor: Colors.orangeAccent,     isRead: false),
-    _NotifData(username: "@scifi_world",   type: _NotifType.mention,  extra: "@you check this out!",        time: "1h ago",  avatarColor: Colors.cyanAccent,       isRead: false),
+    _NotifData(username: "@scifi_world",   type: _NotifType.mention,  extra: "@you check this out!",         time: "1h ago",  avatarColor: Colors.cyanAccent,       isRead: false),
   ];
 
   final List<_NotifData> _weekNotifs = [
-    _NotifData(username: "@blender_art",   type: _NotifType.duet,                                           time: "2d ago", avatarColor: Colors.tealAccent,      isRead: true),
-    _NotifData(username: "@road_warrior",  type: _NotifType.like,    extra: "Street & dirt 💪",             time: "3d ago", avatarColor: Colors.redAccent,       isRead: true),
-    _NotifData(username: "@fun_factory",   type: _NotifType.follow,                                         time: "4d ago", avatarColor: Colors.amberAccent,     isRead: true),
+    _NotifData(username: "@blender_art",   type: _NotifType.duet,                                            time: "2d ago", avatarColor: Colors.tealAccent,      isRead: true),
+    _NotifData(username: "@road_warrior",  type: _NotifType.like,    extra: "Street & dirt 🚙",             time: "3d ago", avatarColor: Colors.redAccent,       isRead: true),
+    _NotifData(username: "@fun_factory",   type: _NotifType.follow,                                          time: "4d ago", avatarColor: Colors.amberAccent,     isRead: true),
     _NotifData(username: "@bull_run_crew", type: _NotifType.comment,  extra: "Bro this slaps 🔥",           time: "5d ago", avatarColor: Colors.lightBlueAccent, isRead: true),
     _NotifData(username: "@car_review_bd", type: _NotifType.like,    extra: "VW GTI Review 🚗",             time: "6d ago", avatarColor: Colors.greenAccent,     isRead: true),
   ];
