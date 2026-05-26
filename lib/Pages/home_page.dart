@@ -552,7 +552,7 @@ class _FeedVideoItemState extends State<FeedVideoItem>
     final wasPlaying = _isPlaying;
     widget.controller?.pause();
     showCommentPopup(
-      context: context,
+      context,
       comments: _comments,
       commentCount: _commentCount,
       onPost: (text) => setState(() {
@@ -2009,4 +2009,3 @@ class _NotifTile extends StatelessWidget {
     );
   }
 }
-
