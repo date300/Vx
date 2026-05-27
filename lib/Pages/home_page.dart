@@ -11,12 +11,10 @@ class ProfilePage extends StatefulWidget {
 class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
-  // User stats
   final int _followingCount = 234;
   final int _followersCount = 125400;
   final int _likesCount = 2500000;
 
-  // Dummy video thumbnails
   final List<String> _userVideos = const [
     "https://picsum.photos/300/400?random=1",
     "https://picsum.photos/300/400?random=2",
@@ -123,7 +121,6 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
       padding: const EdgeInsets.all(20.0),
       child: Column(
         children: [
-          // Profile Picture with gradient ring
           Stack(
             alignment: Alignment.center,
             children: [
@@ -172,8 +169,6 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
             ],
           ),
           const SizedBox(height: 16),
-
-          // Username
           const Text(
             "Sohan Dev",
             style: TextStyle(
@@ -183,8 +178,6 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
             ),
           ),
           const SizedBox(height: 8),
-
-          // Bio
           const Text(
             "Flutter Developer | UI/UX Enthusiast\nCreating premium apps | DM for collab",
             textAlign: TextAlign.center,
@@ -195,8 +188,6 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
             ),
           ),
           const SizedBox(height: 20),
-
-          // Stats Row
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
@@ -208,8 +199,6 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
             ],
           ),
           const SizedBox(height: 20),
-
-          // Action Buttons
           Row(
             children: [
               Expanded(
@@ -494,3 +483,4 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
     return n.toString();
   }
 }
+
