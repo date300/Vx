@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart'; // ← নতুন
+import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
+
 import 'screen/splash_screen.dart';
-import 'Layout/premium_theme_controller.dart';
+import 'Layout/theme_provider.dart';
 
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized(); // ← নতুন
+  WidgetsFlutterBinding.ensureInitialized();
 
   // TikTok-style true full screen
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
@@ -18,7 +20,12 @@ void main() async {
     ),
   );
 
-  runApp(const MyApp());
+  runApp(
+    ChangeNotifierProvider(
+      create: (_) => ThemeProvider(),
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -26,30 +33,88 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ValueListenableBuilder<ThemeMode>(
-      valueListenable: PremiumTheme.themeMode,
-      builder: (context, currentMode, child) {
-        return MaterialApp(
-          debugShowCheckedModeBanner: false,
-          title: 'SKYTHOR',
-          themeMode: currentMode,
+    final themeProvider = context.watch<ThemeProvider>();
 
-          theme: ThemeData(
-            brightness: Brightness.light,
-            primaryColor: Colors.blue,
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      title: 'VX',
+      themeMode: themeProvider.themeMode,
+
+      // ── Light Theme ──
+      theme: ThemeData(
+        brightness: Brightness.light,
+        primaryColor: const Color(0xFFFF4FB3),
+        fontFamily: 'Inter',
+        scaffoldBackgroundColor: Colors.white,
+        colorScheme: const ColorScheme.light(
+          primary: Color(0xFFFF4FB3),
+          surface: Color(0xFFF5F5F5),
+        ),
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Colors.white,
+          elevation: 0,
+          iconTheme: IconThemeData(color: Colors.black),
+          titleTextStyle: TextStyle(
+            color: Colors.black,
             fontFamily: 'Inter',
-            scaffoldBackgroundColor: Colors.white,
+            fontWeight: FontWeight.bold,
+            fontSize: 20,
           ),
+        ),
+        switchTheme: SwitchThemeData(
+          thumbColor: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.selected)) {
+              return const Color(0xFFFF4FB3);
+            }
+            return Colors.grey;
+          }),
+          trackColor: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.selected)) {
+              return const Color(0xFFFF4FB3).withOpacity(0.3);
+            }
+            return Colors.grey.withOpacity(0.3);
+          }),
+        ),
+      ),
 
-          darkTheme: ThemeData(
-            brightness: Brightness.dark,
-            scaffoldBackgroundColor: Colors.black,
+      // ── Dark Theme ──
+      darkTheme: ThemeData(
+        brightness: Brightness.dark,
+        primaryColor: const Color(0xFFFF4FB3),
+        fontFamily: 'Inter',
+        scaffoldBackgroundColor: Colors.black,
+        colorScheme: const ColorScheme.dark(
+          primary: Color(0xFFFF4FB3),
+          surface: Color(0xFF1A1A1A),
+        ),
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Colors.black,
+          elevation: 0,
+          iconTheme: IconThemeData(color: Colors.white),
+          titleTextStyle: TextStyle(
+            color: Colors.white,
             fontFamily: 'Inter',
+            fontWeight: FontWeight.bold,
+            fontSize: 20,
           ),
+        ),
+        switchTheme: SwitchThemeData(
+          thumbColor: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.selected)) {
+              return const Color(0xFFFF4FB3);
+            }
+            return Colors.grey;
+          }),
+          trackColor: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.selected)) {
+              return const Color(0xFFFF4FB3).withOpacity(0.3);
+            }
+            return Colors.grey.withOpacity(0.3);
+          }),
+        ),
+      ),
 
-          home: const SplashScreen(),
-        );
-      },
+      home: const SplashScreen(),
     );
   }
 }
