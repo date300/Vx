@@ -3,15 +3,15 @@ import 'package:flutter/services.dart';
 import 'package:video_player/video_player.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
-// ????????????????????????????????????????????????????????????????
+// ================================================================
 //  CONSTANTS
-// ????????????????????????????????????????????????????????????????
+// ================================================================
 const int kPreloadAhead  = 3;
 const int kPreloadBehind = 1;
 
-// ????????????????????????????????????????????????????????????????
+// ================================================================
 //  MODEL
-// ????????????????????????????????????????????????????????????????
+// ================================================================
 class VideoData {
   final String url;
   final String username;
@@ -34,82 +34,82 @@ class VideoData {
   });
 }
 
-// ????????????????????????????????????????????????????????????????
+// ================================================================
 //  DATASET
-// ????????????????????????????????????????????????????????????????
+// ================================================================
 const List<VideoData> kVideoList = [
   VideoData(
     url: "https://flutter.github.io/assets-for-api-docs/assets/videos/butterfly.mp4",
     username: "@nature_vibes", displayName: "Nature Vibes",
-    caption: "Butterfly in slow motion ? Nature never stops amazing me! #nature #butterfly #wildlife",
+    caption: "Butterfly in slow motion 🦋 Nature never stops amazing me! #nature #butterfly #wildlife",
     sound: "Nature Sounds - Chill Mix", likes: 128400, comments: 3200, shares: 940,
   ),
   VideoData(
     url: "https://flutter.github.io/assets-for-api-docs/assets/videos/bee.mp4",
     username: "@wild_lens", displayName: "Wild Lens",
-    caption: "Busy bee doing its thing ? Save the bees, save the world! #wildlife #bee #nature",
+    caption: "Busy bee doing its thing 🐝 Save the bees, save the world! #wildlife #bee #nature",
     sound: "Buzzing Beats - DJ Honey", likes: 87600, comments: 1540, shares: 620,
   ),
   VideoData(
     url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
     username: "@animation_hub", displayName: "Animation Hub",
-    caption: "Big Buck Bunny is an absolute legend ? Open source cinema at its finest! #animation #3d #blender",
+    caption: "Big Buck Bunny is an absolute legend 🐰 Open source cinema at its finest! #animation #3d #blender",
     sound: "Big Buck Bunny OST", likes: 245000, comments: 9800, shares: 4200,
   ),
   VideoData(
     url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
     username: "@blender_art", displayName: "Blender Art",
-    caption: "Elephants Dream ? a timeless open-source classic ? #blender #art #animation",
+    caption: "Elephants Dream 🐘 a timeless open-source classic ✨ #blender #art #animation",
     sound: "Elephants Dream OST", likes: 196000, comments: 7600, shares: 3100,
   ),
   VideoData(
     url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4",
     username: "@adrenaline_rush", displayName: "Adrenaline Rush",
-    caption: "When life gives you roads, take the joyride ? Feel the speed! #joyride #fun #thrill",
+    caption: "When life gives you roads, take the joyride 🚗 Feel the speed! #joyride #fun #thrill",
     sound: "Speed Demon - Turbo Mix", likes: 312000, comments: 11200, shares: 7800,
   ),
   VideoData(
     url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
     username: "@fire_starter", displayName: "Fire Starter",
-    caption: "Bigger blazes = bigger dreams ? Stay lit every single day! #fire #energy #motivation",
+    caption: "Bigger blazes = bigger dreams 🔥 Stay lit every single day! #fire #energy #motivation",
     sound: "Blaze It Up - LoFi", likes: 98700, comments: 4300, shares: 2100,
   ),
   VideoData(
     url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4",
     username: "@scifi_world", displayName: "SciFi World",
-    caption: "Tears of Steel ? the future is already here ? #scifi #blender #vfx #film",
+    caption: "Tears of Steel 🤖 the future is already here ⚡ #scifi #blender #vfx #film",
     sound: "Steel Tears - Cinematic", likes: 430000, comments: 18700, shares: 12400,
   ),
   VideoData(
     url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4",
     username: "@fun_factory", displayName: "Fun Factory",
-    caption: "More fun, more life! Choose bigger, always ? #fun #vibes #goodtimes",
+    caption: "More fun, more life! Choose bigger, always 🎉 #fun #vibes #goodtimes",
     sound: "Fun Mode - Party Mix", likes: 76500, comments: 2900, shares: 1300,
   ),
   VideoData(
     url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/SubaruOutbackOnStreetAndDirt.mp4",
     username: "@road_warrior", displayName: "Road Warrior",
-    caption: "Street & dirt ? no road is too tough ? Built for anything! #offroad #car #adventure",
+    caption: "Street & dirt 🛣️ no road is too tough 💪 Built for anything! #offroad #car #adventure",
     sound: "Dirt Road Anthem", likes: 221000, comments: 8400, shares: 5100,
   ),
   VideoData(
     url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/WeAreGoingOnBullrun.mp4",
     username: "@bull_run_crew", displayName: "Bull Run Crew",
-    caption: "We are going on a bull run ? Buckle up and hold tight! #bullrun #adventure #extreme",
+    caption: "We are going on a bull run 🐂 Buckle up and hold tight! #bullrun #adventure #extreme",
     sound: "Bull Run Hype - Beats", likes: 189000, comments: 5500, shares: 4400,
   ),
   VideoData(
     url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/VolkswagenGTIReview.mp4",
     username: "@car_review_bd", displayName: "Car Review BD",
-    caption: "VW GTI Review ? smooth like butter ? This car is a beast! #car #review #gti #volkswagen",
+    caption: "VW GTI Review 🚗 smooth like butter 🧈 This car is a beast! #car #review #gti #volkswagen",
     sound: "GTI Vibes - Engine Roar", likes: 267000, comments: 12300, shares: 6700,
   ),
 ];
 
 
-// ????????????????????????????????????????????????????????????????
+// ================================================================
 //  POPUP ENTRY POINTS (Fast Popup Style)
-// ????????????????????????????????????????????????????????????????
+// ================================================================
 
 Future<void> showCommentPopup(BuildContext context, {
   required List<_CommentItem> comments,
@@ -166,9 +166,9 @@ Future<void> showNotificationPopup(BuildContext context) {
   );
 }
 
-// ????????????????????????????????????????????????????????????????
+// ================================================================
 //  HOME FEED PAGE
-// ????????????????????????????????????????????????????????????????
+// ================================================================
 class HomeFeedPage extends StatefulWidget {
   const HomeFeedPage({super.key});
 
@@ -221,9 +221,9 @@ class _HomeFeedPageState extends State<HomeFeedPage>
   }
 }
 
-// ????????????????????????????????????????????????????????????????
+// ================================================================
 //  TOP BAR
-// ????????????????????????????????????????????????????????????????
+// ================================================================
 class _TopBar extends StatefulWidget {
   final TabController tabController;
   const _TopBar({required this.tabController});
@@ -301,9 +301,9 @@ class _TopBarState extends State<_TopBar> {
   }
 }
 
-// ????????????????????????????????????????????????????????????????
+// ================================================================
 //  VIDEO FEED LIST
-// ????????????????????????????????????????????????????????????????
+// ================================================================
 class _VideoFeedList extends StatefulWidget {
   final List<VideoData> videos;
   final String feedKey;
@@ -405,9 +405,9 @@ class _VideoFeedListState extends State<_VideoFeedList>
   }
 }
 
-// ????????????????????????????????????????????????????????????????
+// ================================================================
 //  SINGLE VIDEO ITEM
-// ????????????????????????????????????????????????????????????????
+// ================================================================
 class FeedVideoItem extends StatefulWidget {
   final VideoData data;
   final VideoPlayerController? controller;
@@ -431,6 +431,8 @@ class _FeedVideoItemState extends State<FeedVideoItem>
   late final ValueNotifier<bool> _likedNotifier;
   late final ValueNotifier<int>  _likeCountNotifier;
   late final ValueNotifier<bool> _savedNotifier;
+  // NEW: ValueNotifier for seek progress — avoids full rebuild on drag
+  late final ValueNotifier<double> _seekProgressNotifier;
 
   late final AnimationController _heartCtrl;
   late final Animation<double>   _heartScale;
@@ -447,7 +449,6 @@ class _FeedVideoItemState extends State<FeedVideoItem>
 
   // TikTok-style horizontal drag to seek
   bool   _isSeeking         = false;
-  double _seekProgress      = 0.0;
   double _dragStartX        = 0.0;
   double _seekStartProgress = 0.0;
 
@@ -459,6 +460,7 @@ class _FeedVideoItemState extends State<FeedVideoItem>
     _likedNotifier     = ValueNotifier(false);
     _likeCountNotifier = ValueNotifier(widget.data.likes);
     _savedNotifier     = ValueNotifier(false);
+    _seekProgressNotifier = ValueNotifier(0.0); // NEW
     _commentCount      = widget.data.comments;
     _shareCount        = widget.data.shares;
 
@@ -478,9 +480,9 @@ class _FeedVideoItemState extends State<FeedVideoItem>
     ]).animate(_heartCtrl);
 
     _comments.addAll([
-      _CommentItem("@user_1",        "This is amazing! ?", 342),
-      _CommentItem("@flutter_dev",   "Smooth af bro ?",    120),
-      _CommentItem("@creative_soul", "Love this content ?",  87),
+      _CommentItem("@user_1",        "This is amazing! 🔥", 342),
+      _CommentItem("@flutter_dev",   "Smooth af bro ✨",    120),
+      _CommentItem("@creative_soul", "Love this content 💯",  87),
     ]);
   }
 
@@ -498,10 +500,11 @@ class _FeedVideoItemState extends State<FeedVideoItem>
     _likedNotifier.dispose();
     _likeCountNotifier.dispose();
     _savedNotifier.dispose();
+    _seekProgressNotifier.dispose(); // NEW
     super.dispose();
   }
 
-  // ?? Toggle play/pause ? HapticFeedback ??? (????????? ????) ??
+  // Toggle play/pause + HapticFeedback
   void _togglePlay() {
     final ctrl = widget.controller;
     if (ctrl == null || !widget.isReady) return;
@@ -588,7 +591,7 @@ class _FeedVideoItemState extends State<FeedVideoItem>
     HapticFeedback.lightImpact();
     _savedNotifier.value = !_savedNotifier.value;
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(_savedNotifier.value ? "Saved to collection ?" : "Removed from collection"),
+      content: Text(_savedNotifier.value ? "Saved to collection 💾" : "Removed from collection"),
       duration: const Duration(milliseconds: 900),
       backgroundColor: _savedNotifier.value ? Colors.pinkAccent : Colors.grey[800],
       behavior: SnackBarBehavior.floating,
@@ -602,7 +605,7 @@ class _FeedVideoItemState extends State<FeedVideoItem>
     setState(() => _isFollowing = !_isFollowing);
   }
 
-  // ?? TikTok-style horizontal drag seek ????????????????????????
+  // UPDATED: TikTok-style horizontal drag seek — uses ValueNotifier for smooth 60fps
   void _onSeekDragStart(DragStartDetails d) {
     final ctrl = widget.controller;
     if (ctrl == null || !widget.isReady) return;
@@ -610,26 +613,25 @@ class _FeedVideoItemState extends State<FeedVideoItem>
     if (dur == 0) return;
     _dragStartX = d.localPosition.dx;
     _seekStartProgress = ctrl.value.position.inMilliseconds / dur;
-    setState(() {
-      _isSeeking    = true;
-      _seekProgress = _seekStartProgress;
-    });
+    _seekProgressNotifier.value = _seekStartProgress; // Notifier
+    setState(() => _isSeeking = true);                // Only toggle visibility
     ctrl.pause();
   }
 
   void _onSeekDragUpdate(DragUpdateDetails d) {
     if (!_isSeeking) return;
     final screenW = MediaQuery.of(context).size.width;
-    final delta   = (d.localPosition.dx - _dragStartX) / screenW;
-    final newProg = (_seekStartProgress + delta * 1.5).clamp(0.0, 1.0);
-    setState(() => _seekProgress = newProg);
+    // Use delta for incremental smooth movement + 0.6x sensitivity (was 1.5x)
+    final delta = d.delta.dx / screenW;
+    final newProg = (_seekProgressNotifier.value + delta * 0.6).clamp(0.0, 1.0);
+    _seekProgressNotifier.value = newProg; // NO setState — 60fps smooth
   }
 
   void _onSeekDragEnd(DragEndDetails d) {
     final ctrl = widget.controller;
     if (ctrl == null || !_isSeeking) return;
-    ctrl.seekTo(ctrl.value.duration * _seekProgress);
-    setState(() => _isSeeking = false);
+    ctrl.seekTo(ctrl.value.duration * _seekProgressNotifier.value);
+    setState(() => _isSeeking = false); // Only toggle visibility off
     if (_isPlaying) ctrl.play();
   }
 
@@ -653,7 +655,7 @@ class _FeedVideoItemState extends State<FeedVideoItem>
         fit: StackFit.expand,
         children: [
 
-          // ?? Video ??????????????????????????????????????????????
+          // Video layer
           const ColoredBox(color: Colors.black),
           if (ready)
             RepaintBoundary(
@@ -675,7 +677,7 @@ class _FeedVideoItemState extends State<FeedVideoItem>
               ),
             ),
 
-          // ?? Bottom gradient ????????????????????????????????????
+          // Bottom gradient
           Positioned(
             bottom: 0, left: 0, right: 0,
             height: size.height * 0.60,
@@ -691,7 +693,7 @@ class _FeedVideoItemState extends State<FeedVideoItem>
             ),
           ),
 
-          // ?? Top gradient ???????????????????????????????????????
+          // Top gradient
           Positioned(
             top: 0, left: 0, right: 0,
             height: size.height * 0.25,
@@ -706,66 +708,73 @@ class _FeedVideoItemState extends State<FeedVideoItem>
             ),
           ),
 
-          // ?? TikTok seek overlay ????????????????????????????????
-          if (_isSeeking)
-            Positioned.fill(
-              child: ColoredBox(
-                color: Colors.black.withOpacity(0.35),
-                child: Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        _formatDuration(
-                          ready
-                              ? ctrl.value.duration * _seekProgress
-                              : Duration.zero,
-                        ),
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 32,
-                          fontWeight: FontWeight.w700,
-                          shadows: [Shadow(color: Colors.black54, blurRadius: 12)],
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      SizedBox(
-                        width: size.width * 0.7,
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(4),
-                          child: LinearProgressIndicator(
-                            value: _seekProgress,
-                            backgroundColor: Colors.white30,
-                            valueColor: const AlwaysStoppedAnimation<Color>(Colors.pinkAccent),
-                            minHeight: 4,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      Row(
+          // UPDATED: Seek overlay — ValueListenableBuilder rebuilds ONLY overlay
+          ValueListenableBuilder<double>(
+            valueListenable: _seekProgressNotifier,
+            builder: (context, seekProgress, child) {
+              if (!_isSeeking) return const SizedBox.shrink();
+              return RepaintBoundary(
+                child: Positioned.fill(
+                  child: ColoredBox(
+                    color: Colors.black.withOpacity(0.35),
+                    child: Center(
+                      child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(
-                            _seekProgress > _seekStartProgress
-                                ? Icons.fast_forward_rounded
-                                : Icons.fast_rewind_rounded,
-                            color: Colors.white70,
-                            size: 22,
+                          Text(
+                            _formatDuration(
+                              ready
+                                  ? ctrl.value.duration * seekProgress
+                                  : Duration.zero,
+                            ),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 32,
+                              fontWeight: FontWeight.w700,
+                              shadows: [Shadow(color: Colors.black54, blurRadius: 12)],
+                            ),
                           ),
-                          const SizedBox(width: 6),
-                          const Text(
-                            "Slide to seek",
-                            style: TextStyle(color: Colors.white54, fontSize: 13),
+                          const SizedBox(height: 10),
+                          SizedBox(
+                            width: size.width * 0.7,
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(4),
+                              child: LinearProgressIndicator(
+                                value: seekProgress,
+                                backgroundColor: Colors.white30,
+                                valueColor: const AlwaysStoppedAnimation<Color>(Colors.pinkAccent),
+                                minHeight: 4,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                seekProgress > _seekStartProgress
+                                    ? Icons.fast_forward_rounded
+                                    : Icons.fast_rewind_rounded,
+                                color: Colors.white70,
+                                size: 22,
+                              ),
+                              const SizedBox(width: 6),
+                              const Text(
+                                "Slide to seek",
+                                style: TextStyle(color: Colors.white54, fontSize: 13),
+                              ),
+                            ],
                           ),
                         ],
                       ),
-                    ],
+                    ),
                   ),
                 ),
-              ),
-            ),
+              );
+            },
+          ),
 
-          // ?? Hold overlay ???????????????????????????????????????
+          // Hold overlay
           if (_isHolding)
             ColoredBox(
               color: Colors.black.withOpacity(0.3),
@@ -789,7 +798,7 @@ class _FeedVideoItemState extends State<FeedVideoItem>
               ),
             ),
 
-          // ?? Paused icon ? ???? background ???, ???? icon ??????
+          // Paused icon
           if (!_isPlaying && !_isHolding && !_isSeeking)
             const Center(
               child: Icon(
@@ -800,7 +809,7 @@ class _FeedVideoItemState extends State<FeedVideoItem>
               ),
             ),
 
-          // ?? Double-tap heart ???????????????????????????????????
+          // Double-tap heart
           if (_showHeart)
             Positioned(
               left: _tapPosition.dx - 55,
@@ -823,19 +832,24 @@ class _FeedVideoItemState extends State<FeedVideoItem>
               ),
             ),
 
-          // ?? Progress bar ???????????????????????????????????????
+          // UPDATED: Progress bar — uses ValueListenableBuilder for seek
           if (ready)
             Positioned(
               left: 0, right: 0,
               bottom: bottomPad,
               child: RepaintBoundary(
-                child: _isSeeking
-                    ? _SeekProgressBar(progress: _seekProgress)
-                    : _VideoProgressBar(controller: ctrl),
+                child: ValueListenableBuilder<double>(
+                  valueListenable: _seekProgressNotifier,
+                  builder: (context, seekProgress, _) {
+                    return _isSeeking
+                        ? _SeekProgressBar(progress: seekProgress)
+                        : _VideoProgressBar(controller: ctrl);
+                  },
+                ),
               ),
             ),
 
-          // ?? Right actions ??????????????????????????????????????
+          // Right actions
           Positioned(
             right: 8,
             bottom: bottomPad + 16,
@@ -857,7 +871,7 @@ class _FeedVideoItemState extends State<FeedVideoItem>
             ),
           ),
 
-          // ?? Bottom info ????????????????????????????????????????
+          // Bottom info
           Positioned(
             left: 14, right: 80,
             bottom: bottomPad + 12,
@@ -882,9 +896,9 @@ class _FeedVideoItemState extends State<FeedVideoItem>
   }
 }
 
-// ????????????????????????????????????????????????????????????????
+// ================================================================
 //  SEEK PROGRESS BAR
-// ????????????????????????????????????????????????????????????????
+// ================================================================
 class _SeekProgressBar extends StatelessWidget {
   final double progress;
   const _SeekProgressBar({required this.progress});
@@ -908,9 +922,9 @@ class _SeekProgressBar extends StatelessWidget {
   }
 }
 
-// ????????????????????????????????????????????????????????????????
+// ================================================================
 //  PROGRESS BAR
-// ????????????????????????????????????????????????????????????????
+// ================================================================
 class _VideoProgressBar extends StatefulWidget {
   final VideoPlayerController controller;
   const _VideoProgressBar({required this.controller});
@@ -975,9 +989,9 @@ class _VideoProgressBarState extends State<_VideoProgressBar> {
   }
 }
 
-// ????????????????????????????????????????????????????????????????
+// ================================================================
 //  RIGHT ACTIONS
-// ????????????????????????????????????????????????????????????????
+// ================================================================
 class _RightActions extends StatelessWidget {
   final String              username;
   final ValueNotifier<bool> likedNotifier;
@@ -1114,9 +1128,9 @@ class _RightActions extends StatelessWidget {
   }
 }
 
-// ????????????????????????????????????????????????????????????????
+// ================================================================
 //  ANIMATED ACTION BUTTON
-// ????????????????????????????????????????????????????????????????
+// ================================================================
 class _AnimatedActionBtn extends StatefulWidget {
   final IconData     icon;
   final String       label;
@@ -1231,9 +1245,9 @@ class _ActionBtn extends StatelessWidget {
   }
 }
 
-// ????????????????????????????????????????????????????????????????
+// ================================================================
 //  SPINNING DISC
-// ????????????????????????????????????????????????????????????????
+// ================================================================
 class _SpinningDisc extends StatefulWidget {
   const _SpinningDisc();
 
@@ -1285,9 +1299,9 @@ class _SpinningDiscState extends State<_SpinningDisc>
   }
 }
 
-// ????????????????????????????????????????????????????????????????
+// ================================================================
 //  BOTTOM INFO
-// ????????????????????????????????????????????????????????????????
+// ================================================================
 class _BottomInfo extends StatelessWidget {
   final VideoData    data;
   final bool         isFollowing;
@@ -1368,9 +1382,9 @@ class _BottomInfo extends StatelessWidget {
   }
 }
 
-// ????????????????????????????????????????????????????????????????
+// ================================================================
 //  SOUND TICKER
-// ????????????????????????????????????????????????????????????????
+// ================================================================
 class _SoundTicker extends StatefulWidget {
   final String sound;
   const _SoundTicker({required this.sound});
@@ -1425,9 +1439,9 @@ class _SoundTickerState extends State<_SoundTicker>
   }
 }
 
-// ????????????????????????????????????????????????????????????????
+// ================================================================
 //  COMMENT MODEL
-// ????????????????????????????????????????????????????????????????
+// ================================================================
 class _CommentItem {
   final String username;
   final String text;
@@ -1436,9 +1450,9 @@ class _CommentItem {
   _CommentItem(this.username, this.text, this.likes, {this.liked = false});
 }
 
-// ????????????????????????????????????????????????????????????????
+// ================================================================
 //  COMMENT SHEET
-// ????????????????????????????????????????????????????????????????
+// ================================================================
 class _CommentSheet extends StatefulWidget {
   final List<_CommentItem>    comments;
   final int                   commentCount;
@@ -1661,9 +1675,9 @@ class _CommentTile extends StatelessWidget {
   }
 }
 
-// ????????????????????????????????????????????????????????????????
+// ================================================================
 //  SHARE SHEET
-// ????????????????????????????????????????????????????????????????
+// ================================================================
 class _ShareOption {
   final dynamic icon;
   final String  label;
@@ -1723,7 +1737,7 @@ class _ShareSheet extends StatelessWidget {
                   onTap: () {
                     Navigator.pop(context);
                     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                      content: Text("Shared via ${opt.label} ?"),
+                      content: Text("Shared via ${opt.label} ✅"),
                       duration: const Duration(milliseconds: 900),
                       backgroundColor: opt.bgColor == const Color(0xFF333333)
                           ? Colors.pinkAccent : opt.bgColor,
@@ -1764,9 +1778,9 @@ class _ShareSheet extends StatelessWidget {
   }
 }
 
-// ????????????????????????????????????????????????????????????????
+// ================================================================
 //  NOTIFICATION SHEET
-// ????????????????????????????????????????????????????????????????
+// ================================================================
 enum _NotifType { like, follow, comment, mention, duet }
 
 class _NotifData {
@@ -1803,18 +1817,18 @@ class _NotificationSheet extends StatefulWidget {
 
 class _NotificationSheetState extends State<_NotificationSheet> {
   final List<_NotifData> _newNotifs = [
-    _NotifData(username: "@nature_vibes",  type: _NotifType.like,    extra: "Butterfly in slow motion ?", time: "2m ago",  avatarColor: Colors.pinkAccent,       isRead: false),
+    _NotifData(username: "@nature_vibes",  type: _NotifType.like,    extra: "Butterfly in slow motion 🦋", time: "2m ago",  avatarColor: Colors.pinkAccent,       isRead: false),
     _NotifData(username: "@wild_lens",     type: _NotifType.follow,                                          time: "10m ago", avatarColor: Colors.deepPurpleAccent, isRead: false),
-    _NotifData(username: "@animation_hub", type: _NotifType.comment,  extra: "This is insane quality ?",  time: "25m ago", avatarColor: Colors.orangeAccent,     isRead: false),
+    _NotifData(username: "@animation_hub", type: _NotifType.comment,  extra: "This is insane quality 🔥",  time: "25m ago", avatarColor: Colors.orangeAccent,     isRead: false),
     _NotifData(username: "@scifi_world",   type: _NotifType.mention,  extra: "@you check this out!",         time: "1h ago",  avatarColor: Colors.cyanAccent,       isRead: false),
   ];
 
   final List<_NotifData> _weekNotifs = [
     _NotifData(username: "@blender_art",   type: _NotifType.duet,                                            time: "2d ago", avatarColor: Colors.tealAccent,      isRead: true),
-    _NotifData(username: "@road_warrior",  type: _NotifType.like,    extra: "Street & dirt ?",             time: "3d ago", avatarColor: Colors.redAccent,       isRead: true),
+    _NotifData(username: "@road_warrior",  type: _NotifType.like,    extra: "Street & dirt 🛣️",             time: "3d ago", avatarColor: Colors.redAccent,       isRead: true),
     _NotifData(username: "@fun_factory",   type: _NotifType.follow,                                          time: "4d ago", avatarColor: Colors.amberAccent,     isRead: true),
-    _NotifData(username: "@bull_run_crew", type: _NotifType.comment,  extra: "Bro this slaps ?",           time: "5d ago", avatarColor: Colors.lightBlueAccent, isRead: true),
-    _NotifData(username: "@car_review_bd", type: _NotifType.like,    extra: "VW GTI Review ?",             time: "6d ago", avatarColor: Colors.greenAccent,     isRead: true),
+    _NotifData(username: "@bull_run_crew", type: _NotifType.comment,  extra: "Bro this slaps 🔥",           time: "5d ago", avatarColor: Colors.lightBlueAccent, isRead: true),
+    _NotifData(username: "@car_review_bd", type: _NotifType.like,    extra: "VW GTI Review 🚗",             time: "6d ago", avatarColor: Colors.greenAccent,     isRead: true),
   ];
 
   final Set<String> _followingBack = {};

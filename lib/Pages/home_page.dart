@@ -406,7 +406,7 @@ class _VideoFeedListState extends State<_VideoFeedList>
 }
 
 // ================================================================
-//  SINGLE VIDEO ITEM
+//  SINGLE VIDEO ITEM — ULTRA FAST SEEK
 // ================================================================
 class FeedVideoItem extends StatefulWidget {
   final VideoData data;
@@ -431,7 +431,8 @@ class _FeedVideoItemState extends State<FeedVideoItem>
   late final ValueNotifier<bool> _likedNotifier;
   late final ValueNotifier<int>  _likeCountNotifier;
   late final ValueNotifier<bool> _savedNotifier;
-  // NEW: ValueNotifier for seek progress — avoids full rebuild on drag
+  // ULTRA FAST: Notifiers for seek — parent NEVER rebuilds during seek
+  late final ValueNotifier<bool>   _isSeekingNotifier;
   late final ValueNotifier<double> _seekProgressNotifier;
 
   late final AnimationController _heartCtrl;
@@ -447,22 +448,23 @@ class _FeedVideoItemState extends State<FeedVideoItem>
   late int _commentCount;
   late int _shareCount;
 
-  // TikTok-style horizontal drag to seek
-  bool   _isSeeking         = false;
+  // Seek state
   double _dragStartX        = 0.0;
   double _seekStartProgress = 0.0;
+  double _screenWidth       = 0.0; // Cached — no MediaQuery lookup every frame
 
   final List<_CommentItem> _comments = [];
 
   @override
   void initState() {
     super.initState();
-    _likedNotifier     = ValueNotifier(false);
-    _likeCountNotifier = ValueNotifier(widget.data.likes);
-    _savedNotifier     = ValueNotifier(false);
-    _seekProgressNotifier = ValueNotifier(0.0); // NEW
-    _commentCount      = widget.data.comments;
-    _shareCount        = widget.data.shares;
+    _likedNotifier        = ValueNotifier(false);
+    _likeCountNotifier    = ValueNotifier(widget.data.likes);
+    _savedNotifier        = ValueNotifier(false);
+    _isSeekingNotifier    = ValueNotifier(false);   // ULTRA FAST
+    _seekProgressNotifier = ValueNotifier(0.0);     // ULTRA FAST
+    _commentCount         = widget.data.comments;
+    _shareCount           = widget.data.shares;
 
     _heartCtrl = AnimationController(
       vsync: this,
@@ -487,6 +489,13 @@ class _FeedVideoItemState extends State<FeedVideoItem>
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Cache screen width once — avoids MediaQuery tree walk every drag frame
+    _screenWidth = MediaQuery.of(context).size.width;
+  }
+
+  @override
   void didUpdateWidget(FeedVideoItem old) {
     super.didUpdateWidget(old);
     if (widget.isCurrent && !old.isCurrent) {
@@ -500,11 +509,11 @@ class _FeedVideoItemState extends State<FeedVideoItem>
     _likedNotifier.dispose();
     _likeCountNotifier.dispose();
     _savedNotifier.dispose();
-    _seekProgressNotifier.dispose(); // NEW
+    _isSeekingNotifier.dispose();
+    _seekProgressNotifier.dispose();
     super.dispose();
   }
 
-  // Toggle play/pause + HapticFeedback
   void _togglePlay() {
     final ctrl = widget.controller;
     if (ctrl == null || !widget.isReady) return;
@@ -544,10 +553,7 @@ class _FeedVideoItemState extends State<FeedVideoItem>
     _likedNotifier.value     = !wasLiked;
     _likeCountNotifier.value = _likeCountNotifier.value + (wasLiked ? -1 : 1);
     if (!wasLiked) {
-      _tapPosition = Offset(
-        MediaQuery.of(context).size.width  / 2,
-        MediaQuery.of(context).size.height / 2,
-      );
+      _tapPosition = Offset(_screenWidth / 2, MediaQuery.of(context).size.height / 2);
       _popHeart();
     }
   }
@@ -605,7 +611,9 @@ class _FeedVideoItemState extends State<FeedVideoItem>
     setState(() => _isFollowing = !_isFollowing);
   }
 
-  // UPDATED: TikTok-style horizontal drag seek — uses ValueNotifier for smooth 60fps
+  // ================================================================
+  //  ULTRA FAST SEEK — Zero parent rebuild, 3.0x sensitivity
+  // ================================================================
   void _onSeekDragStart(DragStartDetails d) {
     final ctrl = widget.controller;
     if (ctrl == null || !widget.isReady) return;
@@ -613,25 +621,24 @@ class _FeedVideoItemState extends State<FeedVideoItem>
     if (dur == 0) return;
     _dragStartX = d.localPosition.dx;
     _seekStartProgress = ctrl.value.position.inMilliseconds / dur;
-    _seekProgressNotifier.value = _seekStartProgress; // Notifier
-    setState(() => _isSeeking = true);                // Only toggle visibility
+    _seekProgressNotifier.value = _seekStartProgress;
+    _isSeekingNotifier.value = true;   // NO setState — notifier only
     ctrl.pause();
   }
 
   void _onSeekDragUpdate(DragUpdateDetails d) {
-    if (!_isSeeking) return;
-    final screenW = MediaQuery.of(context).size.width;
-    // Use delta for incremental smooth movement + 0.6x sensitivity (was 1.5x)
-    final delta = d.delta.dx / screenW;
-    final newProg = (_seekProgressNotifier.value + delta * 0.6).clamp(0.0, 1.0);
-    _seekProgressNotifier.value = newProg; // NO setState — 60fps smooth
+    if (!_isSeekingNotifier.value) return;
+    // Cached _screenWidth — zero tree walk. 3.0x = blink-of-eye speed
+    final delta = d.delta.dx / _screenWidth;
+    final newProg = (_seekProgressNotifier.value + delta * 3.0).clamp(0.0, 1.0);
+    _seekProgressNotifier.value = newProg; // NO setState — 60fps+ smooth
   }
 
   void _onSeekDragEnd(DragEndDetails d) {
     final ctrl = widget.controller;
-    if (ctrl == null || !_isSeeking) return;
+    if (ctrl == null || !_isSeekingNotifier.value) return;
     ctrl.seekTo(ctrl.value.duration * _seekProgressNotifier.value);
-    setState(() => _isSeeking = false); // Only toggle visibility off
+    _isSeekingNotifier.value = false;  // NO setState — notifier only
     if (_isPlaying) ctrl.play();
   }
 
@@ -708,70 +715,16 @@ class _FeedVideoItemState extends State<FeedVideoItem>
             ),
           ),
 
-          // UPDATED: Seek overlay — ValueListenableBuilder rebuilds ONLY overlay
-          ValueListenableBuilder<double>(
-            valueListenable: _seekProgressNotifier,
-            builder: (context, seekProgress, child) {
-              if (!_isSeeking) return const SizedBox.shrink();
-              return RepaintBoundary(
-                child: Positioned.fill(
-                  child: ColoredBox(
-                    color: Colors.black.withOpacity(0.35),
-                    child: Center(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            _formatDuration(
-                              ready
-                                  ? ctrl.value.duration * seekProgress
-                                  : Duration.zero,
-                            ),
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 32,
-                              fontWeight: FontWeight.w700,
-                              shadows: [Shadow(color: Colors.black54, blurRadius: 12)],
-                            ),
-                          ),
-                          const SizedBox(height: 10),
-                          SizedBox(
-                            width: size.width * 0.7,
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(4),
-                              child: LinearProgressIndicator(
-                                value: seekProgress,
-                                backgroundColor: Colors.white30,
-                                valueColor: const AlwaysStoppedAnimation<Color>(Colors.pinkAccent),
-                                minHeight: 4,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 10),
-                          Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                seekProgress > _seekStartProgress
-                                    ? Icons.fast_forward_rounded
-                                    : Icons.fast_rewind_rounded,
-                                color: Colors.white70,
-                                size: 22,
-                              ),
-                              const SizedBox(width: 6),
-                              const Text(
-                                "Slide to seek",
-                                style: TextStyle(color: Colors.white54, fontSize: 13),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              );
-            },
+          // ================================================================
+          //  ULTRA FAST: Seek overlay — parent NEVER rebuilds
+          //  ValueListenableBuilder handles ALL overlay updates internally
+          // ================================================================
+          _SeekOverlayLayer(
+            isSeekingNotifier: _isSeekingNotifier,
+            seekProgressNotifier: _seekProgressNotifier,
+            seekStartProgress: _seekStartProgress,
+            ready: ready,
+            ctrl: ctrl,
           ),
 
           // Hold overlay
@@ -799,7 +752,7 @@ class _FeedVideoItemState extends State<FeedVideoItem>
             ),
 
           // Paused icon
-          if (!_isPlaying && !_isHolding && !_isSeeking)
+          if (!_isPlaying && !_isHolding)
             const Center(
               child: Icon(
                 Icons.play_arrow_rounded,
@@ -832,20 +785,18 @@ class _FeedVideoItemState extends State<FeedVideoItem>
               ),
             ),
 
-          // UPDATED: Progress bar — uses ValueListenableBuilder for seek
+          // ================================================================
+          //  ULTRA FAST: Bottom progress bar — parent NEVER rebuilds
+          //  Switches between seek bar & video bar via internal notifiers
+          // ================================================================
           if (ready)
             Positioned(
               left: 0, right: 0,
               bottom: bottomPad,
-              child: RepaintBoundary(
-                child: ValueListenableBuilder<double>(
-                  valueListenable: _seekProgressNotifier,
-                  builder: (context, seekProgress, _) {
-                    return _isSeeking
-                        ? _SeekProgressBar(progress: seekProgress)
-                        : _VideoProgressBar(controller: ctrl);
-                  },
-                ),
+              child: _BottomBarSwitcher(
+                isSeekingNotifier: _isSeekingNotifier,
+                seekProgressNotifier: _seekProgressNotifier,
+                ctrl: ctrl,
               ),
             ),
 
@@ -888,20 +839,147 @@ class _FeedVideoItemState extends State<FeedVideoItem>
       ),
     );
   }
+}
 
-  String _formatDuration(Duration d) {
+// ================================================================
+//  ULTRA FAST: Seek Overlay Layer (isolated widget, zero lag)
+// ================================================================
+class _SeekOverlayLayer extends StatelessWidget {
+  final ValueNotifier<bool>   isSeekingNotifier;
+  final ValueNotifier<double> seekProgressNotifier;
+  final double                seekStartProgress;
+  final bool                  ready;
+  final VideoPlayerController? ctrl;
+
+  const _SeekOverlayLayer({
+    required this.isSeekingNotifier,
+    required this.seekProgressNotifier,
+    required this.seekStartProgress,
+    required this.ready,
+    required this.ctrl,
+  });
+
+  static String _fmtDur(Duration d) {
     final m = d.inMinutes.remainder(60).toString().padLeft(2, '0');
     final s = d.inSeconds.remainder(60).toString().padLeft(2, '0');
     return "$m:$s";
   }
+
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<bool>(
+      valueListenable: isSeekingNotifier,
+      builder: (_, isSeeking, __) {
+        if (!isSeeking) return const SizedBox.shrink();
+        return ValueListenableBuilder<double>(
+          valueListenable: seekProgressNotifier,
+          builder: (_, progress, __) {
+            final size = MediaQuery.of(context).size;
+            final barW = size.width * 0.7;
+            return Positioned.fill(
+              child: Container(
+                color: Colors.black.withOpacity(0.35),
+                child: Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Time text
+                      Text(
+                        _fmtDur(ready ? ctrl!.value.duration * progress : Duration.zero),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 32,
+                          fontWeight: FontWeight.w700,
+                          shadows: [Shadow(color: Colors.black54, blurRadius: 12)],
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      // Ultra-lightweight bar: direct Container width, NO ClipRRect, NO LinearProgressIndicator
+                      Container(
+                        width: barW,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: Colors.white30,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        alignment: Alignment.centerLeft,
+                        child: Container(
+                          width: barW * progress,
+                          height: 4,
+                          decoration: BoxDecoration(
+                            color: Colors.pinkAccent,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      // Direction icon
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            progress > seekStartProgress
+                                ? Icons.fast_forward_rounded
+                                : Icons.fast_rewind_rounded,
+                            color: Colors.white70,
+                            size: 22,
+                          ),
+                          const SizedBox(width: 6),
+                          const Text(
+                            "Slide to seek",
+                            style: TextStyle(color: Colors.white54, fontSize: 13),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
 }
 
 // ================================================================
-//  SEEK PROGRESS BAR
+//  ULTRA FAST: Bottom Bar Switcher (isolated, no parent rebuild)
 // ================================================================
-class _SeekProgressBar extends StatelessWidget {
+class _BottomBarSwitcher extends StatelessWidget {
+  final ValueNotifier<bool>   isSeekingNotifier;
+  final ValueNotifier<double> seekProgressNotifier;
+  final VideoPlayerController ctrl;
+
+  const _BottomBarSwitcher({
+    required this.isSeekingNotifier,
+    required this.seekProgressNotifier,
+    required this.ctrl,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<bool>(
+      valueListenable: isSeekingNotifier,
+      builder: (_, isSeeking, __) {
+        if (isSeeking) {
+          return ValueListenableBuilder<double>(
+            valueListenable: seekProgressNotifier,
+            builder: (_, progress, __) => _UltraSeekBar(progress: progress),
+          );
+        }
+        return _VideoProgressBar(controller: ctrl);
+      },
+    );
+  }
+}
+
+// ================================================================
+//  ULTRA FAST: Seek Progress Bar (no LinearProgressIndicator)
+// ================================================================
+class _UltraSeekBar extends StatelessWidget {
   final double progress;
-  const _SeekProgressBar({required this.progress});
+  const _UltraSeekBar({required this.progress});
 
   @override
   Widget build(BuildContext context) {
@@ -909,12 +987,13 @@ class _SeekProgressBar extends StatelessWidget {
       height: 28,
       child: Align(
         alignment: Alignment.bottomCenter,
-        child: SizedBox(
+        child: Container(
           height: 4,
-          child: LinearProgressIndicator(
-            value: progress,
-            backgroundColor: Colors.white24,
-            valueColor: const AlwaysStoppedAnimation<Color>(Colors.pinkAccent),
+          color: Colors.white24,
+          child: FractionallySizedBox(
+            alignment: Alignment.centerLeft,
+            widthFactor: progress,
+            child: const ColoredBox(color: Colors.pinkAccent),
           ),
         ),
       ),
@@ -2029,3 +2108,4 @@ class _NotifTile extends StatelessWidget {
     );
   }
 }
+
