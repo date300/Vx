@@ -40,7 +40,6 @@ class _SettingsPageState extends State<SettingsPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Account Section
             _buildSectionTitle("Account"),
             _buildMenuItem(
               icon: Icons.person_outline,
@@ -72,10 +71,7 @@ class _SettingsPageState extends State<SettingsPage> {
               subtitle: "Scan or share your profile QR",
               onTap: () => _showSnackBar("QR code"),
             ),
-
             const SizedBox(height: 8),
-
-            // Content & Activity
             _buildSectionTitle("Content & Activity"),
             _buildMenuItem(
               icon: Icons.favorite_border,
@@ -101,10 +97,7 @@ class _SettingsPageState extends State<SettingsPage> {
               subtitle: "Manage your comments",
               onTap: () => _showSnackBar("Comments"),
             ),
-
             const SizedBox(height: 8),
-
-            // Preferences
             _buildSectionTitle("Preferences"),
             _buildToggleItem(
               icon: Icons.dark_mode_outlined,
@@ -142,10 +135,7 @@ class _SettingsPageState extends State<SettingsPage> {
               subtitle: "English",
               onTap: () => _showSnackBar("Language"),
             ),
-
             const SizedBox(height: 8),
-
-            // Support & About
             _buildSectionTitle("Support & About"),
             _buildMenuItem(
               icon: Icons.help_outline,
@@ -169,10 +159,7 @@ class _SettingsPageState extends State<SettingsPage> {
               subtitle: "Version 1.0.0",
               onTap: () => _showSnackBar("About"),
             ),
-
             const SizedBox(height: 8),
-
-            // Danger Zone
             _buildSectionTitle("Danger Zone"),
             _buildDangerItem(
               icon: Icons.logout,
@@ -185,7 +172,6 @@ class _SettingsPageState extends State<SettingsPage> {
               color: Colors.redAccent,
               onTap: () => _showSnackBar("Delete account"),
             ),
-
             const SizedBox(height: 40),
           ],
         ),
@@ -355,3 +341,4 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 }
+
