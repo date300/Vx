@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../Settings/settings_page.dart'; // তোমার SettingsPage পাথ অনুযায়ী ঠিক করে দিও
+import 'Settings/settings_page.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -11,12 +11,10 @@ class ProfilePage extends StatefulWidget {
 class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
-  // User stats
   final int _followingCount = 234;
   final int _followersCount = 125400;
   final int _likesCount = 2500000;
 
-  // Dummy video thumbnails
   final List<String> _userVideos = const [
     "https://picsum.photos/300/400?random=1",
     "https://picsum.photos/300/400?random=2",
@@ -123,7 +121,6 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
       padding: const EdgeInsets.all(20.0),
       child: Column(
         children: [
-          // Profile Picture with gradient ring
           Stack(
             alignment: Alignment.center,
             children: [
@@ -172,8 +169,6 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
             ],
           ),
           const SizedBox(height: 16),
-
-          // Username
           const Text(
             "Sohan Dev",
             style: TextStyle(
@@ -183,11 +178,8 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
             ),
           ),
           const SizedBox(height: 8),
-
-          // Bio
           const Text(
-            "Flutter Developer 💙 | UI/UX Enthusiast 🎨
-Creating premium apps | DM for collab 🤝",
+            "Flutter Developer | UI/UX Enthusiast\nCreating premium apps | DM for collab",
             textAlign: TextAlign.center,
             style: TextStyle(
               color: Colors.white70,
@@ -196,8 +188,6 @@ Creating premium apps | DM for collab 🤝",
             ),
           ),
           const SizedBox(height: 20),
-
-          // Stats Row
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
@@ -209,8 +199,6 @@ Creating premium apps | DM for collab 🤝",
             ],
           ),
           const SizedBox(height: 20),
-
-          // Action Buttons
           Row(
             children: [
               Expanded(
@@ -331,7 +319,6 @@ Creating premium apps | DM for collab 🤝",
           child: Stack(
             fit: StackFit.expand,
             children: [
-              // Video thumbnail
               Container(
                 color: Colors.grey[900],
                 child: Image.network(
@@ -349,8 +336,6 @@ Creating premium apps | DM for collab 🤝",
                   },
                 ),
               ),
-
-              // Play icon overlay
               const Positioned(
                 bottom: 8,
                 left: 8,
@@ -360,8 +345,6 @@ Creating premium apps | DM for collab 🤝",
                   size: 20,
                 ),
               ),
-
-              // View count
               Positioned(
                 bottom: 8,
                 right: 8,
@@ -407,7 +390,6 @@ Creating premium apps | DM for collab 🤝",
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header
             Padding(
               padding: const EdgeInsets.all(20.0),
               child: Row(
@@ -426,16 +408,11 @@ Creating premium apps | DM for collab 🤝",
               ),
             ),
             const Divider(color: Colors.white24, thickness: 1),
-
-            // Menu Items
             _buildMenuItem(context, Icons.monetization_on, "Monetization", false),
             _buildMenuItem(context, Icons.history, "Watch history", false),
             _buildMenuItem(context, Icons.video_settings, "Vx Studio", false),
             _buildMenuItem(context, Icons.settings, "Settings and privacy", true),
-
             const Spacer(),
-
-            // Version info
             Padding(
               padding: const EdgeInsets.all(20.0),
               child: Column(
@@ -483,7 +460,6 @@ Creating premium apps | DM for collab 🤝",
       trailing: const Icon(Icons.arrow_forward_ios, color: Colors.white38, size: 16),
       onTap: () {
         if (isSettings) {
-          // Settings page navigate
           Navigator.push(
             context,
             MaterialPageRoute(builder: (context) => const SettingsPage()),
@@ -507,4 +483,3 @@ Creating premium apps | DM for collab 🤝",
     return n.toString();
   }
 }
-
