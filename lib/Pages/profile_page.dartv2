@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../Layout/theme_provider.dart';
 import 'Settings/settings_page.dart';
 
 class ProfilePage extends StatefulWidget {
@@ -10,8 +8,7 @@ class ProfilePage extends StatefulWidget {
   State<ProfilePage> createState() => _ProfilePageState();
 }
 
-class _ProfilePageState extends State<ProfilePage>
-    with SingleTickerProviderStateMixin {
+class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
   final int _followingCount = 234;
@@ -54,46 +51,17 @@ class _ProfilePageState extends State<ProfilePage>
     super.dispose();
   }
 
-  // ── থিম helper ──
-  bool get _isDark {
-    final mode = context.read<ThemeProvider>().themeMode;
-    if (mode == ThemeMode.system) {
-      return WidgetsBinding.instance.platformDispatcher.platformBrightness ==
-          Brightness.dark;
-    }
-    return mode == ThemeMode.dark;
-  }
-
-  Color get _bgColor => _isDark ? Colors.black : Colors.white;
-  Color get _surfaceColor =>
-      _isDark ? const Color(0xFF1A1A1A) : const Color(0xFFF5F5F5);
-  Color get _drawerBgColor =>
-      _isDark ? const Color(0xFF1A1A1A) : const Color(0xFFFFFFFF);
-  Color get _titleColor => _isDark ? Colors.white : Colors.black;
-  Color get _subtitleColor => _isDark ? Colors.white70 : Colors.black54;
-  Color get _mutedColor => _isDark ? Colors.white54 : Colors.black45;
-  Color get _dividerColor => _isDark ? Colors.white24 : Colors.black12;
-  Color get _iconColor => _isDark ? Colors.white70 : Colors.black54;
-  Color get _arrowColor => _isDark ? Colors.white38 : Colors.black38;
-  Color get _tabUnselectedColor => _isDark ? Colors.white38 : Colors.black26;
-  Color get _gridBgColor => _isDark ? Colors.grey.shade900 : Colors.grey.shade200;
-  Color get _versionColor => _isDark ? Colors.white38 : Colors.black38;
-
-  static const Color _pink = Color(0xFFFF4FB3);
-
   @override
   Widget build(BuildContext context) {
-    context.watch<ThemeProvider>();
-
     return Scaffold(
-      backgroundColor: _bgColor,
+      backgroundColor: Colors.black,
       appBar: AppBar(
-        backgroundColor: _bgColor,
+        backgroundColor: Colors.black,
         elevation: 0,
-        title: Text(
+        title: const Text(
           "@Sohan_Dev",
           style: TextStyle(
-            color: _titleColor,
+            color: Colors.white,
             fontWeight: FontWeight.bold,
             fontSize: 20,
           ),
@@ -101,7 +69,7 @@ class _ProfilePageState extends State<ProfilePage>
         centerTitle: false,
         actions: [
           IconButton(
-            icon: Icon(Icons.add_box_outlined, color: _titleColor, size: 28),
+            icon: const Icon(Icons.add_box_outlined, color: Colors.white, size: 28),
             onPressed: () {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(content: Text("Upload video coming soon")),
@@ -111,7 +79,7 @@ class _ProfilePageState extends State<ProfilePage>
           Builder(
             builder: (context) {
               return IconButton(
-                icon: Icon(Icons.menu, color: _titleColor, size: 28),
+                icon: const Icon(Icons.menu, color: Colors.white, size: 28),
                 onPressed: () {
                   Scaffold.of(context).openEndDrawer();
                 },
@@ -153,16 +121,15 @@ class _ProfilePageState extends State<ProfilePage>
       padding: const EdgeInsets.all(20.0),
       child: Column(
         children: [
-          // ── Avatar ──
           Stack(
             alignment: Alignment.center,
             children: [
               Container(
                 width: 110,
                 height: 110,
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  gradient: LinearGradient(
+                  gradient: const LinearGradient(
                     colors: [
                       Color(0xFFFF4FB3),
                       Color(0xFFB24FF3),
@@ -178,65 +145,60 @@ class _ProfilePageState extends State<ProfilePage>
                 height: 104,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: _bgColor,
+                  color: Colors.black,
                 ),
               ),
               Container(
                 width: 98,
                 height: 98,
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  gradient: LinearGradient(
-                    colors: [Color(0xFFFF4FB3), Color(0xFFB24FF3)],
+                  gradient: const LinearGradient(
+                    colors: [
+                      Color(0xFFFF4FB3),
+                      Color(0xFFB24FF3),
+                    ],
                   ),
                 ),
-                child: const Icon(Icons.person, color: Colors.white, size: 50),
+                child: const Icon(
+                  Icons.person,
+                  color: Colors.white,
+                  size: 50,
+                ),
               ),
             ],
           ),
-
           const SizedBox(height: 16),
-
-          // ── Name ──
-          Text(
+          const Text(
             "Sohan Dev",
             style: TextStyle(
-              color: _titleColor,
+              color: Colors.white,
               fontSize: 22,
               fontWeight: FontWeight.bold,
             ),
           ),
-
           const SizedBox(height: 8),
-
-          // ── Bio ──
-          Text(
+          const Text(
             "Flutter Developer | UI/UX Enthusiast\nCreating premium apps | DM for collab",
             textAlign: TextAlign.center,
             style: TextStyle(
-              color: _subtitleColor,
+              color: Colors.white70,
               fontSize: 14,
               height: 1.4,
             ),
           ),
-
           const SizedBox(height: 20),
-
-          // ── Stats ──
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
               _buildStatItem("Following", _followingCount),
-              Container(width: 1, height: 20, color: _dividerColor),
+              Container(width: 1, height: 20, color: Colors.white24),
               _buildStatItem("Followers", _followersCount),
-              Container(width: 1, height: 20, color: _dividerColor),
+              Container(width: 1, height: 20, color: Colors.white24),
               _buildStatItem("Likes", _likesCount),
             ],
           ),
-
           const SizedBox(height: 20),
-
-          // ── Buttons ──
           Row(
             children: [
               Expanded(
@@ -244,24 +206,17 @@ class _ProfilePageState extends State<ProfilePage>
                 child: ElevatedButton.icon(
                   onPressed: () {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                          content: Text("Edit profile coming soon")),
+                      const SnackBar(content: Text("Edit profile coming soon")),
                     );
                   },
-                  icon: Icon(
-                    Icons.edit,
-                    size: 18,
-                    color: _isDark ? Colors.black : Colors.white,
-                  ),
-                  label: Text(
+                  icon: const Icon(Icons.edit, size: 18),
+                  label: const Text(
                     "Edit Profile",
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: _isDark ? Colors.black : Colors.white,
-                    ),
+                    style: TextStyle(fontWeight: FontWeight.bold),
                   ),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: _isDark ? Colors.white : Colors.black,
+                    backgroundColor: Colors.white,
+                    foregroundColor: Colors.black,
                     padding: const EdgeInsets.symmetric(vertical: 12),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
@@ -275,19 +230,18 @@ class _ProfilePageState extends State<ProfilePage>
                 child: OutlinedButton(
                   onPressed: () {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                          content: Text("Share profile coming soon")),
+                      const SnackBar(content: Text("Share profile coming soon")),
                     );
                   },
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: _titleColor,
-                    side: BorderSide(color: _titleColor, width: 1.5),
+                    foregroundColor: Colors.white,
+                    side: const BorderSide(color: Colors.white, width: 1.5),
                     padding: const EdgeInsets.symmetric(vertical: 12),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
                   ),
-                  child: Icon(Icons.share, size: 20, color: _titleColor),
+                  child: const Icon(Icons.share, size: 20),
                 ),
               ),
             ],
@@ -302,8 +256,8 @@ class _ProfilePageState extends State<ProfilePage>
       children: [
         Text(
           _formatCount(count),
-          style: TextStyle(
-            color: _titleColor,
+          style: const TextStyle(
+            color: Colors.white,
             fontSize: 20,
             fontWeight: FontWeight.bold,
           ),
@@ -311,7 +265,10 @@ class _ProfilePageState extends State<ProfilePage>
         const SizedBox(height: 4),
         Text(
           label,
-          style: TextStyle(color: _mutedColor, fontSize: 13),
+          style: const TextStyle(
+            color: Colors.white54,
+            fontSize: 13,
+          ),
         ),
       ],
     );
@@ -319,20 +276,24 @@ class _ProfilePageState extends State<ProfilePage>
 
   Widget _buildTabBar() {
     return Container(
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         border: Border(
-          bottom: BorderSide(color: _dividerColor, width: 1),
+          bottom: BorderSide(color: Colors.white10, width: 1),
         ),
       ),
       child: TabBar(
         controller: _tabController,
-        indicatorColor: _titleColor,
+        indicatorColor: Colors.white,
         indicatorWeight: 2,
-        labelColor: _titleColor,
-        unselectedLabelColor: _tabUnselectedColor,
+        labelColor: Colors.white,
+        unselectedLabelColor: Colors.white38,
         tabs: const [
-          Tab(icon: Icon(Icons.grid_on, size: 24)),
-          Tab(icon: Icon(Icons.favorite_border, size: 24)),
+          Tab(
+            icon: Icon(Icons.grid_on, size: 24),
+          ),
+          Tab(
+            icon: Icon(Icons.favorite_border, size: 24),
+          ),
         ],
       ),
     );
@@ -359,16 +320,16 @@ class _ProfilePageState extends State<ProfilePage>
             fit: StackFit.expand,
             children: [
               Container(
-                color: _gridBgColor,
+                color: Colors.grey[900],
                 child: Image.network(
                   videos[index],
                   fit: BoxFit.cover,
                   errorBuilder: (context, error, stackTrace) {
                     return Container(
-                      color: _gridBgColor,
-                      child: Icon(
+                      color: Colors.grey[850],
+                      child: const Icon(
                         Icons.play_circle_outline,
-                        color: _mutedColor,
+                        color: Colors.white54,
                         size: 40,
                       ),
                     );
@@ -378,14 +339,22 @@ class _ProfilePageState extends State<ProfilePage>
               const Positioned(
                 bottom: 8,
                 left: 8,
-                child: Icon(Icons.play_arrow, color: Colors.white, size: 20),
+                child: Icon(
+                  Icons.play_arrow,
+                  color: Colors.white,
+                  size: 20,
+                ),
               ),
               Positioned(
                 bottom: 8,
                 right: 8,
                 child: Row(
                   children: [
-                    const Icon(Icons.play_arrow, color: Colors.white, size: 14),
+                    const Icon(
+                      Icons.play_arrow,
+                      color: Colors.white,
+                      size: 14,
+                    ),
                     const SizedBox(width: 2),
                     Text(
                       _formatCount((index + 1) * 125000),
@@ -393,7 +362,12 @@ class _ProfilePageState extends State<ProfilePage>
                         color: Colors.white,
                         fontSize: 11,
                         fontWeight: FontWeight.bold,
-                        shadows: [Shadow(blurRadius: 4, color: Colors.black)],
+                        shadows: [
+                          Shadow(
+                            blurRadius: 4,
+                            color: Colors.black,
+                          ),
+                        ],
                       ),
                     ),
                   ],
@@ -406,10 +380,9 @@ class _ProfilePageState extends State<ProfilePage>
     );
   }
 
-  // ── Drawer ──
   Widget _buildThemeDrawer(BuildContext context) {
     return Drawer(
-      backgroundColor: _drawerBgColor,
+      backgroundColor: const Color(0xFF1A1A1A),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.horizontal(left: Radius.circular(20)),
       ),
@@ -421,12 +394,12 @@ class _ProfilePageState extends State<ProfilePage>
               padding: const EdgeInsets.all(20.0),
               child: Row(
                 children: [
-                  Icon(Icons.menu, color: _titleColor, size: 28),
+                  const Icon(Icons.menu, color: Colors.white, size: 28),
                   const SizedBox(width: 12),
-                  Text(
+                  const Text(
                     "Menu",
                     style: TextStyle(
-                      color: _titleColor,
+                      color: Colors.white,
                       fontSize: 22,
                       fontWeight: FontWeight.bold,
                     ),
@@ -434,36 +407,33 @@ class _ProfilePageState extends State<ProfilePage>
                 ],
               ),
             ),
-            Divider(color: _dividerColor, thickness: 1),
-            _buildDrawerItem(
-              context,
-              Icons.monetization_on,
-              "Monetization",
-              false,
-            ),
-            _buildDrawerItem(context, Icons.history, "Watch history", false),
-            _buildDrawerItem(context, Icons.video_settings, "Vx Studio", false),
-            _buildDrawerItem(
-              context,
-              Icons.settings,
-              "Settings and privacy",
-              true,
-            ),
+            const Divider(color: Colors.white24, thickness: 1),
+            _buildMenuItem(context, Icons.monetization_on, "Monetization", false),
+            _buildMenuItem(context, Icons.history, "Watch history", false),
+            _buildMenuItem(context, Icons.video_settings, "Vx Studio", false),
+            _buildMenuItem(context, Icons.settings, "Settings and privacy", true),
             const Spacer(),
             Padding(
               padding: const EdgeInsets.all(20.0),
               child: Column(
                 children: [
-                  Divider(color: _dividerColor, thickness: 1),
+                  const Divider(color: Colors.white24, thickness: 1),
                   const SizedBox(height: 12),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.info_outline, color: _versionColor, size: 16),
+                      const Icon(
+                        Icons.info_outline,
+                        color: Colors.white38,
+                        size: 16,
+                      ),
                       const SizedBox(width: 6),
                       Text(
-                        "Vx App v1.0.0",
-                        style: TextStyle(color: _versionColor, fontSize: 12),
+                        "Premium App v1.0.0",
+                        style: TextStyle(
+                          color: Colors.white38,
+                          fontSize: 12,
+                        ),
                       ),
                     ],
                   ),
@@ -476,25 +446,19 @@ class _ProfilePageState extends State<ProfilePage>
     );
   }
 
-  Widget _buildDrawerItem(
-    BuildContext context,
-    IconData icon,
-    String title,
-    bool isSettings,
-  ) {
+  Widget _buildMenuItem(BuildContext context, IconData icon, String title, bool isSettings) {
     return ListTile(
-      leading: Icon(icon, color: _iconColor, size: 26),
+      leading: Icon(icon, color: Colors.white70, size: 26),
       title: Text(
         title,
-        style: TextStyle(
-          color: _titleColor,
+        style: const TextStyle(
+          color: Colors.white,
           fontWeight: FontWeight.w600,
           fontSize: 16,
         ),
       ),
-      trailing: Icon(Icons.arrow_forward_ios, color: _arrowColor, size: 16),
+      trailing: const Icon(Icons.arrow_forward_ios, color: Colors.white38, size: 16),
       onTap: () {
-        Navigator.pop(context); // drawer বন্ধ করো
         if (isSettings) {
           Navigator.push(
             context,
@@ -511,10 +475,10 @@ class _ProfilePageState extends State<ProfilePage>
 
   String _formatCount(int n) {
     if (n >= 1000000) {
-      return "${(n / 1000000).toStringAsFixed(1)}M".replaceAll(".0M", "M");
+      return "${(n / 1000000).toStringAsFixed(1)}M".replaceAll(".0", "");
     }
     if (n >= 1000) {
-      return "${(n / 1000).toStringAsFixed(1)}K".replaceAll(".0K", "K");
+      return "${(n / 1000).toStringAsFixed(1)}K".replaceAll(".0", "");
     }
     return n.toString();
   }
