@@ -41,7 +41,7 @@ class _MainLayoutState extends State<MainLayout>
     );
   }
 
-  // UploadPage বাদ দিয়ে শুধু ৪টি পেজ রাখা হলো
+  // UploadPage ??? ????? ???? ??? ??? ???? ???
   final List<Widget> _pages = const [
     HomeFeedPage(),
     ExplorePage(),
@@ -50,11 +50,11 @@ class _MainLayoutState extends State<MainLayout>
   ];
 
   void _onItemTapped(int index) {
-    // Auth gate check
-    if ((index == 2 || index == 3) && !AuthService.isLoggedIn) {
-      showAuthPopup(context);
-      return;
-    }
+    // [DISABLED TEMPORARILY] Auth gate check - will be enabled later
+    // if ((index == 2 || index == 3) && !AuthService.isLoggedIn) {
+    //   showAuthPopup(context);
+    //   return;
+    // }
     setState(() => _selectedIndex = index);
   }
 
@@ -103,13 +103,13 @@ class _MainLayoutState extends State<MainLayout>
                   icon: CupertinoIcons.search,
                   activeIcon: CupertinoIcons.search,
                 ),
-                _buildUploadButton(), // Popup ওপেন করবে
+                _buildUploadButton(), // Popup ???? ???
                 _buildNavItem(
-                  index: 2, // Inbox এখন index 2
+                  index: 2, // Inbox ??? index 2
                   icon: CupertinoIcons.bell,
                   activeIcon: CupertinoIcons.bell_fill,
                 ),
-                _buildProfileItem(), // Profile এখন index 3
+                _buildProfileItem(), // Profile ??? index 3
               ],
             ),
           ),
@@ -165,7 +165,7 @@ class _MainLayoutState extends State<MainLayout>
   Widget _buildUploadButton() {
     return GestureDetector(
       onTap: () {
-        // পপআপ ওপেন — কোনো পেজ চেঞ্জ হবে না
+        // ???? ???? ? ???? ??? ????? ??? ??
         showUploadPopup(context);
       },
       behavior: HitTestBehavior.opaque,
@@ -202,7 +202,7 @@ class _MainLayoutState extends State<MainLayout>
   }
 
   Widget _buildProfileItem() {
-    final isActive = _selectedIndex == 3; // Profile এখন index 3
+    final isActive = _selectedIndex == 3; // Profile ??? index 3
 
     return GestureDetector(
       onTap: () => _onItemTapped(3),
@@ -251,3 +251,4 @@ class _MainLayoutState extends State<MainLayout>
     );
   }
 }
+
