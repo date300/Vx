@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../Pages/Auth/auth_gate_page.dart';
-import '../Pages/home_page.dart' hide ProfilePage;
+import '../Pages/home_page.dart';
 import '../Pages/explore_page.dart';
 import '../Pages/inbox_page.dart';
 import '../Pages/profile_page.dart';
@@ -42,7 +42,7 @@ class _MainLayoutState extends State<MainLayout>
   }
 
   final List<Widget> _pages = const [
-    HomePage(),
+    HomeFeedPage(),
     ExplorePage(),
     InboxPage(),
     ProfilePage(),
