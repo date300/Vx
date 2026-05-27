@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'Settings/settings_page.dart'; // তোমার SettingsPage পাথ অনুযায়ী ঠিক করে দিও
+import '../Layout/premium_theme_controller.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -16,7 +16,7 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
   final int _followersCount = 125400;
   final int _likesCount = 2500000;
 
-  // Dummy video thumbnails
+  // Dummy video thumbnails (প্রোডাক্শনে এগুলো API থেকে আসবে)
   final List<String> _userVideos = const [
     "https://picsum.photos/300/400?random=1",
     "https://picsum.photos/300/400?random=2",
@@ -186,8 +186,7 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
 
           // Bio
           const Text(
-            "Flutter Developer 💙 | UI/UX Enthusiast 🎨
-Creating premium apps | DM for collab 🤝",
+            "Flutter Developer 🚀 | UI/UX Enthusiast ✨\nCreating premium apps | DM for collab 📩",
             textAlign: TextAlign.center,
             style: TextStyle(
               color: Colors.white70,
@@ -331,7 +330,7 @@ Creating premium apps | DM for collab 🤝",
           child: Stack(
             fit: StackFit.expand,
             children: [
-              // Video thumbnail
+              // Video thumbnail (প্রোডাক্শনে actual thumbnail হবে)
               Container(
                 color: Colors.grey[900],
                 child: Image.network(
@@ -349,7 +348,7 @@ Creating premium apps | DM for collab 🤝",
                   },
                 ),
               ),
-
+              
               // Play icon overlay
               const Positioned(
                 bottom: 8,
@@ -360,7 +359,7 @@ Creating premium apps | DM for collab 🤝",
                   size: 20,
                 ),
               ),
-
+              
               // View count
               Positioned(
                 bottom: 8,
@@ -407,15 +406,14 @@ Creating premium apps | DM for collab 🤝",
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header
             Padding(
               padding: const EdgeInsets.all(20.0),
               child: Row(
                 children: [
-                  const Icon(Icons.menu, color: Colors.white, size: 28),
+                  const Icon(Icons.palette, color: Colors.white, size: 28),
                   const SizedBox(width: 12),
                   const Text(
-                    "Menu",
+                    "Theme & Colors",
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 22,
@@ -426,15 +424,79 @@ Creating premium apps | DM for collab 🤝",
               ),
             ),
             const Divider(color: Colors.white24, thickness: 1),
-
-            // Menu Items
-            _buildMenuItem(context, Icons.monetization_on, "Monetization", false),
-            _buildMenuItem(context, Icons.history, "Watch history", false),
-            _buildMenuItem(context, Icons.video_settings, "Vx Studio", false),
-            _buildMenuItem(context, Icons.settings, "Settings and privacy", true),
-
+            
+            // Dark/Light Mode Section
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    "Appearance",
+                    style: TextStyle(
+                      color: Colors.white54,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  _buildModeOption(
+                    context,
+                    Icons.dark_mode,
+                    "Dark Mode",
+                    "Comfortable for eyes",
+                    true,
+                  ),
+                  const SizedBox(height: 8),
+                  _buildModeOption(
+                    context,
+                    Icons.light_mode,
+                    "Light Mode",
+                    "Coming soon",
+                    false,
+                  ),
+                ],
+              ),
+            ),
+            
+            const SizedBox(height: 20),
+            const Divider(color: Colors.white24, thickness: 1),
+            
+            // Accent Colors Section
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    "Accent Colors",
+                    style: TextStyle(
+                      color: Colors.white54,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Wrap(
+                    spacing: 16,
+                    runSpacing: 16,
+                    children: [
+                      _buildColorDot(context, const Color(0xFFFF4FB3), "Pink"),
+                      _buildColorDot(context, const Color(0xFF4F9DFF), "Blue"),
+                      _buildColorDot(context, const Color(0xFF4FFF9D), "Green"),
+                      _buildColorDot(context, const Color(0xFFFF4F4F), "Red"),
+                      _buildColorDot(context, const Color(0xFFB24FF3), "Purple"),
+                      _buildColorDot(context, const Color(0xFFFFB74F), "Orange"),
+                      _buildColorDot(context, const Color(0xFF4FFFF3), "Cyan"),
+                      _buildColorDot(context, const Color(0xFFFFF34F), "Yellow"),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            
             const Spacer(),
-
+            
             // Version info
             Padding(
               padding: const EdgeInsets.all(20.0),
@@ -445,7 +507,7 @@ Creating premium apps | DM for collab 🤝",
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.info_outline,
                         color: Colors.white38,
                         size: 16,
@@ -469,31 +531,109 @@ Creating premium apps | DM for collab 🤝",
     );
   }
 
-  Widget _buildMenuItem(BuildContext context, IconData icon, String title, bool isSettings) {
-    return ListTile(
-      leading: Icon(icon, color: Colors.white70, size: 26),
-      title: Text(
-        title,
-        style: const TextStyle(
-          color: Colors.white,
-          fontWeight: FontWeight.w600,
-          fontSize: 16,
-        ),
+  Widget _buildModeOption(
+    BuildContext context,
+    IconData icon,
+    String title,
+    String subtitle,
+    bool isActive,
+  ) {
+    return Container(
+      decoration: BoxDecoration(
+        color: isActive ? Colors.white.withOpacity(0.05) : Colors.transparent,
+        borderRadius: BorderRadius.circular(12),
+        border: isActive
+            ? Border.all(color: const Color(0xFFFF4FB3), width: 1.5)
+            : Border.all(color: Colors.white10, width: 1),
       ),
-      trailing: const Icon(Icons.arrow_forward_ios, color: Colors.white38, size: 16),
+      child: ListTile(
+        leading: Icon(
+          icon,
+          color: isActive ? const Color(0xFFFF4FB3) : Colors.white70,
+          size: 26,
+        ),
+        title: Text(
+          title,
+          style: TextStyle(
+            color: isActive ? Colors.white : Colors.white70,
+            fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
+          ),
+        ),
+        subtitle: Text(
+          subtitle,
+          style: TextStyle(
+            color: Colors.white38,
+            fontSize: 12,
+          ),
+        ),
+        trailing: isActive
+            ? const Icon(Icons.check_circle, color: Color(0xFFFF4FB3), size: 22)
+            : null,
+        onTap: isActive
+            ? null
+            : () {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text("$title coming soon")),
+                );
+              },
+      ),
+    );
+  }
+
+  Widget _buildColorDot(BuildContext context, Color color, String name) {
+    return GestureDetector(
       onTap: () {
-        if (isSettings) {
-          // Settings page navigate
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const SettingsPage()),
-          );
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text("$title coming soon")),
-          );
-        }
+        PremiumTheme.accentColor.value = color;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("$name theme activated"),
+            duration: const Duration(seconds: 1),
+          ),
+        );
       },
+      child: ValueListenableBuilder<Color>(
+        valueListenable: PremiumTheme.accentColor,
+        builder: (context, activeColor, child) {
+          bool isSelected = activeColor.value == color.value;
+          return Column(
+            children: [
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                width: isSelected ? 56 : 52,
+                height: isSelected ? 56 : 52,
+                decoration: BoxDecoration(
+                  color: color,
+                  shape: BoxShape.circle,
+                  border: isSelected
+                      ? Border.all(color: Colors.white, width: 3)
+                      : Border.all(color: Colors.white24, width: 1),
+                  boxShadow: isSelected
+                      ? [
+                          BoxShadow(
+                            color: color.withOpacity(0.6),
+                            blurRadius: 16,
+                            spreadRadius: 2,
+                          )
+                        ]
+                      : null,
+                ),
+                child: isSelected
+                    ? const Icon(Icons.check, color: Colors.white, size: 24)
+                    : null,
+              ),
+              const SizedBox(height: 6),
+              Text(
+                name,
+                style: TextStyle(
+                  color: isSelected ? Colors.white : Colors.white54,
+                  fontSize: 11,
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                ),
+              ),
+            ],
+          );
+        },
+      ),
     );
   }
 
