@@ -2,15 +2,13 @@ import 'dart:ui';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:provider/provider.dart';
 
-import '../Layout/theme_provider.dart';
 import '../Pages/Auth/auth_gate_page.dart';
 import '../Pages/home_page.dart';
 import '../Pages/explore_page.dart';
 import '../Pages/inbox_page.dart';
 import '../Pages/profile_page.dart';
-import '../Pages/upload_popup.dart';
+import '../Pages/upload_popup.dart'; // Popup import
 
 class AuthService {
   static bool isLoggedIn = false;
@@ -30,23 +28,20 @@ class _MainLayoutState extends State<MainLayout>
   @override
   void initState() {
     super.initState();
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-  }
 
-  void _updateSystemUI(bool isDark) {
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     SystemChrome.setSystemUIOverlayStyle(
-      SystemUiOverlayStyle(
+      const SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
-        statusBarIconBrightness:
-            isDark ? Brightness.light : Brightness.dark,
+        statusBarIconBrightness: Brightness.light,
         systemNavigationBarColor: Colors.transparent,
         systemNavigationBarDividerColor: Colors.transparent,
-        systemNavigationBarIconBrightness:
-            isDark ? Brightness.light : Brightness.dark,
+        systemNavigationBarIconBrightness: Brightness.light,
       ),
     );
   }
 
+  // UploadPage ??? ????? ???? ??? ??? ???? ???
   final List<Widget> _pages = const [
     HomeFeedPage(),
     ExplorePage(),
@@ -63,64 +58,21 @@ class _MainLayoutState extends State<MainLayout>
     setState(() => _selectedIndex = index);
   }
 
-  bool _isDark(ThemeMode mode) {
-    if (mode == ThemeMode.system) {
-      return WidgetsBinding
-              .instance.platformDispatcher.platformBrightness ==
-          Brightness.dark;
-    }
-    return mode == ThemeMode.dark;
-  }
-
   @override
   Widget build(BuildContext context) {
-    final themeProvider = context.watch<ThemeProvider>();
-    final isDark = _isDark(themeProvider.themeMode);
-
-    _updateSystemUI(isDark);
-
-    final bgColor = isDark ? Colors.black : Colors.white;
-    final navBgColor = isDark
-        ? Colors.black.withOpacity(0.55)
-        : Colors.white.withOpacity(0.75);
-    final borderColor = isDark
-        ? Colors.white.withOpacity(0.07)
-        : Colors.black.withOpacity(0.07);
-    final activeIconColor = isDark ? Colors.white : Colors.black;
-    final inactiveIconColor = isDark
-        ? Colors.white.withOpacity(0.42)
-        : Colors.black.withOpacity(0.35);
-    final uploadBorderColor = isDark
-        ? Colors.white.withOpacity(0.38)
-        : Colors.black.withOpacity(0.30);
-
     return Scaffold(
       extendBody: true,
       extendBodyBehindAppBar: true,
-      backgroundColor: bgColor,
+      backgroundColor: Colors.black,
       body: IndexedStack(
         index: _selectedIndex,
         children: _pages,
       ),
-      bottomNavigationBar: _buildNavBar(
-        isDark: isDark,
-        navBgColor: navBgColor,
-        borderColor: borderColor,
-        activeIconColor: activeIconColor,
-        inactiveIconColor: inactiveIconColor,
-        uploadBorderColor: uploadBorderColor,
-      ),
+      bottomNavigationBar: _buildNavBar(),
     );
   }
 
-  Widget _buildNavBar({
-    required bool isDark,
-    required Color navBgColor,
-    required Color borderColor,
-    required Color activeIconColor,
-    required Color inactiveIconColor,
-    required Color uploadBorderColor,
-  }) {
+  Widget _buildNavBar() {
     return ClipRect(
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 28.0, sigmaY: 28.0),
@@ -129,9 +81,12 @@ class _MainLayoutState extends State<MainLayout>
           child: Container(
             height: 58,
             decoration: BoxDecoration(
-              color: navBgColor,
+              color: Colors.black.withOpacity(0.55),
               border: Border(
-                top: BorderSide(color: borderColor, width: 0.5),
+                top: BorderSide(
+                  color: Colors.white.withOpacity(0.07),
+                  width: 0.5,
+                ),
               ),
             ),
             child: Row(
@@ -142,31 +97,19 @@ class _MainLayoutState extends State<MainLayout>
                   index: 0,
                   icon: CupertinoIcons.house,
                   activeIcon: CupertinoIcons.house_fill,
-                  activeColor: activeIconColor,
-                  inactiveColor: inactiveIconColor,
                 ),
                 _buildNavItem(
                   index: 1,
                   icon: CupertinoIcons.search,
                   activeIcon: CupertinoIcons.search,
-                  activeColor: activeIconColor,
-                  inactiveColor: inactiveIconColor,
                 ),
-                _buildUploadButton(
-                  uploadBorderColor: uploadBorderColor,
-                  inactiveColor: inactiveIconColor,
-                ),
+                _buildUploadButton(), // Popup ???? ???
                 _buildNavItem(
-                  index: 2,
+                  index: 2, // Inbox ??? index 2
                   icon: CupertinoIcons.bell,
                   activeIcon: CupertinoIcons.bell_fill,
-                  activeColor: activeIconColor,
-                  inactiveColor: inactiveIconColor,
                 ),
-                _buildProfileItem(
-                  activeColor: activeIconColor,
-                  inactiveColor: inactiveIconColor,
-                ),
+                _buildProfileItem(), // Profile ??? index 3
               ],
             ),
           ),
@@ -179,8 +122,6 @@ class _MainLayoutState extends State<MainLayout>
     required int index,
     required IconData icon,
     required IconData activeIcon,
-    required Color activeColor,
-    required Color inactiveColor,
   }) {
     final isActive = _selectedIndex == index;
 
@@ -200,7 +141,7 @@ class _MainLayoutState extends State<MainLayout>
                 isActive ? activeIcon : icon,
                 key: ValueKey('${index}_$isActive'),
                 size: 26,
-                color: isActive ? activeColor : inactiveColor,
+                color: isActive ? Colors.white : Colors.white.withOpacity(0.42),
               ),
             ),
             const SizedBox(height: 5),
@@ -209,8 +150,8 @@ class _MainLayoutState extends State<MainLayout>
               curve: Curves.easeOut,
               width: isActive ? 4 : 0,
               height: isActive ? 4 : 0,
-              decoration: BoxDecoration(
-                color: activeColor,
+              decoration: const BoxDecoration(
+                color: Colors.white,
                 shape: BoxShape.circle,
               ),
             ),
@@ -220,12 +161,13 @@ class _MainLayoutState extends State<MainLayout>
     );
   }
 
-  Widget _buildUploadButton({
-    required Color uploadBorderColor,
-    required Color inactiveColor,
-  }) {
+  // ==================== UPLOAD POPUP BUTTON ====================
+  Widget _buildUploadButton() {
     return GestureDetector(
-      onTap: () => showUploadPopup(context),
+      onTap: () {
+        // ???? ???? ? ???? ??? ????? ??? ??
+        showUploadPopup(context);
+      },
       behavior: HitTestBehavior.opaque,
       child: SizedBox(
         width: 52,
@@ -240,7 +182,7 @@ class _MainLayoutState extends State<MainLayout>
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(9),
                 border: Border.all(
-                  color: uploadBorderColor,
+                  color: Colors.white.withOpacity(0.38),
                   width: 1.6,
                 ),
               ),
@@ -248,7 +190,7 @@ class _MainLayoutState extends State<MainLayout>
                 child: Icon(
                   CupertinoIcons.add,
                   size: 19,
-                  color: inactiveColor,
+                  color: Colors.white.withOpacity(0.42),
                 ),
               ),
             ),
@@ -259,11 +201,8 @@ class _MainLayoutState extends State<MainLayout>
     );
   }
 
-  Widget _buildProfileItem({
-    required Color activeColor,
-    required Color inactiveColor,
-  }) {
-    final isActive = _selectedIndex == 3;
+  Widget _buildProfileItem() {
+    final isActive = _selectedIndex == 3; // Profile ??? index 3
 
     return GestureDetector(
       onTap: () => _onItemTapped(3),
@@ -281,7 +220,7 @@ class _MainLayoutState extends State<MainLayout>
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 border: Border.all(
-                  color: isActive ? activeColor : Colors.transparent,
+                  color: isActive ? Colors.white : Colors.transparent,
                   width: 2.0,
                 ),
               ),
@@ -289,7 +228,9 @@ class _MainLayoutState extends State<MainLayout>
                 child: Icon(
                   CupertinoIcons.person_fill,
                   size: 20,
-                  color: isActive ? activeColor : inactiveColor,
+                  color: isActive
+                      ? Colors.white
+                      : Colors.white.withOpacity(0.42),
                 ),
               ),
             ),
@@ -299,8 +240,8 @@ class _MainLayoutState extends State<MainLayout>
               curve: Curves.easeOut,
               width: isActive ? 4 : 0,
               height: isActive ? 4 : 0,
-              decoration: BoxDecoration(
-                color: activeColor,
+              decoration: const BoxDecoration(
+                color: Colors.white,
                 shape: BoxShape.circle,
               ),
             ),
@@ -310,3 +251,4 @@ class _MainLayoutState extends State<MainLayout>
     );
   }
 }
+

@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../../Layout/theme_provider.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -8,33 +11,59 @@ class SettingsPage extends StatefulWidget {
 }
 
 class _SettingsPageState extends State<SettingsPage> {
-  ThemeMode _themeMode = ThemeMode.dark; // dark / light / system
   bool _notifications = true;
   bool _privateAccount = false;
   bool _autoPlay = true;
   bool _dataSaver = false;
 
-  // থিম অনুযায়ী রঙ ঠিক করা
+  static const Color _pink = Color(0xFFFF4FB3);
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPreferences();
+  }
+
+  Future<void> _loadPreferences() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _notifications = prefs.getBool('notifications') ?? true;
+      _privateAccount = prefs.getBool('private_account') ?? false;
+      _autoPlay = prefs.getBool('auto_play') ?? true;
+      _dataSaver = prefs.getBool('data_saver') ?? false;
+    });
+  }
+
+  Future<void> _saveBool(String key, bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(key, value);
+  }
+
   bool get _isDark {
-    if (_themeMode == ThemeMode.system) {
+    final mode = context.read<ThemeProvider>().themeMode;
+    if (mode == ThemeMode.system) {
       return WidgetsBinding.instance.platformDispatcher.platformBrightness ==
           Brightness.dark;
     }
-    return _themeMode == ThemeMode.dark;
+    return mode == ThemeMode.dark;
   }
 
   Color get _bgColor => _isDark ? Colors.black : Colors.white;
-  Color get _surfaceColor => _isDark ? const Color(0xFF1A1A1A) : const Color(0xFFF5F5F5);
-  Color get _iconBgColor => _isDark ? Colors.white.withOpacity(0.06) : Colors.black.withOpacity(0.06);
+  Color get _surfaceColor =>
+      _isDark ? const Color(0xFF1A1A1A) : const Color(0xFFF5F5F5);
+  Color get _iconBgColor => _isDark
+      ? Colors.white.withOpacity(0.06)
+      : Colors.black.withOpacity(0.06);
   Color get _titleColor => _isDark ? Colors.white : Colors.black;
   Color get _subtitleColor => _isDark ? Colors.white38 : Colors.black38;
   Color get _sectionTitleColor => _isDark ? Colors.white54 : Colors.black54;
   Color get _arrowColor => _isDark ? Colors.white38 : Colors.black38;
   Color get _iconColor => _isDark ? Colors.white70 : Colors.black54;
-  static const Color _pink = Color(0xFFFF4FB3);
 
   @override
   Widget build(BuildContext context) {
+    context.watch<ThemeProvider>();
+
     return Scaffold(
       backgroundColor: _bgColor,
       appBar: AppBar(
@@ -59,6 +88,7 @@ class _SettingsPageState extends State<SettingsPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // ── Account ──
             _buildSectionTitle("Account"),
             _buildMenuItem(
               icon: Icons.person_outline,
@@ -90,7 +120,10 @@ class _SettingsPageState extends State<SettingsPage> {
               subtitle: "Scan or share your profile QR",
               onTap: () => _showSnackBar("QR code"),
             ),
+
             const SizedBox(height: 8),
+
+            // ── Content & Activity ──
             _buildSectionTitle("Content & Activity"),
             _buildMenuItem(
               icon: Icons.favorite_border,
@@ -116,35 +149,47 @@ class _SettingsPageState extends State<SettingsPage> {
               subtitle: "Manage your comments",
               onTap: () => _showSnackBar("Comments"),
             ),
+
             const SizedBox(height: 8),
+
+            // ── Preferences ──
             _buildSectionTitle("Preferences"),
-
-            // ── Theme Selector ──
             _buildThemeSelector(),
-
             _buildToggleItem(
               icon: Icons.notifications_outlined,
               title: "Push notifications",
               value: _notifications,
-              onChanged: (val) => setState(() => _notifications = val),
+              onChanged: (val) {
+                setState(() => _notifications = val);
+                _saveBool('notifications', val);
+              },
             ),
             _buildToggleItem(
               icon: Icons.lock_outline,
               title: "Private account",
               value: _privateAccount,
-              onChanged: (val) => setState(() => _privateAccount = val),
+              onChanged: (val) {
+                setState(() => _privateAccount = val);
+                _saveBool('private_account', val);
+              },
             ),
             _buildToggleItem(
               icon: Icons.play_circle_outline,
               title: "Auto-play videos",
               value: _autoPlay,
-              onChanged: (val) => setState(() => _autoPlay = val),
+              onChanged: (val) {
+                setState(() => _autoPlay = val);
+                _saveBool('auto_play', val);
+              },
             ),
             _buildToggleItem(
               icon: Icons.data_saver_off_outlined,
               title: "Data saver",
               value: _dataSaver,
-              onChanged: (val) => setState(() => _dataSaver = val),
+              onChanged: (val) {
+                setState(() => _dataSaver = val);
+                _saveBool('data_saver', val);
+              },
             ),
             _buildMenuItem(
               icon: Icons.language,
@@ -152,7 +197,10 @@ class _SettingsPageState extends State<SettingsPage> {
               subtitle: "English",
               onTap: () => _showSnackBar("Language"),
             ),
+
             const SizedBox(height: 8),
+
+            // ── Support & About ──
             _buildSectionTitle("Support & About"),
             _buildMenuItem(
               icon: Icons.help_outline,
@@ -176,7 +224,10 @@ class _SettingsPageState extends State<SettingsPage> {
               subtitle: "Version 1.0.0",
               onTap: () => _showSnackBar("About"),
             ),
+
             const SizedBox(height: 8),
+
+            // ── Danger Zone ──
             _buildSectionTitle("Danger Zone"),
             _buildDangerItem(
               icon: Icons.logout,
@@ -189,6 +240,7 @@ class _SettingsPageState extends State<SettingsPage> {
               color: Colors.redAccent,
               onTap: () => _showSnackBar("Delete account"),
             ),
+
             const SizedBox(height: 40),
           ],
         ),
@@ -196,8 +248,10 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
-  // ── Theme Selector Widget ──
   Widget _buildThemeSelector() {
+    final themeProvider = context.watch<ThemeProvider>();
+    final currentMode = themeProvider.themeMode;
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: Container(
@@ -250,16 +304,22 @@ class _SettingsPageState extends State<SettingsPage> {
                       icon: Icons.dark_mode,
                       label: "Dark",
                       mode: ThemeMode.dark,
+                      currentMode: currentMode,
+                      themeProvider: themeProvider,
                     ),
                     _buildThemeOption(
                       icon: Icons.light_mode,
                       label: "Light",
                       mode: ThemeMode.light,
+                      currentMode: currentMode,
+                      themeProvider: themeProvider,
                     ),
                     _buildThemeOption(
                       icon: Icons.phone_android,
                       label: "System",
                       mode: ThemeMode.system,
+                      currentMode: currentMode,
+                      themeProvider: themeProvider,
                     ),
                   ],
                 ),
@@ -275,11 +335,14 @@ class _SettingsPageState extends State<SettingsPage> {
     required IconData icon,
     required String label,
     required ThemeMode mode,
+    required ThemeMode currentMode,
+    required ThemeProvider themeProvider,
   }) {
-    final bool isSelected = _themeMode == mode;
+    final bool isSelected = currentMode == mode;
+
     return Expanded(
       child: GestureDetector(
-        onTap: () => setState(() => _themeMode = mode),
+        onTap: () => themeProvider.setTheme(mode),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 250),
           curve: Curves.easeInOut,
@@ -357,10 +420,8 @@ class _SettingsPageState extends State<SettingsPage> {
         ),
       ),
       subtitle: subtitle != null
-          ? Text(
-              subtitle,
-              style: TextStyle(color: _subtitleColor, fontSize: 12),
-            )
+          ? Text(subtitle,
+              style: TextStyle(color: _subtitleColor, fontSize: 12))
           : null,
       trailing:
           Icon(Icons.arrow_forward_ios, color: _arrowColor, size: 14),
