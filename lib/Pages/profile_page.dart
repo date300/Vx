@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'Settings/settings_page.dart'; // তোমার SettingsPage পাথ অনুযায়ী ঠিক করে দিও
+import '../Settings/settings_page.dart'; // তোমার SettingsPage পাথ অনুযায়ী ঠিক করে দিও
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -507,3 +507,4 @@ Creating premium apps | DM for collab 🤝",
     return n.toString();
   }
 }
+
