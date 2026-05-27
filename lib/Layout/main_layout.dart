@@ -8,7 +8,7 @@ import '../Pages/home_page.dart';
 import '../Pages/explore_page.dart';
 import '../Pages/inbox_page.dart';
 import '../Pages/profile_page.dart';
-import '../Pages/upload_popup.dart';
+import '../Pages/upload_popup.dart'; // Popup import
 
 class AuthService {
   static bool isLoggedIn = false;
@@ -41,6 +41,7 @@ class _MainLayoutState extends State<MainLayout>
     );
   }
 
+  // UploadPage ??? ????? ???? ??? ??? ???? ???
   final List<Widget> _pages = const [
     HomeFeedPage(),
     ExplorePage(),
@@ -49,6 +50,11 @@ class _MainLayoutState extends State<MainLayout>
   ];
 
   void _onItemTapped(int index) {
+    // [DISABLED TEMPORARILY] Auth gate check - will be enabled later
+    // if ((index == 2 || index == 3) && !AuthService.isLoggedIn) {
+    //   showAuthPopup(context);
+    //   return;
+    // }
     setState(() => _selectedIndex = index);
   }
 
@@ -97,13 +103,13 @@ class _MainLayoutState extends State<MainLayout>
                   icon: CupertinoIcons.search,
                   activeIcon: CupertinoIcons.search,
                 ),
-                _buildUploadButton(),
+                _buildUploadButton(), // Popup ???? ???
                 _buildNavItem(
-                  index: 2,
+                  index: 2, // Inbox ??? index 2
                   icon: CupertinoIcons.bell,
                   activeIcon: CupertinoIcons.bell_fill,
                 ),
-                _buildProfileItem(),
+                _buildProfileItem(), // Profile ??? index 3
               ],
             ),
           ),
@@ -155,9 +161,11 @@ class _MainLayoutState extends State<MainLayout>
     );
   }
 
+  // ==================== UPLOAD POPUP BUTTON ====================
   Widget _buildUploadButton() {
     return GestureDetector(
       onTap: () {
+        // ???? ???? ? ???? ??? ????? ??? ??
         showUploadPopup(context);
       },
       behavior: HitTestBehavior.opaque,
@@ -194,7 +202,7 @@ class _MainLayoutState extends State<MainLayout>
   }
 
   Widget _buildProfileItem() {
-    final isActive = _selectedIndex == 3;
+    final isActive = _selectedIndex == 3; // Profile ??? index 3
 
     return GestureDetector(
       onTap: () => _onItemTapped(3),
@@ -243,3 +251,4 @@ class _MainLayoutState extends State<MainLayout>
     );
   }
 }
+
