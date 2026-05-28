@@ -55,13 +55,11 @@ class _MainLayoutState extends State<MainLayout>
   ];
 
   void _onItemTapped(int index) {
-    if (index == 3 && !AuthService.isLoggedIn) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const AuthGatePage()),
-      );
-      return;
-    }
+    // [DISABLED TEMPORARILY] Auth gate check - will be enabled later
+    // if ((index == 2 || index == 3) && !AuthService.isLoggedIn) {
+    //   showAuthPopup(context);
+    //   return;
+    // }
     setState(() => _selectedIndex = index);
   }
 

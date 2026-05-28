@@ -112,7 +112,7 @@ const List<VideoData> kVideoList = [
 
 // ================================================================
 //  TIKTOK-STYLE COMMENT OVERLAY
-//  Video shrinks to top-right mini preview + draggable sheet
+//  Video stays at TOP, comments sheet slides up from bottom
 // ================================================================
 
 class TikTokCommentOverlay extends StatefulWidget {
@@ -157,7 +157,7 @@ class _TikTokCommentOverlayState extends State<TikTokCommentOverlay>
     super.initState();
     _animController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 380),
+      duration: const Duration(milliseconds: 400),
     );
 
     final curve = CurvedAnimation(
@@ -166,9 +166,10 @@ class _TikTokCommentOverlayState extends State<TikTokCommentOverlay>
       reverseCurve: Curves.easeInCubic,
     );
 
-    _videoScaleAnim = Tween<double>(begin: 1.0, end: 0.30).animate(curve);
+    // Video shrinks to top center (not top-right corner)
+    _videoScaleAnim = Tween<double>(begin: 1.0, end: 0.85).animate(curve);
     _videoSlideAnim = Tween<double>(begin: 0.0, end: 1.0).animate(curve);
-    _backdropAnim   = Tween<double>(begin: 0.0, end: 0.60).animate(curve);
+    _backdropAnim   = Tween<double>(begin: 0.0, end: 0.75).animate(curve);
     _sheetAnim      = Tween<double>(begin: 1.0, end: 0.0).animate(curve);
 
     _animController.forward();
@@ -214,10 +215,9 @@ class _TikTokCommentOverlayState extends State<TikTokCommentOverlay>
     final safeTop = MediaQuery.of(context).padding.top;
     final safeBottom = MediaQuery.of(context).padding.bottom;
 
-    final previewW = size.width * 0.30;
-    final previewH = previewW * (size.height / size.width);
-    final targetTop = safeTop + 14;
-    final targetRight = 14.0;
+    // Video takes top ~38% of screen when comments open
+    final videoTargetHeight = size.height * 0.38;
+    final targetTop = safeTop + 8;
 
     return GestureDetector(
       onTap: _close,
@@ -228,61 +228,51 @@ class _TikTokCommentOverlayState extends State<TikTokCommentOverlay>
           builder: (context, child) {
             final p = _animController.value;
 
-            final left = lerpDouble(0, size.width - previewW - targetRight, p)!;
-            final top  = lerpDouble(0, targetTop, p)!;
-            final scale = _videoScaleAnim.value;
-            final radius = lerpDouble(0, 14, p)!;
+            // Interpolate video position: stays at top center
+            final videoTop = lerpDouble(0, targetTop, p)!;
+            final videoScale = _videoScaleAnim.value;
+            final videoHeight = lerpDouble(size.height, videoTargetHeight, p)!;
+            final radius = lerpDouble(0, 12, p)!;
 
             return Stack(
               fit: StackFit.expand,
               children: [
-                // Blurred dark backdrop
-                BackdropFilter(
-                  filter: ImageFilter.blur(
-                    sigmaX: _backdropAnim.value * 10,
-                    sigmaY: _backdropAnim.value * 10,
-                  ),
-                  child: Container(
-                    color: Colors.black.withOpacity(_backdropAnim.value * 0.75),
-                  ),
+                // Dark backdrop (no blur needed since video is visible at top)
+                Container(
+                  color: Colors.black.withOpacity(_backdropAnim.value),
                 ),
 
-                // Mini video preview (top-right)
+                // Video at TOP CENTER (like screenshot)
                 Positioned(
-                  left: left,
-                  top: top,
-                  width: previewW,
-                  height: previewH,
+                  top: videoTop,
+                  left: 0,
+                  right: 0,
+                  height: videoHeight,
                   child: GestureDetector(
-                    onTap: () {}, // absorb tap
+                    onTap: () {}, // absorb tap so it doesn't close
                     child: Transform.scale(
-                      scale: scale,
-                      alignment: Alignment.topLeft,
+                      scale: videoScale,
+                      alignment: Alignment.topCenter,
                       child: ClipRRect(
-                        borderRadius: BorderRadius.circular(radius),
+                        borderRadius: BorderRadius.only(
+                          bottomLeft: Radius.circular(radius),
+                          bottomRight: Radius.circular(radius),
+                        ),
                         child: Container(
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(radius),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.5 * p),
-                                blurRadius: 24,
-                                spreadRadius: 2,
-                              ),
-                            ],
-                          ),
+                          color: Colors.black,
                           child: widget.isReady && widget.controller != null
-                              ? AspectRatio(
-                                  aspectRatio: widget.controller!.value.aspectRatio,
-                                  child: VideoPlayer(widget.controller!),
+                              ? FittedBox(
+                                  fit: BoxFit.cover,
+                                  child: SizedBox(
+                                    width: widget.controller!.value.size.width,
+                                    height: widget.controller!.value.size.height,
+                                    child: VideoPlayer(widget.controller!),
+                                  ),
                                 )
-                              : Container(
-                                  color: Colors.black,
-                                  child: const Center(
-                                    child: CircularProgressIndicator(
-                                      color: Colors.pinkAccent,
-                                      strokeWidth: 2,
-                                    ),
+                              : const Center(
+                                  child: CircularProgressIndicator(
+                                    color: Colors.pinkAccent,
+                                    strokeWidth: 2,
                                   ),
                                 ),
                         ),
@@ -291,13 +281,13 @@ class _TikTokCommentOverlayState extends State<TikTokCommentOverlay>
                   ),
                 ),
 
-                // Search icon (top right, next to mini video)
-                if (p > 0.25)
+                // Search icon at top right
+                if (p > 0.3)
                   Positioned(
-                    top: targetTop + 6,
-                    right: targetRight,
+                    top: safeTop + 10,
+                    right: 16,
                     child: Opacity(
-                      opacity: (p - 0.25) / 0.75,
+                      opacity: (p - 0.3) / 0.7,
                       child: GestureDetector(
                         onTap: () {
                           Navigator.of(context).push(
@@ -308,9 +298,8 @@ class _TikTokCommentOverlayState extends State<TikTokCommentOverlay>
                           width: 40,
                           height: 40,
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.12),
+                            color: Colors.black.withOpacity(0.4),
                             shape: BoxShape.circle,
-                            border: Border.all(color: Colors.white24),
                           ),
                           child: const Icon(
                             Icons.search_rounded,
@@ -322,30 +311,31 @@ class _TikTokCommentOverlayState extends State<TikTokCommentOverlay>
                     ),
                   ),
 
-                // Draggable comment sheet
+                // Draggable comment sheet from bottom
                 Positioned.fill(
-                  top: size.height * 0.22 + (1 - p) * size.height * 0.65,
+                  top: size.height * 0.38 + (1 - p) * size.height * 0.62,
                   child: GestureDetector(
                     onTap: () {}, // prevent tap-through
                     child: NotificationListener<DraggableScrollableNotification>(
                       onNotification: (notification) {
-                        if (notification.extent <= 0.12 && !_isClosing) {
+                        // Auto-close when dragged down enough
+                        if (notification.extent <= 0.15 && !_isClosing) {
                           _close();
                         }
                         return true;
                       },
                       child: DraggableScrollableSheet(
                         controller: _sheetController,
-                        initialChildSize: 0.78,
+                        initialChildSize: 0.62,
                         minChildSize: 0.0,
-                        maxChildSize: 0.95,
+                        maxChildSize: 0.75,
                         expand: false,
                         builder: (context, scrollController) {
                           return Container(
                             decoration: const BoxDecoration(
-                              color: Color(0xFF111111),
+                              color: Colors.white,
                               borderRadius: BorderRadius.vertical(
-                                top: Radius.circular(20),
+                                top: Radius.circular(16),
                               ),
                             ),
                             child: Column(
@@ -362,14 +352,14 @@ class _TikTokCommentOverlayState extends State<TikTokCommentOverlay>
                                       width: 40,
                                       height: 4,
                                       decoration: BoxDecoration(
-                                        color: Colors.white30,
+                                        color: Colors.grey[400],
                                         borderRadius: BorderRadius.circular(2),
                                       ),
                                     ),
                                   ),
                                 ),
 
-                                // Header
+                                // Header: Comment count + Close (X)
                                 Padding(
                                   padding: const EdgeInsets.symmetric(horizontal: 16),
                                   child: Row(
@@ -377,32 +367,31 @@ class _TikTokCommentOverlayState extends State<TikTokCommentOverlay>
                                       Text(
                                         "${widget.commentCount} comments",
                                         style: const TextStyle(
-                                          color: Colors.white,
+                                          color: Colors.black,
                                           fontWeight: FontWeight.w700,
                                           fontSize: 16,
                                         ),
                                       ),
+                                      const SizedBox(width: 6),
+                                      const Icon(
+                                        Icons.sort,
+                                        color: Colors.black54,
+                                        size: 18,
+                                      ),
                                       const Spacer(),
                                       GestureDetector(
                                         onTap: _close,
-                                        child: Container(
-                                          padding: const EdgeInsets.all(6),
-                                          decoration: BoxDecoration(
-                                            color: Colors.white.withOpacity(0.1),
-                                            shape: BoxShape.circle,
-                                          ),
-                                          child: const Icon(
-                                            Icons.close_rounded,
-                                            color: Colors.white54,
-                                            size: 20,
-                                          ),
+                                        child: const Icon(
+                                          Icons.close,
+                                          color: Colors.black54,
+                                          size: 24,
                                         ),
                                       ),
                                     ],
                                   ),
                                 ),
                                 const SizedBox(height: 8),
-                                const Divider(color: Colors.white10, height: 1),
+                                const Divider(color: Color(0xFFE0E0E0), height: 1),
 
                                 // Comments list
                                 Expanded(
@@ -412,7 +401,7 @@ class _TikTokCommentOverlayState extends State<TikTokCommentOverlay>
                                     itemCount: widget.comments.length,
                                     itemBuilder: (_, i) {
                                       final c = widget.comments[i];
-                                      return _CommentTile(
+                                      return _TikTokCommentTile(
                                         item: c,
                                         onLike: () => setState(() {
                                           c.liked = !c.liked;
@@ -423,21 +412,23 @@ class _TikTokCommentOverlayState extends State<TikTokCommentOverlay>
                                   ),
                                 ),
 
-                                const Divider(color: Colors.white10, height: 1),
+                                const Divider(color: Color(0xFFE0E0E0), height: 1),
 
-                                // Input
-                                Padding(
+                                // Comment input bar (like screenshot)
+                                Container(
+                                  color: const Color(0xFFF5F5F5),
                                   padding: EdgeInsets.only(
                                     left: 12,
                                     right: 12,
                                     top: 10,
-                                    bottom: safeBottom + 16,
+                                    bottom: safeBottom + 12,
                                   ),
                                   child: Row(
                                     children: [
+                                      // Avatar
                                       Container(
-                                        width: 38,
-                                        height: 38,
+                                        width: 36,
+                                        height: 36,
                                         decoration: const BoxDecoration(
                                           shape: BoxShape.circle,
                                           gradient: LinearGradient(
@@ -450,55 +441,76 @@ class _TikTokCommentOverlayState extends State<TikTokCommentOverlay>
                                         child: const Icon(
                                           Icons.person,
                                           color: Colors.white,
-                                          size: 20,
+                                          size: 18,
                                         ),
                                       ),
                                       const SizedBox(width: 10),
+                                      // Input field
                                       Expanded(
                                         child: Container(
                                           decoration: BoxDecoration(
-                                            color: Colors.white10,
-                                            borderRadius: BorderRadius.circular(24),
-                                            border: Border.all(color: Colors.white12),
+                                            color: Colors.white,
+                                            borderRadius: BorderRadius.circular(20),
+                                            border: Border.all(color: const Color(0xFFE0E0E0)),
                                           ),
-                                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                                          padding: const EdgeInsets.symmetric(horizontal: 14),
                                           child: TextField(
                                             controller: _commentCtrl,
                                             focusNode: _commentFocus,
                                             style: const TextStyle(
-                                              color: Colors.white,
+                                              color: Colors.black,
                                               fontSize: 14,
                                             ),
                                             textInputAction: TextInputAction.send,
                                             onSubmitted: (_) => _postComment(),
                                             decoration: const InputDecoration(
-                                              hintText: "Add a comment...",
+                                              hintText: "Add comment...",
                                               hintStyle: TextStyle(
-                                                color: Colors.white38,
+                                                color: Colors.grey,
                                                 fontSize: 14,
                                               ),
                                               border: InputBorder.none,
                                               isDense: true,
-                                              contentPadding: EdgeInsets.symmetric(vertical: 11),
+                                              contentPadding: EdgeInsets.symmetric(vertical: 10),
                                             ),
                                           ),
                                         ),
                                       ),
                                       const SizedBox(width: 8),
-                                      GestureDetector(
-                                        onTap: _postComment,
-                                        child: Container(
-                                          padding: const EdgeInsets.all(8),
-                                          decoration: BoxDecoration(
-                                            shape: BoxShape.circle,
-                                            color: Colors.pinkAccent.withOpacity(0.15),
-                                          ),
-                                          child: const Icon(
-                                            Icons.send_rounded,
-                                            color: Colors.pinkAccent,
-                                            size: 26,
-                                          ),
+                                      // Image icon
+                                      IconButton(
+                                        onPressed: () {},
+                                        icon: const Icon(
+                                          Icons.image_outlined,
+                                          color: Colors.black54,
+                                          size: 24,
                                         ),
+                                        padding: EdgeInsets.zero,
+                                        constraints: const BoxConstraints(),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      // Emoji icon
+                                      IconButton(
+                                        onPressed: () {},
+                                        icon: const Icon(
+                                          Icons.emoji_emotions_outlined,
+                                          color: Colors.black54,
+                                          size: 24,
+                                        ),
+                                        padding: EdgeInsets.zero,
+                                        constraints: const BoxConstraints(),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      // @ icon
+                                      IconButton(
+                                        onPressed: () {},
+                                        icon: const Icon(
+                                          Icons.alternate_email,
+                                          color: Colors.black54,
+                                          size: 24,
+                                        ),
+                                        padding: EdgeInsets.zero,
+                                        constraints: const BoxConstraints(),
                                       ),
                                     ],
                                   ),
@@ -515,6 +527,121 @@ class _TikTokCommentOverlayState extends State<TikTokCommentOverlay>
             );
           },
         ),
+      ),
+    );
+  }
+}
+
+// ================================================================
+//  TIKTOK-STYLE COMMENT TILE (white background, dark text)
+// ================================================================
+class _TikTokCommentTile extends StatelessWidget {
+  final _CommentItem item;
+  final VoidCallback onLike;
+  const _TikTokCommentTile({required this.item, required this.onLike});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Avatar
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.grey[300],
+              border: Border.all(color: Colors.grey[400]!),
+            ),
+            child: const Icon(Icons.person, color: Colors.grey, size: 22),
+          ),
+          const SizedBox(width: 12),
+          // Content
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Username
+                Text(
+                  item.username,
+                  style: const TextStyle(
+                    color: Colors.black87,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                // Comment text
+                Text(
+                  item.text,
+                  style: const TextStyle(
+                    color: Colors.black,
+                    fontSize: 14,
+                    height: 1.4,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                // Time + Reply row
+                Row(
+                  children: [
+                    Text(
+                      "2h", // placeholder time
+                      style: TextStyle(
+                        color: Colors.grey[600],
+                        fontSize: 12,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Text(
+                      "Reply",
+                      style: TextStyle(
+                        color: Colors.grey[600],
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          // Like / Dislike column
+          Column(
+            children: [
+              GestureDetector(
+                onTap: onLike,
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 150),
+                  transitionBuilder: (child, anim) =>
+                      ScaleTransition(scale: anim, child: child),
+                  child: Icon(
+                    item.liked ? Icons.favorite : Icons.favorite_border,
+                    key: ValueKey(item.liked),
+                    color: item.liked ? Colors.red : Colors.grey[600],
+                    size: 20,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                item.likes > 0 ? item.likes.toString() : "",
+                style: TextStyle(
+                  color: Colors.grey[600],
+                  fontSize: 11,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Icon(
+                Icons.thumb_down_off_alt,
+                color: Colors.grey[500],
+                size: 18,
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -903,7 +1030,7 @@ class _FeedVideoItemState extends State<FeedVideoItem>
   // ================================================================
   void _onComment() {
     final wasPlaying = _isPlaying;
-    // Video keeps playing in mini preview — do NOT pause
+    // Video keeps playing in top preview — do NOT pause
 
     showGeneralDialog(
       context: context,
@@ -1873,77 +2000,6 @@ class _CommentItem {
   int  likes;
   bool liked;
   _CommentItem(this.username, this.text, this.likes, {this.liked = false});
-}
-
-// ================================================================
-//  COMMENT TILE
-// ================================================================
-class _CommentTile extends StatelessWidget {
-  final _CommentItem item;
-  final VoidCallback onLike;
-  const _CommentTile({required this.item, required this.onLike});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 38, height: 38,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle, color: Colors.white12,
-              border: Border.all(color: Colors.white.withOpacity(0.16)),
-            ),
-            child: const Icon(Icons.person, color: Colors.white54, size: 20),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(item.username, style: const TextStyle(
-                  color: Colors.white70, fontSize: 12.5, fontWeight: FontWeight.w600)),
-                const SizedBox(height: 3),
-                Text(item.text, style: const TextStyle(
-                  color: Colors.white, fontSize: 14, height: 1.4)),
-                const SizedBox(height: 5),
-                const Text("Reply",
-                  style: TextStyle(color: Colors.white38, fontSize: 12)),
-              ],
-            ),
-          ),
-          GestureDetector(
-            onTap: onLike,
-            child: Padding(
-              padding: const EdgeInsets.only(left: 8, top: 2),
-              child: Column(
-                children: [
-                  AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 150),
-                    transitionBuilder: (child, anim) =>
-                        ScaleTransition(scale: anim, child: child),
-                    child: Icon(
-                      item.liked ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-                      key: ValueKey(item.liked),
-                      color: item.liked ? Colors.pinkAccent : Colors.white54,
-                      size: 18,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    item.likes > 0 ? item.likes.toString() : "",
-                    style: const TextStyle(color: Colors.white54, fontSize: 11),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 }
 
 // ================================================================
