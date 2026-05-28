@@ -1,8 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../Layout/theme_provider.dart';
 
+// ডামি মেসেজ মডেল
 class _Message {
   final String name;
   final String avatar;
@@ -24,6 +23,7 @@ class _Message {
 class InboxPage extends StatelessWidget {
   const InboxPage({super.key});
 
+  // ডামি ডেটা — পরে API দিয়ে রিপ্লেস করো
   static const List<_Message> _messages = [
     _Message(
       name: "Rafi Ahmed",
@@ -36,7 +36,7 @@ class InboxPage extends StatelessWidget {
     _Message(
       name: "Nadia Islam",
       avatar: "NI",
-      lastMessage: "Thanks for following! 🎉",
+      lastMessage: "Thanks for following! 🙌",
       time: "15m",
       isUnread: true,
       unreadCount: 1,
@@ -52,7 +52,7 @@ class InboxPage extends StatelessWidget {
     _Message(
       name: "Sadia Rahman",
       avatar: "SR",
-      lastMessage: "Haha 😂 ekdom thik bolecho",
+      lastMessage: "Haha 😄 ekdom thik bolecho",
       time: "3h",
       isUnread: false,
       unreadCount: 0,
@@ -68,63 +68,25 @@ class InboxPage extends StatelessWidget {
     _Message(
       name: "Mitu Akter",
       avatar: "MA",
-      lastMessage: "Loved your last post 🔥🔥",
+      lastMessage: "Loved your last post ❤️",
       time: "2d",
       isUnread: false,
       unreadCount: 0,
     ),
   ];
 
-  // ── থিম helper ──
-  bool _isDark(BuildContext context) {
-    final mode = context.read<ThemeProvider>().themeMode;
-    if (mode == ThemeMode.system) {
-      return WidgetsBinding.instance.platformDispatcher.platformBrightness ==
-          Brightness.dark;
-    }
-    return mode == ThemeMode.dark;
-  }
-
   @override
   Widget build(BuildContext context) {
-    context.watch<ThemeProvider>();
-
-    final isDark = _isDark(context);
-
-    final bgColor = isDark ? Colors.black : Colors.white;
-    final titleColor = isDark ? Colors.white : Colors.black;
-    final avatarBgColor = isDark
-        ? Colors.white.withOpacity(0.10)
-        : Colors.black.withOpacity(0.07);
-    final avatarBorderColor = isDark
-        ? Colors.white.withOpacity(0.15)
-        : Colors.black.withOpacity(0.10);
-    final highlightColor = isDark
-        ? Colors.white.withOpacity(0.05)
-        : Colors.black.withOpacity(0.04);
-    final onlineBorderColor = isDark ? Colors.black : Colors.white;
-    final badgeBgColor = isDark ? Colors.white : Colors.black;
-    final badgeTextColor = isDark ? Colors.black : Colors.white;
-    final emptyIconColor = isDark
-        ? Colors.white.withOpacity(0.2)
-        : Colors.black.withOpacity(0.15);
-    final emptyTitleColor = isDark
-        ? Colors.white.withOpacity(0.5)
-        : Colors.black.withOpacity(0.4);
-    final emptySubtitleColor = isDark
-        ? Colors.white.withOpacity(0.3)
-        : Colors.black.withOpacity(0.3);
-
     return Scaffold(
-      backgroundColor: bgColor,
+      backgroundColor: Colors.black,
       appBar: AppBar(
-        backgroundColor: bgColor,
+        backgroundColor: Colors.black,
         elevation: 0,
         centerTitle: true,
-        title: Text(
+        title: const Text(
           "Inbox",
           style: TextStyle(
-            color: titleColor,
+            color: Colors.white,
             fontSize: 17,
             fontWeight: FontWeight.w600,
           ),
@@ -134,68 +96,36 @@ class InboxPage extends StatelessWidget {
             padding: const EdgeInsets.only(right: 16),
             child: Icon(
               CupertinoIcons.pencil_ellipsis_rectangle,
-              color: titleColor,
+              color: Colors.white,
               size: 24,
             ),
           ),
         ],
       ),
       body: _messages.isEmpty
-          ? _buildEmptyState(
-              emptyIconColor: emptyIconColor,
-              emptyTitleColor: emptyTitleColor,
-              emptySubtitleColor: emptySubtitleColor,
-            )
+          ? _buildEmptyState()
           : ListView.builder(
               padding: const EdgeInsets.only(top: 8, bottom: 100),
               itemCount: _messages.length,
               itemBuilder: (context, index) {
-                return _buildMessageTile(
-                  _messages[index],
-                  isDark: isDark,
-                  titleColor: titleColor,
-                  avatarBgColor: avatarBgColor,
-                  avatarBorderColor: avatarBorderColor,
-                  highlightColor: highlightColor,
-                  onlineBorderColor: onlineBorderColor,
-                  badgeBgColor: badgeBgColor,
-                  badgeTextColor: badgeTextColor,
-                );
+                return _buildMessageTile(_messages[index]);
               },
             ),
     );
   }
 
-  Widget _buildMessageTile(
-    _Message msg, {
-    required bool isDark,
-    required Color titleColor,
-    required Color avatarBgColor,
-    required Color avatarBorderColor,
-    required Color highlightColor,
-    required Color onlineBorderColor,
-    required Color badgeBgColor,
-    required Color badgeTextColor,
-  }) {
-    final nameColor = titleColor;
-    final msgColor = msg.isUnread
-        ? titleColor.withOpacity(0.8)
-        : titleColor.withOpacity(0.4);
-    final timeColor = msg.isUnread
-        ? titleColor
-        : titleColor.withOpacity(0.35);
-
+  Widget _buildMessageTile(_Message msg) {
     return InkWell(
       onTap: () {
-        // TODO: চ্যাট পেজে navigate করো
+        // TODO: মেসেজ ডিটেইলস পেজে নেভিগেট করো
       },
       splashColor: Colors.transparent,
-      highlightColor: highlightColor,
+      highlightColor: Colors.white.withOpacity(0.05),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Row(
           children: [
-            // ── Avatar ──
+            // অ্যাভাটার
             Stack(
               children: [
                 Container(
@@ -203,24 +133,24 @@ class InboxPage extends StatelessWidget {
                   height: 52,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: avatarBgColor,
+                    color: Colors.white.withOpacity(0.1),
                     border: Border.all(
-                      color: avatarBorderColor,
+                      color: Colors.white.withOpacity(0.15),
                       width: 1,
                     ),
                   ),
                   child: Center(
                     child: Text(
                       msg.avatar,
-                      style: TextStyle(
-                        color: titleColor,
+                      style: const TextStyle(
+                        color: Colors.white,
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
                   ),
                 ),
-                // ── Online dot ──
+                // অনলাইন ইন্ডিকেটর (প্রথম ২টায় দেখাবে)
                 if (msg.isUnread)
                   Positioned(
                     right: 1,
@@ -231,19 +161,14 @@ class InboxPage extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: Colors.greenAccent,
                         shape: BoxShape.circle,
-                        border: Border.all(
-                          color: onlineBorderColor,
-                          width: 2,
-                        ),
+                        border: Border.all(color: Colors.black, width: 2),
                       ),
                     ),
                   ),
               ],
             ),
-
             const SizedBox(width: 14),
-
-            // ── Name & Message ──
+            // নাম ও মেসেজ
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -251,7 +176,7 @@ class InboxPage extends StatelessWidget {
                   Text(
                     msg.name,
                     style: TextStyle(
-                      color: nameColor,
+                      color: Colors.white,
                       fontSize: 15,
                       fontWeight:
                           msg.isUnread ? FontWeight.w600 : FontWeight.w400,
@@ -263,7 +188,9 @@ class InboxPage extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
-                      color: msgColor,
+                      color: msg.isUnread
+                          ? Colors.white.withOpacity(0.8)
+                          : Colors.white.withOpacity(0.4),
                       fontSize: 13,
                       fontWeight:
                           msg.isUnread ? FontWeight.w500 : FontWeight.w400,
@@ -272,31 +199,34 @@ class InboxPage extends StatelessWidget {
                 ],
               ),
             ),
-
             const SizedBox(width: 10),
-
-            // ── Time & Badge ──
+            // সময় ও আনরেড ব্যাজ
             Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Text(
                   msg.time,
-                  style: TextStyle(color: timeColor, fontSize: 12),
+                  style: TextStyle(
+                    color: msg.isUnread
+                        ? Colors.white
+                        : Colors.white.withOpacity(0.35),
+                    fontSize: 12,
+                  ),
                 ),
                 const SizedBox(height: 5),
                 if (msg.unreadCount > 0)
                   Container(
                     width: 20,
                     height: 20,
-                    decoration: BoxDecoration(
-                      color: badgeBgColor,
+                    decoration: const BoxDecoration(
+                      color: Colors.white,
                       shape: BoxShape.circle,
                     ),
                     child: Center(
                       child: Text(
                         msg.unreadCount.toString(),
-                        style: TextStyle(
-                          color: badgeTextColor,
+                        style: const TextStyle(
+                          color: Colors.black,
                           fontSize: 11,
                           fontWeight: FontWeight.w700,
                         ),
@@ -313,21 +243,21 @@ class InboxPage extends StatelessWidget {
     );
   }
 
-  Widget _buildEmptyState({
-    required Color emptyIconColor,
-    required Color emptyTitleColor,
-    required Color emptySubtitleColor,
-  }) {
+  Widget _buildEmptyState() {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(CupertinoIcons.tray, color: emptyIconColor, size: 60),
+          Icon(
+            CupertinoIcons.tray,
+            color: Colors.white.withOpacity(0.2),
+            size: 60,
+          ),
           const SizedBox(height: 16),
           Text(
             "No messages yet",
             style: TextStyle(
-              color: emptyTitleColor,
+              color: Colors.white.withOpacity(0.5),
               fontSize: 16,
               fontWeight: FontWeight.w500,
             ),
@@ -337,7 +267,7 @@ class InboxPage extends StatelessWidget {
             "When someone messages you,\nit will appear here.",
             textAlign: TextAlign.center,
             style: TextStyle(
-              color: emptySubtitleColor,
+              color: Colors.white.withOpacity(0.3),
               fontSize: 13,
               height: 1.5,
             ),
