@@ -2045,7 +2045,7 @@ class _SearchPageState extends State<SearchPage> {
                 decoration: BoxDecoration(
                   color: Colors.white.withOpacity(0.04),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.white08),
+                  border: Border.all(color: Colors.white.withOpacity(0.08)),
                 ),
                 child: Row(
                   children: [
@@ -2118,7 +2118,7 @@ class _SearchPageState extends State<SearchPage> {
           children: [
             const Icon(Icons.search_off_rounded, color: Colors.white24, size: 56),
             const SizedBox(height: 12),
-            Text("No results for "$_query"", style: const TextStyle(
+            Text('No results for "$_query"', style: const TextStyle(
               color: Colors.white54, fontSize: 15, fontWeight: FontWeight.w600)),
             const SizedBox(height: 6),
             const Text("Try different keywords or hashtags", style: TextStyle(
@@ -2199,7 +2199,7 @@ class _UserCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.04),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white08),
+        border: Border.all(color: Colors.white.withOpacity(0.08)),
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -2246,4 +2246,3 @@ class _UserCard extends StatelessWidget {
     );
   }
 }
-
