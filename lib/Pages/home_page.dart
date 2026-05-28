@@ -1,9 +1,11 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:video_player/video_player.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 import 'search_page.dart';
+
 // ================================================================
 //  CONSTANTS
 // ================================================================
@@ -42,111 +44,482 @@ const List<VideoData> kVideoList = [
   VideoData(
     url: "https://flutter.github.io/assets-for-api-docs/assets/videos/butterfly.mp4",
     username: "@nature_vibes", displayName: "Nature Vibes",
-    caption: "Butterfly in slow motion ? Nature never stops amazing me! #nature #butterfly #wildlife",
+    caption: "Butterfly in slow motion 🦋 Nature never stops amazing me! #nature #butterfly #wildlife",
     sound: "Nature Sounds - Chill Mix", likes: 128400, comments: 3200, shares: 940,
   ),
   VideoData(
     url: "https://flutter.github.io/assets-for-api-docs/assets/videos/bee.mp4",
     username: "@wild_lens", displayName: "Wild Lens",
-    caption: "Busy bee doing its thing ? Save the bees, save the world! #wildlife #bee #nature",
+    caption: "Busy bee doing its thing 🐝 Save the bees, save the world! #wildlife #bee #nature",
     sound: "Buzzing Beats - DJ Honey", likes: 87600, comments: 1540, shares: 620,
   ),
   VideoData(
     url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
     username: "@animation_hub", displayName: "Animation Hub",
-    caption: "Big Buck Bunny is an absolute legend ? Open source cinema at its finest! #animation #3d #blender",
+    caption: "Big Buck Bunny is an absolute legend 🐰 Open source cinema at its finest! #animation #3d #blender",
     sound: "Big Buck Bunny OST", likes: 245000, comments: 9800, shares: 4200,
   ),
   VideoData(
     url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
     username: "@blender_art", displayName: "Blender Art",
-    caption: "Elephants Dream ? a timeless open-source classic ? #blender #art #animation",
+    caption: "Elephants Dream 🐘 a timeless open-source classic ✨ #blender #art #animation",
     sound: "Elephants Dream OST", likes: 196000, comments: 7600, shares: 3100,
   ),
   VideoData(
     url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4",
     username: "@adrenaline_rush", displayName: "Adrenaline Rush",
-    caption: "When life gives you roads, take the joyride ? Feel the speed! #joyride #fun #thrill",
+    caption: "When life gives you roads, take the joyride 🚗 Feel the speed! #joyride #fun #thrill",
     sound: "Speed Demon - Turbo Mix", likes: 312000, comments: 11200, shares: 7800,
   ),
   VideoData(
     url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
     username: "@fire_starter", displayName: "Fire Starter",
-    caption: "Bigger blazes = bigger dreams ? Stay lit every single day! #fire #energy #motivation",
+    caption: "Bigger blazes = bigger dreams 🔥 Stay lit every single day! #fire #energy #motivation",
     sound: "Blaze It Up - LoFi", likes: 98700, comments: 4300, shares: 2100,
   ),
   VideoData(
     url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4",
     username: "@scifi_world", displayName: "SciFi World",
-    caption: "Tears of Steel ? the future is already here ? #scifi #blender #vfx #film",
+    caption: "Tears of Steel 🤖 the future is already here ⚡ #scifi #blender #vfx #film",
     sound: "Steel Tears - Cinematic", likes: 430000, comments: 18700, shares: 12400,
   ),
   VideoData(
     url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4",
     username: "@fun_factory", displayName: "Fun Factory",
-    caption: "More fun, more life! Choose bigger, always ? #fun #vibes #goodtimes",
+    caption: "More fun, more life! Choose bigger, always 🎉 #fun #vibes #goodtimes",
     sound: "Fun Mode - Party Mix", likes: 76500, comments: 2900, shares: 1300,
   ),
   VideoData(
     url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/SubaruOutbackOnStreetAndDirt.mp4",
     username: "@road_warrior", displayName: "Road Warrior",
-    caption: "Street & dirt ?? no road is too tough ? Built for anything! #offroad #car #adventure",
+    caption: "Street & dirt 🛣️💨 no road is too tough 💪 Built for anything! #offroad #car #adventure",
     sound: "Dirt Road Anthem", likes: 221000, comments: 8400, shares: 5100,
   ),
   VideoData(
     url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/WeAreGoingOnBullrun.mp4",
     username: "@bull_run_crew", displayName: "Bull Run Crew",
-    caption: "We are going on a bull run ? Buckle up and hold tight! #bullrun #adventure #extreme",
+    caption: "We are going on a bull run 🐂 Buckle up and hold tight! #bullrun #adventure #extreme",
     sound: "Bull Run Hype - Beats", likes: 189000, comments: 5500, shares: 4400,
   ),
   VideoData(
     url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/VolkswagenGTIReview.mp4",
     username: "@car_review_bd", displayName: "Car Review BD",
-    caption: "VW GTI Review ? smooth like butter ? This car is a beast! #car #review #gti #volkswagen",
+    caption: "VW GTI Review 🚙 smooth like butter 🧈 This car is a beast! #car #review #gti #volkswagen",
     sound: "GTI Vibes - Engine Roar", likes: 267000, comments: 12300, shares: 6700,
   ),
 ];
 
 
 // ================================================================
-//  POPUP ENTRY POINTS (Fast Popup Style)
+//  TIKTOK-STYLE COMMENT OVERLAY
+//  Video shrinks to top-right mini preview + draggable sheet
 // ================================================================
 
-Future<void> showCommentPopup(BuildContext context, {
-  required List<_CommentItem> comments,
-  required int commentCount,
-  required void Function(String) onPost,
-}) {
-  return showGeneralDialog(
-    context: context,
-    barrierDismissible: true,
-    barrierColor: Colors.black.withOpacity(0.6),
-    transitionDuration: const Duration(milliseconds: 250),
-    pageBuilder: (context, animation, secondaryAnimation) {
-      return Scaffold(
-        backgroundColor: Colors.transparent,
-        body: Column(
-          mainAxisAlignment: MainAxisAlignment.end,
-          children: [
-            _CommentSheet(
-              comments: comments,
-              commentCount: commentCount,
-              onPost: onPost,
-              isPopup: true,
-            ),
-          ],
-        ),
-      );
-    },
-    transitionBuilder: (context, animation, secondaryAnimation, child) {
-      final offset = Tween<Offset>(
-        begin: const Offset(0, 1),
-        end: Offset.zero,
-      ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOut));
-      return SlideTransition(position: offset, child: child);
-    },
-  );
+class TikTokCommentOverlay extends StatefulWidget {
+  final VideoData data;
+  final VideoPlayerController? controller;
+  final bool isReady;
+  final List<_CommentItem> comments;
+  final int commentCount;
+  final void Function(String) onPost;
+
+  const TikTokCommentOverlay({
+    super.key,
+    required this.data,
+    required this.controller,
+    required this.isReady,
+    required this.comments,
+    required this.commentCount,
+    required this.onPost,
+  });
+
+  @override
+  State<TikTokCommentOverlay> createState() => _TikTokCommentOverlayState();
 }
+
+class _TikTokCommentOverlayState extends State<TikTokCommentOverlay>
+    with TickerProviderStateMixin {
+  late final AnimationController _animController;
+  late final Animation<double> _videoScaleAnim;
+  late final Animation<double> _videoSlideAnim;
+  late final Animation<double> _backdropAnim;
+  late final Animation<double> _sheetAnim;
+
+  final DraggableScrollableController _sheetController = DraggableScrollableController();
+  final TextEditingController _commentCtrl = TextEditingController();
+  final FocusNode _commentFocus = FocusNode();
+  final ScrollController _commentsScrollCtrl = ScrollController();
+
+  bool _isClosing = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _animController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 380),
+    );
+
+    final curve = CurvedAnimation(
+      parent: _animController,
+      curve: Curves.easeOutCubic,
+      reverseCurve: Curves.easeInCubic,
+    );
+
+    _videoScaleAnim = Tween<double>(begin: 1.0, end: 0.30).animate(curve);
+    _videoSlideAnim = Tween<double>(begin: 0.0, end: 1.0).animate(curve);
+    _backdropAnim   = Tween<double>(begin: 0.0, end: 0.60).animate(curve);
+    _sheetAnim      = Tween<double>(begin: 1.0, end: 0.0).animate(curve);
+
+    _animController.forward();
+  }
+
+  @override
+  void dispose() {
+    _animController.dispose();
+    _sheetController.dispose();
+    _commentCtrl.dispose();
+    _commentFocus.dispose();
+    _commentsScrollCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _close() async {
+    if (_isClosing) return;
+    _isClosing = true;
+    _commentFocus.unfocus();
+    await _animController.reverse();
+    if (mounted) Navigator.of(context).pop();
+  }
+
+  void _postComment() {
+    final text = _commentCtrl.text.trim();
+    if (text.isEmpty) return;
+    HapticFeedback.selectionClick();
+    widget.onPost(text);
+    _commentCtrl.clear();
+    _commentFocus.unfocus();
+    if (_commentsScrollCtrl.hasClients) {
+      _commentsScrollCtrl.animateTo(
+        0,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOut,
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+    final safeTop = MediaQuery.of(context).padding.top;
+    final safeBottom = MediaQuery.of(context).padding.bottom;
+
+    final previewW = size.width * 0.30;
+    final previewH = previewW * (size.height / size.width);
+    final targetTop = safeTop + 14;
+    final targetRight = 14.0;
+
+    return GestureDetector(
+      onTap: _close,
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        body: AnimatedBuilder(
+          animation: _animController,
+          builder: (context, child) {
+            final p = _animController.value;
+
+            final left = lerpDouble(0, size.width - previewW - targetRight, p)!;
+            final top  = lerpDouble(0, targetTop, p)!;
+            final scale = _videoScaleAnim.value;
+            final radius = lerpDouble(0, 14, p)!;
+
+            return Stack(
+              fit: StackFit.expand,
+              children: [
+                // Blurred dark backdrop
+                BackdropFilter(
+                  filter: ImageFilter.blur(
+                    sigmaX: _backdropAnim.value * 10,
+                    sigmaY: _backdropAnim.value * 10,
+                  ),
+                  child: Container(
+                    color: Colors.black.withOpacity(_backdropAnim.value * 0.75),
+                  ),
+                ),
+
+                // Mini video preview (top-right)
+                Positioned(
+                  left: left,
+                  top: top,
+                  width: previewW,
+                  height: previewH,
+                  child: GestureDetector(
+                    onTap: () {}, // absorb tap
+                    child: Transform.scale(
+                      scale: scale,
+                      alignment: Alignment.topLeft,
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(radius),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(radius),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.5 * p),
+                                blurRadius: 24,
+                                spreadRadius: 2,
+                              ),
+                            ],
+                          ),
+                          child: widget.isReady && widget.controller != null
+                              ? AspectRatio(
+                                  aspectRatio: widget.controller!.value.aspectRatio,
+                                  child: VideoPlayer(widget.controller!),
+                                )
+                              : Container(
+                                  color: Colors.black,
+                                  child: const Center(
+                                    child: CircularProgressIndicator(
+                                      color: Colors.pinkAccent,
+                                      strokeWidth: 2,
+                                    ),
+                                  ),
+                                ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+
+                // Search icon (top right, next to mini video)
+                if (p > 0.25)
+                  Positioned(
+                    top: targetTop + 6,
+                    right: targetRight,
+                    child: Opacity(
+                      opacity: (p - 0.25) / 0.75,
+                      child: GestureDetector(
+                        onTap: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(builder: (_) => const SearchPage()),
+                          );
+                        },
+                        child: Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.12),
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white24),
+                          ),
+                          child: const Icon(
+                            Icons.search_rounded,
+                            color: Colors.white,
+                            size: 22,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+
+                // Draggable comment sheet
+                Positioned.fill(
+                  top: size.height * 0.22 + (1 - p) * size.height * 0.65,
+                  child: GestureDetector(
+                    onTap: () {}, // prevent tap-through
+                    child: NotificationListener<DraggableScrollableNotification>(
+                      onNotification: (notification) {
+                        if (notification.extent <= 0.12 && !_isClosing) {
+                          _close();
+                        }
+                        return true;
+                      },
+                      child: DraggableScrollableSheet(
+                        controller: _sheetController,
+                        initialChildSize: 0.78,
+                        minChildSize: 0.0,
+                        maxChildSize: 0.95,
+                        expand: false,
+                        builder: (context, scrollController) {
+                          return Container(
+                            decoration: const BoxDecoration(
+                              color: Color(0xFF111111),
+                              borderRadius: BorderRadius.vertical(
+                                top: Radius.circular(20),
+                              ),
+                            ),
+                            child: Column(
+                              children: [
+                                // Drag handle
+                                GestureDetector(
+                                  onTap: _close,
+                                  onVerticalDragUpdate: (d) {
+                                    if (d.delta.dy > 10 && !_isClosing) _close();
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(vertical: 10),
+                                    child: Container(
+                                      width: 40,
+                                      height: 4,
+                                      decoration: BoxDecoration(
+                                        color: Colors.white30,
+                                        borderRadius: BorderRadius.circular(2),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+
+                                // Header
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                                  child: Row(
+                                    children: [
+                                      Text(
+                                        "${widget.commentCount} comments",
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.w700,
+                                          fontSize: 16,
+                                        ),
+                                      ),
+                                      const Spacer(),
+                                      GestureDetector(
+                                        onTap: _close,
+                                        child: Container(
+                                          padding: const EdgeInsets.all(6),
+                                          decoration: BoxDecoration(
+                                            color: Colors.white.withOpacity(0.1),
+                                            shape: BoxShape.circle,
+                                          ),
+                                          child: const Icon(
+                                            Icons.close_rounded,
+                                            color: Colors.white54,
+                                            size: 20,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                const Divider(color: Colors.white10, height: 1),
+
+                                // Comments list
+                                Expanded(
+                                  child: ListView.builder(
+                                    controller: scrollController,
+                                    padding: const EdgeInsets.symmetric(vertical: 8),
+                                    itemCount: widget.comments.length,
+                                    itemBuilder: (_, i) {
+                                      final c = widget.comments[i];
+                                      return _CommentTile(
+                                        item: c,
+                                        onLike: () => setState(() {
+                                          c.liked = !c.liked;
+                                          c.likes += c.liked ? 1 : -1;
+                                        }),
+                                      );
+                                    },
+                                  ),
+                                ),
+
+                                const Divider(color: Colors.white10, height: 1),
+
+                                // Input
+                                Padding(
+                                  padding: EdgeInsets.only(
+                                    left: 12,
+                                    right: 12,
+                                    top: 10,
+                                    bottom: safeBottom + 16,
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Container(
+                                        width: 38,
+                                        height: 38,
+                                        decoration: const BoxDecoration(
+                                          shape: BoxShape.circle,
+                                          gradient: LinearGradient(
+                                            colors: [
+                                              Colors.pinkAccent,
+                                              Colors.deepPurpleAccent,
+                                            ],
+                                          ),
+                                        ),
+                                        child: const Icon(
+                                          Icons.person,
+                                          color: Colors.white,
+                                          size: 20,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 10),
+                                      Expanded(
+                                        child: Container(
+                                          decoration: BoxDecoration(
+                                            color: Colors.white10,
+                                            borderRadius: BorderRadius.circular(24),
+                                            border: Border.all(color: Colors.white12),
+                                          ),
+                                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                                          child: TextField(
+                                            controller: _commentCtrl,
+                                            focusNode: _commentFocus,
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 14,
+                                            ),
+                                            textInputAction: TextInputAction.send,
+                                            onSubmitted: (_) => _postComment(),
+                                            decoration: const InputDecoration(
+                                              hintText: "Add a comment...",
+                                              hintStyle: TextStyle(
+                                                color: Colors.white38,
+                                                fontSize: 14,
+                                              ),
+                                              border: InputBorder.none,
+                                              isDense: true,
+                                              contentPadding: EdgeInsets.symmetric(vertical: 11),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      GestureDetector(
+                                        onTap: _postComment,
+                                        child: Container(
+                                          padding: const EdgeInsets.all(8),
+                                          decoration: BoxDecoration(
+                                            shape: BoxShape.circle,
+                                            color: Colors.pinkAccent.withOpacity(0.15),
+                                          ),
+                                          child: const Icon(
+                                            Icons.send_rounded,
+                                            color: Colors.pinkAccent,
+                                            size: 26,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
+      ),
+    );
+  }
+}
+
 
 // ================================================================
 //  HOME FEED PAGE
@@ -366,7 +739,7 @@ class _VideoFeedListState extends State<_VideoFeedList>
 }
 
 // ================================================================
-//  SINGLE VIDEO ITEM ? ULTRA FAST SEEK
+//  SINGLE VIDEO ITEM — ULTRA FAST SEEK
 // ================================================================
 class FeedVideoItem extends StatefulWidget {
   final VideoData data;
@@ -391,7 +764,7 @@ class _FeedVideoItemState extends State<FeedVideoItem>
   late final ValueNotifier<bool> _likedNotifier;
   late final ValueNotifier<int>  _likeCountNotifier;
   late final ValueNotifier<bool> _savedNotifier;
-  // ULTRA FAST: Notifiers for seek ? parent NEVER rebuilds during seek
+  // ULTRA FAST: Notifiers for seek — parent NEVER rebuilds during seek
   late final ValueNotifier<bool>   _isSeekingNotifier;
   late final ValueNotifier<double> _seekProgressNotifier;
 
@@ -411,7 +784,7 @@ class _FeedVideoItemState extends State<FeedVideoItem>
   // Seek state
   double _dragStartX        = 0.0;
   double _seekStartProgress = 0.0;
-  double _screenWidth       = 0.0; // Cached ? no MediaQuery lookup every frame
+  double _screenWidth       = 0.0; // Cached — no MediaQuery lookup every frame
 
   final List<_CommentItem> _comments = [];
 
@@ -442,16 +815,16 @@ class _FeedVideoItemState extends State<FeedVideoItem>
     ]).animate(_heartCtrl);
 
     _comments.addAll([
-      _CommentItem("@user_1",        "This is amazing! ?", 342),
-      _CommentItem("@flutter_dev",   "Smooth af bro ?",    120),
-      _CommentItem("@creative_soul", "Love this content ?",  87),
+      _CommentItem("@user_1",        "This is amazing! 🔥", 342),
+      _CommentItem("@flutter_dev",   "Smooth af bro ✨",    120),
+      _CommentItem("@creative_soul", "Love this content 💯",  87),
     ]);
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // Cache screen width once ? avoids MediaQuery tree walk every drag frame
+    // Cache screen width once — avoids MediaQuery tree walk every drag frame
     _screenWidth = MediaQuery.of(context).size.width;
   }
 
@@ -525,21 +898,36 @@ class _FeedVideoItemState extends State<FeedVideoItem>
     });
   }
 
+  // ================================================================
+  //  TIKTOK-STYLE COMMENT OPENING
+  // ================================================================
   void _onComment() {
     final wasPlaying = _isPlaying;
-    widget.controller?.pause();
-    showCommentPopup(
-      context,
-      comments: _comments,
-      commentCount: _commentCount,
-      onPost: (text) => setState(() {
-        _comments.insert(0, _CommentItem("@you", text, 0));
-        _commentCount += 1;
-      }),
+    // Video keeps playing in mini preview — do NOT pause
+
+    showGeneralDialog(
+      context: context,
+      barrierDismissible: false,
+      barrierColor: Colors.transparent, // We handle backdrop ourselves
+      transitionDuration: Duration.zero, // We handle animation internally
+      pageBuilder: (context, animation, secondaryAnimation) {
+        return TikTokCommentOverlay(
+          data: widget.data,
+          controller: widget.controller,
+          isReady: widget.isReady,
+          comments: _comments,
+          commentCount: _commentCount,
+          onPost: (text) {
+            setState(() {
+              _comments.insert(0, _CommentItem("@you", text, 0));
+              _commentCount += 1;
+            });
+          },
+        );
+      },
     ).then((_) {
-      if (wasPlaying && mounted) {
+      if (wasPlaying && mounted && _isPlaying) {
         widget.controller?.play();
-        setState(() => _isPlaying = true);
       }
     });
   }
@@ -557,7 +945,7 @@ class _FeedVideoItemState extends State<FeedVideoItem>
     HapticFeedback.lightImpact();
     _savedNotifier.value = !_savedNotifier.value;
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(_savedNotifier.value ? "Saved to collection ?" : "Removed from collection"),
+      content: Text(_savedNotifier.value ? "Saved to collection ✅" : "Removed from collection"),
       duration: const Duration(milliseconds: 900),
       backgroundColor: _savedNotifier.value ? Colors.pinkAccent : Colors.grey[800],
       behavior: SnackBarBehavior.floating,
@@ -572,7 +960,7 @@ class _FeedVideoItemState extends State<FeedVideoItem>
   }
 
   // ================================================================
-  //  ULTRA FAST SEEK ? Zero parent rebuild, 3.0x sensitivity
+  //  ULTRA FAST SEEK — Zero parent rebuild, 3.0x sensitivity
   // ================================================================
   void _onSeekDragStart(DragStartDetails d) {
     final ctrl = widget.controller;
@@ -582,23 +970,23 @@ class _FeedVideoItemState extends State<FeedVideoItem>
     _dragStartX = d.localPosition.dx;
     _seekStartProgress = ctrl.value.position.inMilliseconds / dur;
     _seekProgressNotifier.value = _seekStartProgress;
-    _isSeekingNotifier.value = true;   // NO setState ? notifier only
+    _isSeekingNotifier.value = true;   // NO setState — notifier only
     ctrl.pause();
   }
 
   void _onSeekDragUpdate(DragUpdateDetails d) {
     if (!_isSeekingNotifier.value) return;
-    // Cached _screenWidth ? zero tree walk. 3.0x = blink-of-eye speed
+    // Cached _screenWidth — zero tree walk. 3.0x = blink-of-eye speed
     final delta = d.delta.dx / _screenWidth;
     final newProg = (_seekProgressNotifier.value + delta * 3.0).clamp(0.0, 1.0);
-    _seekProgressNotifier.value = newProg; // NO setState ? 60fps+ smooth
+    _seekProgressNotifier.value = newProg; // NO setState — 60fps+ smooth
   }
 
   void _onSeekDragEnd(DragEndDetails d) {
     final ctrl = widget.controller;
     if (ctrl == null || !_isSeekingNotifier.value) return;
     ctrl.seekTo(ctrl.value.duration * _seekProgressNotifier.value);
-    _isSeekingNotifier.value = false;  // NO setState ? notifier only
+    _isSeekingNotifier.value = false;  // NO setState — notifier only
     if (_isPlaying) ctrl.play();
   }
 
@@ -676,8 +1064,7 @@ class _FeedVideoItemState extends State<FeedVideoItem>
           ),
 
           // ================================================================
-          //  ULTRA FAST: Seek overlay ? parent NEVER rebuilds
-          //  ValueListenableBuilder handles ALL overlay updates internally
+          //  ULTRA FAST: Seek overlay — parent NEVER rebuilds
           // ================================================================
           _SeekOverlayLayer(
             isSeekingNotifier: _isSeekingNotifier,
@@ -746,8 +1133,7 @@ class _FeedVideoItemState extends State<FeedVideoItem>
             ),
 
           // ================================================================
-          //  ULTRA FAST: Bottom progress bar ? parent NEVER rebuilds
-          //  Switches between seek bar & video bar via internal notifiers
+          //  ULTRA FAST: Bottom progress bar — parent NEVER rebuilds
           // ================================================================
           if (ready)
             Positioned(
@@ -854,7 +1240,7 @@ class _SeekOverlayLayer extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 10),
-                      // Ultra-lightweight bar: direct Container width, NO ClipRRect, NO LinearProgressIndicator
+                      // Ultra-lightweight bar
                       Container(
                         width: barW,
                         height: 4,
@@ -1490,162 +1876,8 @@ class _CommentItem {
 }
 
 // ================================================================
-//  COMMENT SHEET
+//  COMMENT TILE
 // ================================================================
-class _CommentSheet extends StatefulWidget {
-  final List<_CommentItem>    comments;
-  final int                   commentCount;
-  final void Function(String) onPost;
-  final bool                  isPopup;
-
-  const _CommentSheet({
-    required this.comments, required this.commentCount, required this.onPost,
-    this.isPopup = false,
-  });
-
-  @override
-  State<_CommentSheet> createState() => _CommentSheetState();
-}
-
-class _CommentSheetState extends State<_CommentSheet> {
-  final TextEditingController _ctrl   = TextEditingController();
-  final FocusNode             _focus  = FocusNode();
-  final ScrollController      _scroll = ScrollController();
-
-  @override
-  void dispose() {
-    _ctrl.dispose(); _focus.dispose(); _scroll.dispose();
-    super.dispose();
-  }
-
-  void _post() {
-    final text = _ctrl.text.trim();
-    if (text.isEmpty) return;
-    HapticFeedback.selectionClick();
-    widget.onPost(text);
-    setState(() {});
-    _ctrl.clear();
-    _focus.unfocus();
-    if (_scroll.hasClients) {
-      _scroll.animateTo(0,
-        duration: const Duration(milliseconds: 250), curve: Curves.easeOut);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: MediaQuery.of(context).size.height * 0.78,
-      decoration: const BoxDecoration(
-        color: Color(0xFF111111),
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      child: Column(
-        children: [
-          const SizedBox(height: 10),
-          Container(
-            width: 38, height: 4,
-            decoration: BoxDecoration(
-              color: Colors.white24, borderRadius: BorderRadius.circular(2)),
-          ),
-          const SizedBox(height: 12),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Row(
-              children: [
-                Text("${widget.commentCount} comments",
-                  style: const TextStyle(
-                    color: Colors.white, fontWeight: FontWeight.w700, fontSize: 16)),
-                const Spacer(),
-                GestureDetector(
-                  onTap: () => Navigator.pop(context),
-                  child: const Icon(Icons.close_rounded, color: Colors.white54, size: 22),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 10),
-          const Divider(color: Colors.white10, height: 1),
-          Expanded(
-            child: ListView.builder(
-              controller: _scroll,
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              itemCount: widget.comments.length,
-              itemBuilder: (_, i) {
-                final c = widget.comments[i];
-                return _CommentTile(
-                  item: c,
-                  onLike: () => setState(() {
-                    c.liked  = !c.liked;
-                    c.likes += c.liked ? 1 : -1;
-                  }),
-                );
-              },
-            ),
-          ),
-          const Divider(color: Colors.white10, height: 1),
-          Padding(
-            padding: EdgeInsets.only(
-              left: 12, right: 12, top: 10,
-              bottom: MediaQuery.of(context).viewInsets.bottom + 16,
-            ),
-            child: Row(
-              children: [
-                Container(
-                  width: 38, height: 38,
-                  decoration: const BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: LinearGradient(
-                      colors: [Colors.pinkAccent, Colors.deepPurpleAccent]),
-                  ),
-                  child: const Icon(Icons.person, color: Colors.white, size: 20),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white10,
-                      borderRadius: BorderRadius.circular(24),
-                      border: Border.all(color: Colors.white12),
-                    ),
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: TextField(
-                      controller: _ctrl,
-                      focusNode: _focus,
-                      style: const TextStyle(color: Colors.white, fontSize: 14),
-                      textInputAction: TextInputAction.send,
-                      onSubmitted: (_) => _post(),
-                      decoration: const InputDecoration(
-                        hintText: "Add a comment...",
-                        hintStyle: TextStyle(color: Colors.white38, fontSize: 14),
-                        border: InputBorder.none,
-                        isDense: true,
-                        contentPadding: EdgeInsets.symmetric(vertical: 11),
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                GestureDetector(
-                  onTap: _post,
-                  child: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Colors.pinkAccent.withOpacity(0.15),
-                    ),
-                    child: const Icon(Icons.send_rounded, color: Colors.pinkAccent, size: 26),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 class _CommentTile extends StatelessWidget {
   final _CommentItem item;
   final VoidCallback onLike;
@@ -1776,7 +2008,7 @@ class _ShareSheet extends StatelessWidget {
                   onTap: () {
                     Navigator.pop(context);
                     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                      content: Text("Shared via ${opt.label} ?"),
+                      content: Text("Shared via ${opt.label} ✅"),
                       duration: const Duration(milliseconds: 900),
                       backgroundColor: opt.bgColor == const Color(0xFF333333)
                           ? Colors.pinkAccent : opt.bgColor,
@@ -1816,5 +2048,3 @@ class _ShareSheet extends StatelessWidget {
     );
   }
 }
-
-// ================================================================
