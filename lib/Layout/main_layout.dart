@@ -6,7 +6,7 @@ import 'package:provider/provider.dart';
 
 import '../Layout/theme_provider.dart';
 import '../Pages/Auth/auth_gate_page.dart';
-import '../Pages/home_page.dart' hide InboxPage;
+import '../Pages/home_page.dart';
 import '../Pages/explore_page.dart';
 import '../Pages/inbox_page.dart';
 import '../Pages/profile_page.dart';
