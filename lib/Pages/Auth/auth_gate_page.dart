@@ -5,6 +5,7 @@ import 'package:flutter_material_design_icons/flutter_material_design_icons.dart
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'setup_profile_screen.dart';
+
 // Auth Popup দেখানোর মূল ফাংশন
 void showAuthPopup(BuildContext context) {
   showGeneralDialog(
@@ -84,7 +85,7 @@ class _VxAuthGateContentState extends State<VxAuthGateContent> {
     }
   }
 
-  // ২. ওটিপি ভেরিফাই করে টোকেন সেভ করার আপডেটেড লজিক
+  // ২. ওটিপি ভেরিফাই করে টোকেন সেভ করার এবং স্ক্রিন রিডাইরেক্ট করার আপডেটেড লজিক
   Future<void> _verifyOTP() async {
     if (_otpController.text.length < 6) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -110,12 +111,15 @@ class _VxAuthGateContentState extends State<VxAuthGateContent> {
       if (!mounted) return;
       final data = jsonDecode(response.body);
 
-      // স্ট্যাটাস কোড ২০০-২৯৯ এর মধ্যে থাকলে সাকসেস ধরবে
+      // স্ট্যাটাস কোড ২০০-২৯ญ এর মধ্যে থাকলে সাকসেস ধরবে
       if (response.statusCode >= 200 && response.statusCode < 300 && data['status'] == true) {
         
         String accessToken = data['access_token'] ?? '';
         String refreshToken = data['refresh_token'] ?? '';
         int userId = data['user']?['id'] ?? 0;
+        
+        // 🎯 ব্যাকএন্ড থেকে পাঠানো 'is_new_user' ফ্ল্যাগটি রিড করা হলো
+        bool isNewUser = data['is_new_user'] ?? true; 
         
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('auth_token', accessToken);
@@ -124,8 +128,22 @@ class _VxAuthGateContentState extends State<VxAuthGateContent> {
         await prefs.setBool('is_logged_in', true);
 
         if (!mounted) return;
+        
+        // ১. প্রথমে বর্তমান ওথ পপআপটি স্ক্রিন থেকে রিমুভ করুন
         Navigator.of(context).pop(); 
         
+        // ২. 🚀 ফ্ল্যাগ চেক করে ইউজারকে সঠিক গন্তব্যে পাঠান
+        if (isNewUser) {
+          // নতুন ইউজার হলে তাকে প্রোফাইল সেটআপ স্ক্রিনে নিয়ে যান
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const SetupProfileScreen()),
+          );
+        } else {
+          // পুরোনো ইউজার হলে সরাসরি মেইন হোম লেআউট স্ক্রিনে নিয়ে যান
+          Navigator.pushReplacementNamed(context, '/home'); 
+        }
+
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("Login Successful! 🚀")),
         );
@@ -486,4 +504,3 @@ class _VxAuthGateContentState extends State<VxAuthGateContent> {
     );
   }
 }
-
