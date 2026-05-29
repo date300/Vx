@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_material_design_icons/flutter_material_design_icons.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-
+import 'package:vx/Pages/Auth/setup_profile_screen.dart';
 // Auth Popup দেখানোর মূল ফাংশন
 void showAuthPopup(BuildContext context) {
   showGeneralDialog(
