@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:video_player/video_player.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
+import 'search_page.dart';
 // ================================================================
 //  CONSTANTS
 // ================================================================
@@ -41,67 +42,67 @@ const List<VideoData> kVideoList = [
   VideoData(
     url: "https://flutter.github.io/assets-for-api-docs/assets/videos/butterfly.mp4",
     username: "@nature_vibes", displayName: "Nature Vibes",
-    caption: "Butterfly in slow motion 🦋 Nature never stops amazing me! #nature #butterfly #wildlife",
+    caption: "Butterfly in slow motion ? Nature never stops amazing me! #nature #butterfly #wildlife",
     sound: "Nature Sounds - Chill Mix", likes: 128400, comments: 3200, shares: 940,
   ),
   VideoData(
     url: "https://flutter.github.io/assets-for-api-docs/assets/videos/bee.mp4",
     username: "@wild_lens", displayName: "Wild Lens",
-    caption: "Busy bee doing its thing 🐝 Save the bees, save the world! #wildlife #bee #nature",
+    caption: "Busy bee doing its thing ? Save the bees, save the world! #wildlife #bee #nature",
     sound: "Buzzing Beats - DJ Honey", likes: 87600, comments: 1540, shares: 620,
   ),
   VideoData(
     url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
     username: "@animation_hub", displayName: "Animation Hub",
-    caption: "Big Buck Bunny is an absolute legend 🐰 Open source cinema at its finest! #animation #3d #blender",
+    caption: "Big Buck Bunny is an absolute legend ? Open source cinema at its finest! #animation #3d #blender",
     sound: "Big Buck Bunny OST", likes: 245000, comments: 9800, shares: 4200,
   ),
   VideoData(
     url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
     username: "@blender_art", displayName: "Blender Art",
-    caption: "Elephants Dream 🐘 a timeless open-source classic ✨ #blender #art #animation",
+    caption: "Elephants Dream ? a timeless open-source classic ? #blender #art #animation",
     sound: "Elephants Dream OST", likes: 196000, comments: 7600, shares: 3100,
   ),
   VideoData(
     url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4",
     username: "@adrenaline_rush", displayName: "Adrenaline Rush",
-    caption: "When life gives you roads, take the joyride 🚗 Feel the speed! #joyride #fun #thrill",
+    caption: "When life gives you roads, take the joyride ? Feel the speed! #joyride #fun #thrill",
     sound: "Speed Demon - Turbo Mix", likes: 312000, comments: 11200, shares: 7800,
   ),
   VideoData(
     url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
     username: "@fire_starter", displayName: "Fire Starter",
-    caption: "Bigger blazes = bigger dreams 🔥 Stay lit every single day! #fire #energy #motivation",
+    caption: "Bigger blazes = bigger dreams ? Stay lit every single day! #fire #energy #motivation",
     sound: "Blaze It Up - LoFi", likes: 98700, comments: 4300, shares: 2100,
   ),
   VideoData(
     url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4",
     username: "@scifi_world", displayName: "SciFi World",
-    caption: "Tears of Steel 🤖 the future is already here ⚡ #scifi #blender #vfx #film",
+    caption: "Tears of Steel ? the future is already here ? #scifi #blender #vfx #film",
     sound: "Steel Tears - Cinematic", likes: 430000, comments: 18700, shares: 12400,
   ),
   VideoData(
     url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4",
     username: "@fun_factory", displayName: "Fun Factory",
-    caption: "More fun, more life! Choose bigger, always 🎉 #fun #vibes #goodtimes",
+    caption: "More fun, more life! Choose bigger, always ? #fun #vibes #goodtimes",
     sound: "Fun Mode - Party Mix", likes: 76500, comments: 2900, shares: 1300,
   ),
   VideoData(
     url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/SubaruOutbackOnStreetAndDirt.mp4",
     username: "@road_warrior", displayName: "Road Warrior",
-    caption: "Street & dirt 🛣️ no road is too tough 💪 Built for anything! #offroad #car #adventure",
+    caption: "Street & dirt ?? no road is too tough ? Built for anything! #offroad #car #adventure",
     sound: "Dirt Road Anthem", likes: 221000, comments: 8400, shares: 5100,
   ),
   VideoData(
     url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/WeAreGoingOnBullrun.mp4",
     username: "@bull_run_crew", displayName: "Bull Run Crew",
-    caption: "We are going on a bull run 🐂 Buckle up and hold tight! #bullrun #adventure #extreme",
+    caption: "We are going on a bull run ? Buckle up and hold tight! #bullrun #adventure #extreme",
     sound: "Bull Run Hype - Beats", likes: 189000, comments: 5500, shares: 4400,
   ),
   VideoData(
     url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/VolkswagenGTIReview.mp4",
     username: "@car_review_bd", displayName: "Car Review BD",
-    caption: "VW GTI Review 🚗 smooth like butter 🧈 This car is a beast! #car #review #gti #volkswagen",
+    caption: "VW GTI Review ? smooth like butter ? This car is a beast! #car #review #gti #volkswagen",
     sound: "GTI Vibes - Engine Roar", likes: 267000, comments: 12300, shares: 6700,
   ),
 ];
@@ -136,25 +137,6 @@ Future<void> showCommentPopup(BuildContext context, {
           ],
         ),
       );
-    },
-    transitionBuilder: (context, animation, secondaryAnimation, child) {
-      final offset = Tween<Offset>(
-        begin: const Offset(0, 1),
-        end: Offset.zero,
-      ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOut));
-      return SlideTransition(position: offset, child: child);
-    },
-  );
-}
-
-Future<void> showNotificationPopup(BuildContext context) {
-  return showGeneralDialog(
-    context: context,
-    barrierDismissible: true,
-    barrierColor: Colors.black.withOpacity(0.6),
-    transitionDuration: const Duration(milliseconds: 250),
-    pageBuilder: (context, animation, secondaryAnimation) {
-      return const _NotificationSheet(isPopup: true);
     },
     transitionBuilder: (context, animation, secondaryAnimation, child) {
       final offset = Tween<Offset>(
@@ -233,13 +215,6 @@ class _TopBar extends StatefulWidget {
 }
 
 class _TopBarState extends State<_TopBar> {
-  bool _hasUnread = true;
-
-  void _showNotifications(BuildContext context) {
-    if (_hasUnread) setState(() => _hasUnread = false);
-    showNotificationPopup(context);
-  }
-
   @override
   Widget build(BuildContext context) {
     final top = MediaQuery.of(context).padding.top;
@@ -253,25 +228,6 @@ class _TopBarState extends State<_TopBar> {
             children: [
               const Icon(Icons.live_tv_rounded, color: Colors.white, size: 24),
               const SizedBox(width: 14),
-              GestureDetector(
-                onTap: () => _showNotifications(context),
-                child: Stack(
-                  clipBehavior: Clip.none,
-                  children: [
-                    const Icon(Icons.notifications_none_rounded, color: Colors.white, size: 26),
-                    if (_hasUnread)
-                      Positioned(
-                        top: -2, right: -2,
-                        child: Container(
-                          width: 9, height: 9,
-                          decoration: const BoxDecoration(
-                            color: Colors.pinkAccent, shape: BoxShape.circle,
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-              ),
               const Spacer(),
               SizedBox(
                 width: 200,
@@ -290,7 +246,11 @@ class _TopBarState extends State<_TopBar> {
               ),
               const Spacer(),
               GestureDetector(
-                onTap: () {},
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const SearchPage()),
+                  );
+                },
                 child: const Icon(Icons.search_rounded, color: Colors.white, size: 26),
               ),
             ],
@@ -406,7 +366,7 @@ class _VideoFeedListState extends State<_VideoFeedList>
 }
 
 // ================================================================
-//  SINGLE VIDEO ITEM — ULTRA FAST SEEK
+//  SINGLE VIDEO ITEM ? ULTRA FAST SEEK
 // ================================================================
 class FeedVideoItem extends StatefulWidget {
   final VideoData data;
@@ -431,7 +391,7 @@ class _FeedVideoItemState extends State<FeedVideoItem>
   late final ValueNotifier<bool> _likedNotifier;
   late final ValueNotifier<int>  _likeCountNotifier;
   late final ValueNotifier<bool> _savedNotifier;
-  // ULTRA FAST: Notifiers for seek — parent NEVER rebuilds during seek
+  // ULTRA FAST: Notifiers for seek ? parent NEVER rebuilds during seek
   late final ValueNotifier<bool>   _isSeekingNotifier;
   late final ValueNotifier<double> _seekProgressNotifier;
 
@@ -451,7 +411,7 @@ class _FeedVideoItemState extends State<FeedVideoItem>
   // Seek state
   double _dragStartX        = 0.0;
   double _seekStartProgress = 0.0;
-  double _screenWidth       = 0.0; // Cached — no MediaQuery lookup every frame
+  double _screenWidth       = 0.0; // Cached ? no MediaQuery lookup every frame
 
   final List<_CommentItem> _comments = [];
 
@@ -482,16 +442,16 @@ class _FeedVideoItemState extends State<FeedVideoItem>
     ]).animate(_heartCtrl);
 
     _comments.addAll([
-      _CommentItem("@user_1",        "This is amazing! 🔥", 342),
-      _CommentItem("@flutter_dev",   "Smooth af bro ✨",    120),
-      _CommentItem("@creative_soul", "Love this content 💯",  87),
+      _CommentItem("@user_1",        "This is amazing! ?", 342),
+      _CommentItem("@flutter_dev",   "Smooth af bro ?",    120),
+      _CommentItem("@creative_soul", "Love this content ?",  87),
     ]);
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // Cache screen width once — avoids MediaQuery tree walk every drag frame
+    // Cache screen width once ? avoids MediaQuery tree walk every drag frame
     _screenWidth = MediaQuery.of(context).size.width;
   }
 
@@ -597,7 +557,7 @@ class _FeedVideoItemState extends State<FeedVideoItem>
     HapticFeedback.lightImpact();
     _savedNotifier.value = !_savedNotifier.value;
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(_savedNotifier.value ? "Saved to collection 💾" : "Removed from collection"),
+      content: Text(_savedNotifier.value ? "Saved to collection ?" : "Removed from collection"),
       duration: const Duration(milliseconds: 900),
       backgroundColor: _savedNotifier.value ? Colors.pinkAccent : Colors.grey[800],
       behavior: SnackBarBehavior.floating,
@@ -612,7 +572,7 @@ class _FeedVideoItemState extends State<FeedVideoItem>
   }
 
   // ================================================================
-  //  ULTRA FAST SEEK — Zero parent rebuild, 3.0x sensitivity
+  //  ULTRA FAST SEEK ? Zero parent rebuild, 3.0x sensitivity
   // ================================================================
   void _onSeekDragStart(DragStartDetails d) {
     final ctrl = widget.controller;
@@ -622,23 +582,23 @@ class _FeedVideoItemState extends State<FeedVideoItem>
     _dragStartX = d.localPosition.dx;
     _seekStartProgress = ctrl.value.position.inMilliseconds / dur;
     _seekProgressNotifier.value = _seekStartProgress;
-    _isSeekingNotifier.value = true;   // NO setState — notifier only
+    _isSeekingNotifier.value = true;   // NO setState ? notifier only
     ctrl.pause();
   }
 
   void _onSeekDragUpdate(DragUpdateDetails d) {
     if (!_isSeekingNotifier.value) return;
-    // Cached _screenWidth — zero tree walk. 3.0x = blink-of-eye speed
+    // Cached _screenWidth ? zero tree walk. 3.0x = blink-of-eye speed
     final delta = d.delta.dx / _screenWidth;
     final newProg = (_seekProgressNotifier.value + delta * 3.0).clamp(0.0, 1.0);
-    _seekProgressNotifier.value = newProg; // NO setState — 60fps+ smooth
+    _seekProgressNotifier.value = newProg; // NO setState ? 60fps+ smooth
   }
 
   void _onSeekDragEnd(DragEndDetails d) {
     final ctrl = widget.controller;
     if (ctrl == null || !_isSeekingNotifier.value) return;
     ctrl.seekTo(ctrl.value.duration * _seekProgressNotifier.value);
-    _isSeekingNotifier.value = false;  // NO setState — notifier only
+    _isSeekingNotifier.value = false;  // NO setState ? notifier only
     if (_isPlaying) ctrl.play();
   }
 
@@ -716,7 +676,7 @@ class _FeedVideoItemState extends State<FeedVideoItem>
           ),
 
           // ================================================================
-          //  ULTRA FAST: Seek overlay — parent NEVER rebuilds
+          //  ULTRA FAST: Seek overlay ? parent NEVER rebuilds
           //  ValueListenableBuilder handles ALL overlay updates internally
           // ================================================================
           _SeekOverlayLayer(
@@ -786,7 +746,7 @@ class _FeedVideoItemState extends State<FeedVideoItem>
             ),
 
           // ================================================================
-          //  ULTRA FAST: Bottom progress bar — parent NEVER rebuilds
+          //  ULTRA FAST: Bottom progress bar ? parent NEVER rebuilds
           //  Switches between seek bar & video bar via internal notifiers
           // ================================================================
           if (ready)
@@ -1816,7 +1776,7 @@ class _ShareSheet extends StatelessWidget {
                   onTap: () {
                     Navigator.pop(context);
                     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                      content: Text("Shared via ${opt.label} ✅"),
+                      content: Text("Shared via ${opt.label} ?"),
                       duration: const Duration(milliseconds: 900),
                       backgroundColor: opt.bgColor == const Color(0xFF333333)
                           ? Colors.pinkAccent : opt.bgColor,
@@ -1858,254 +1818,3 @@ class _ShareSheet extends StatelessWidget {
 }
 
 // ================================================================
-//  NOTIFICATION SHEET
-// ================================================================
-enum _NotifType { like, follow, comment, mention, duet }
-
-class _NotifData {
-  final String     username;
-  final _NotifType type;
-  final String?    extra;
-  final String     time;
-  final Color      avatarColor;
-  bool             isRead;
-
-  _NotifData({
-    required this.username, required this.type, this.extra,
-    required this.time, required this.avatarColor, this.isRead = false,
-  });
-
-  String get message {
-    switch (type) {
-      case _NotifType.like:    return "liked your video. ${extra ?? ''}";
-      case _NotifType.follow:  return "started following you.";
-      case _NotifType.comment: return 'commented: "${extra ?? ''}"';
-      case _NotifType.mention: return 'mentioned you: "${extra ?? ''}"';
-      case _NotifType.duet:    return "dueted your video.";
-    }
-  }
-}
-
-class _NotificationSheet extends StatefulWidget {
-  final bool isPopup;
-  const _NotificationSheet({this.isPopup = false});
-
-  @override
-  State<_NotificationSheet> createState() => _NotificationSheetState();
-}
-
-class _NotificationSheetState extends State<_NotificationSheet> {
-  final List<_NotifData> _newNotifs = [
-    _NotifData(username: "@nature_vibes",  type: _NotifType.like,    extra: "Butterfly in slow motion 🦋", time: "2m ago",  avatarColor: Colors.pinkAccent,       isRead: false),
-    _NotifData(username: "@wild_lens",     type: _NotifType.follow,                                          time: "10m ago", avatarColor: Colors.deepPurpleAccent, isRead: false),
-    _NotifData(username: "@animation_hub", type: _NotifType.comment,  extra: "This is insane quality 🔥",  time: "25m ago", avatarColor: Colors.orangeAccent,     isRead: false),
-    _NotifData(username: "@scifi_world",   type: _NotifType.mention,  extra: "@you check this out!",         time: "1h ago",  avatarColor: Colors.cyanAccent,       isRead: false),
-  ];
-
-  final List<_NotifData> _weekNotifs = [
-    _NotifData(username: "@blender_art",   type: _NotifType.duet,                                            time: "2d ago", avatarColor: Colors.tealAccent,      isRead: true),
-    _NotifData(username: "@road_warrior",  type: _NotifType.like,    extra: "Street & dirt 🛣️",             time: "3d ago", avatarColor: Colors.redAccent,       isRead: true),
-    _NotifData(username: "@fun_factory",   type: _NotifType.follow,                                          time: "4d ago", avatarColor: Colors.amberAccent,     isRead: true),
-    _NotifData(username: "@bull_run_crew", type: _NotifType.comment,  extra: "Bro this slaps 🔥",           time: "5d ago", avatarColor: Colors.lightBlueAccent, isRead: true),
-    _NotifData(username: "@car_review_bd", type: _NotifType.like,    extra: "VW GTI Review 🚗",             time: "6d ago", avatarColor: Colors.greenAccent,     isRead: true),
-  ];
-
-  final Set<String> _followingBack = {};
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: widget.isPopup ? MediaQuery.of(context).size.height : MediaQuery.of(context).size.height * 0.88,
-      decoration: BoxDecoration(
-        color: const Color(0xFF0E0E0E),
-        borderRadius: widget.isPopup
-            ? null
-            : const BorderRadius.vertical(top: Radius.circular(22)),
-      ),
-      child: Column(
-        children: [
-          const SizedBox(height: 10),
-          Container(
-            width: 40, height: 4,
-            decoration: BoxDecoration(
-              color: Colors.white24, borderRadius: BorderRadius.circular(2)),
-          ),
-          const SizedBox(height: 14),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 18),
-            child: Row(
-              children: [
-                const Text("Activity", style: TextStyle(
-                  color: Colors.white, fontWeight: FontWeight.w800,
-                  fontSize: 20, letterSpacing: 0.2)),
-                const Spacer(),
-                GestureDetector(
-                  onTap: () => Navigator.pop(context),
-                  child: const Icon(Icons.close_rounded, color: Colors.white54, size: 22),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 10),
-          const Divider(color: Colors.white10, height: 1),
-          Expanded(
-            child: ListView(
-              padding: const EdgeInsets.only(bottom: 24),
-              children: [
-                _sectionHeader("New"),
-                ..._newNotifs.map((e) => _NotifTile(
-                  item: e,
-                  isFollowing: _followingBack.contains(e.username),
-                  onFollowBack: e.type == _NotifType.follow
-                      ? () => setState(() {
-                            _followingBack.contains(e.username)
-                                ? _followingBack.remove(e.username)
-                                : _followingBack.add(e.username);
-                          })
-                      : null,
-                )),
-                const SizedBox(height: 6),
-                _sectionHeader("This Week"),
-                ..._weekNotifs.map((e) => _NotifTile(
-                  item: e,
-                  isFollowing: _followingBack.contains(e.username),
-                  onFollowBack: e.type == _NotifType.follow
-                      ? () => setState(() {
-                            _followingBack.contains(e.username)
-                                ? _followingBack.remove(e.username)
-                                : _followingBack.add(e.username);
-                          })
-                      : null,
-                )),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _sectionHeader(String title) => Padding(
-    padding: const EdgeInsets.fromLTRB(18, 14, 18, 4),
-    child: Text(title, style: const TextStyle(
-      color: Colors.white, fontWeight: FontWeight.w700, fontSize: 14)),
-  );
-}
-
-class _NotifTile extends StatelessWidget {
-  final _NotifData    item;
-  final bool          isFollowing;
-  final VoidCallback? onFollowBack;
-
-  const _NotifTile({
-    required this.item, required this.isFollowing, this.onFollowBack,
-  });
-
-  IconData get _typeIcon {
-    switch (item.type) {
-      case _NotifType.like:    return Icons.favorite_rounded;
-      case _NotifType.follow:  return Icons.person_add_rounded;
-      case _NotifType.comment: return Icons.chat_bubble_rounded;
-      case _NotifType.mention: return Icons.alternate_email_rounded;
-      case _NotifType.duet:    return Icons.queue_music_rounded;
-    }
-  }
-
-  Color get _typeColor {
-    switch (item.type) {
-      case _NotifType.like:    return Colors.pinkAccent;
-      case _NotifType.follow:  return Colors.purpleAccent;
-      case _NotifType.comment: return Colors.blueAccent;
-      case _NotifType.mention: return Colors.orangeAccent;
-      case _NotifType.duet:    return Colors.tealAccent;
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      color: item.isRead ? Colors.transparent : Colors.white.withOpacity(0.035),
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Stack(
-            clipBehavior: Clip.none,
-            children: [
-              Container(
-                width: 48, height: 48,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: LinearGradient(
-                    colors: [item.avatarColor, item.avatarColor.withOpacity(0.5)],
-                    begin: Alignment.topLeft, end: Alignment.bottomRight,
-                  ),
-                ),
-                child: const Icon(Icons.person, color: Colors.white, size: 24),
-              ),
-              Positioned(
-                bottom: -2, right: -2,
-                child: Container(
-                  width: 20, height: 20,
-                  decoration: BoxDecoration(
-                    color: _typeColor, shape: BoxShape.circle,
-                    border: Border.all(color: const Color(0xFF0E0E0E), width: 2),
-                  ),
-                  child: Icon(_typeIcon, color: Colors.white, size: 11),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: RichText(
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              text: TextSpan(
-                style: const TextStyle(color: Colors.white70, fontSize: 13.5, height: 1.4),
-                children: [
-                  TextSpan(text: item.username,
-                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
-                  const TextSpan(text: " "),
-                  TextSpan(text: item.message),
-                  const TextSpan(text: "  "),
-                  TextSpan(text: item.time,
-                    style: const TextStyle(color: Colors.white38, fontSize: 12)),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(width: 10),
-          if (onFollowBack != null)
-            GestureDetector(
-              onTap: onFollowBack,
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 180),
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                decoration: BoxDecoration(
-                  color: isFollowing ? Colors.transparent : Colors.pinkAccent,
-                  border: Border.all(
-                    color: isFollowing ? Colors.white30 : Colors.pinkAccent),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Text(
-                  isFollowing ? "Following" : "Follow",
-                  style: TextStyle(
-                    color: isFollowing ? Colors.white54 : Colors.white,
-                    fontSize: 12, fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-            )
-          else if (!item.isRead)
-            Container(
-              width: 8, height: 8,
-              decoration: const BoxDecoration(
-                color: Colors.pinkAccent, shape: BoxShape.circle),
-            ),
-        ],
-      ),
-    );
-  }
-}
-

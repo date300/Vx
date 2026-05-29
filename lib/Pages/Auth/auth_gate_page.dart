@@ -3,7 +3,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_material_design_icons/flutter_material_design_icons.dart';
 import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart'; // টোকেন সেভ করার জন্য ইমপোর্ট করা হলো
+import 'package:shared_preferences/shared_preferences.dart';
 
 // Auth Popup দেখানোর মূল ফাংশন
 void showAuthPopup(BuildContext context) {
@@ -35,7 +35,7 @@ class _VxAuthGateContentState extends State<VxAuthGateContent> {
   bool _isLoading = false; 
   final String _baseUrl = "https://app.easysarvice.com";
 
-  // ১. ওটিপি কোড পাঠানোর এপিআই কল
+  // ১. ইমেইলে ওটিপি রিকোয়েস্ট পাঠানোর ফাংশন
   Future<void> _sendOTP() async {
     if (_emailController.text.isEmpty || !_emailController.text.contains("@")) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -84,7 +84,7 @@ class _VxAuthGateContentState extends State<VxAuthGateContent> {
     }
   }
 
-  // ২. ওটিপি ভেরিফাই করে টোকেন লোকাল স্টোরেজে সেভ করার কমপ্লিট লজিক
+  // ২. ওটিপি ভেরিফাই করে টোকেন সেভ করার আপডেটেড লজিক
   Future<void> _verifyOTP() async {
     if (_otpController.text.length < 6) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -110,24 +110,29 @@ class _VxAuthGateContentState extends State<VxAuthGateContent> {
       if (!mounted) return;
       final data = jsonDecode(response.body);
 
-      if (response.statusCode == 200 || data['status'] == true) {
-        // ব্যাকএন্ড থেকে আসা এক্সেস টোকেনটি নেওয়া হলো
-        String accessToken = data['access_token'] ?? '';
+      // স্ট্যাটাস কোড ২০০-২৯৯ এর মধ্যে থাকলে সাকসেস ধরবে
+      if (response.statusCode >= 200 && response.statusCode < 300 && data['status'] == true) {
         
-        // টোকেনটি SharedPreferences-এ আজীবনের জন্য সেভ করা হচ্ছে
+        String accessToken = data['access_token'] ?? '';
+        String refreshToken = data['refresh_token'] ?? '';
+        int userId = data['user']?['id'] ?? 0;
+        
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('auth_token', accessToken);
+        await prefs.setString('refresh_token', refreshToken);
+        await prefs.setInt('user_id', userId);
         await prefs.setBool('is_logged_in', true);
 
         if (!mounted) return;
-        Navigator.of(context).pop(); // সফল লগইনে পপআপ বন্ধ হবে
+        Navigator.of(context).pop(); 
         
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(data['message'] ?? "Login Successful!")),
+          const SnackBar(content: Text("Login Successful! 🚀")),
         );
       } else {
+        String errorMsg = data['message'] ?? "Invalid OTP! (Status: ${response.statusCode})";
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(data['message'] ?? "Invalid OTP code!")),
+          SnackBar(content: Text(errorMsg)),
         );
       }
     } catch (e) {
@@ -261,7 +266,6 @@ class _VxAuthGateContentState extends State<VxAuthGateContent> {
     );
   }
 
-  // ইমেইল ইনপুট ভিউ
   Widget _buildEmailStepView() {
     return Column(
       key: const ValueKey('emailStep'),
@@ -340,7 +344,6 @@ class _VxAuthGateContentState extends State<VxAuthGateContent> {
     );
   }
 
-  // ওটিপি কোড ভেরিফিকেশন ভিউ
   Widget _buildOtpStepView() {
     return Column(
       key: const ValueKey('otpStep'),
@@ -483,3 +486,4 @@ class _VxAuthGateContentState extends State<VxAuthGateContent> {
     );
   }
 }
+
