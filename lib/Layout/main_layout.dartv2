@@ -3,7 +3,6 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import 'package:shared_preferences/shared_preferences.dart'; // নতুন যোগ করা হয়েছে
 
 import '../Layout/theme_provider.dart';
 import '../Pages/Auth/auth_gate_page.dart';
@@ -15,12 +14,6 @@ import '../Pages/upload_popup.dart';
 
 class AuthService {
   static bool isLoggedIn = false;
-
-  // অ্যাপ স্টার্ট হওয়ার সময় লগইন স্ট্যাটাস চেক করবে
-  static Future<void> checkLoginStatus() async {
-    final prefs = await SharedPreferences.getInstance();
-    isLoggedIn = prefs.getBool('is_logged_in') ?? false;
-  }
 }
 
 class MainLayout extends StatefulWidget {
@@ -38,11 +31,6 @@ class _MainLayoutState extends State<MainLayout>
   void initState() {
     super.initState();
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-
-    // অ্যাপ চালু হওয়ার সাথে সাথে লগইন চেক
-    AuthService.checkLoginStatus().then((_) {
-      if (mounted) setState(() {});
-    });
   }
 
   void _updateSystemUI(bool isDark) {
@@ -66,23 +54,12 @@ class _MainLayoutState extends State<MainLayout>
     ProfilePage(),
   ];
 
-  void _onItemTapped(int index) async {
-    // ইনবক্স (2) বা প্রোফাইল (3)-এ ক্লিক করলে এবং লগইন না থাকলে Auth Popup দেখাবে
-    if ((index == 2 || index == 3) && !AuthService.isLoggedIn) {
-      showAuthPopup(context);
-      
-      // পপআপ বন্ধ হওয়ার পর আবার স্ট্যাটাস চেক করে নেবে (যাতে সাথে সাথেই লগইন হয়ে যায়)
-      final prefs = await SharedPreferences.getInstance();
-      AuthService.isLoggedIn = prefs.getBool('is_logged_in') ?? false;
-      
-      // যদি পপআপ থেকে ইউজার লগইন করে ফেলে, তাহলে প্রোফাইল বা ইনবক্সে নিয়ে যাবে
-      if (AuthService.isLoggedIn) {
-        setState(() => _selectedIndex = index);
-      }
-      return;
-    }
-    
-    // লগইন করা থাকলে বা অন্য ট্যাবে ক্লিক করলে নরমালি সিলেক্ট হবে
+  void _onItemTapped(int index) {
+    // [DISABLED TEMPORARILY] Auth gate check - will be enabled later
+    // if ((index == 2 || index == 3) && !AuthService.isLoggedIn) {
+    //   showAuthPopup(context);
+    //   return;
+    // }
     setState(() => _selectedIndex = index);
   }
 

@@ -1,11 +1,8 @@
-import 'dart:convert';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_material_design_icons/flutter_material_design_icons.dart';
-import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart'; // টোকেন সেভ করার জন্য ইমপোর্ট করা হলো
 
-// Auth Popup দেখানোর মূল ফাংশন
+// Auth Popup কল করার ফাংশন
 void showAuthPopup(BuildContext context) {
   showGeneralDialog(
     context: context,
@@ -25,125 +22,44 @@ class VxAuthGateContent extends StatefulWidget {
   State<VxAuthGateContent> createState() => _VxAuthGateContentState();
 }
 
+// স্ক্রিনের ২টি অবস্থার জন্য Enum (১. গুগল + সরাসরি ইমেইল বক্স, ২. ওটিপি বক্স)
 enum AuthStep { emailStep, otpStep }
 
 class _VxAuthGateContentState extends State<VxAuthGateContent> {
   AuthStep _currentStep = AuthStep.emailStep;
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _otpController = TextEditingController();
-  
-  bool _isLoading = false; 
-  final String _baseUrl = "https://app.easysarvice.com";
 
-  // ১. ওটিপি কোড পাঠানোর এপিআই কল
-  Future<void> _sendOTP() async {
+  // ওটিপি পাঠানোর ফাংশন (ইমেইল ভ্যালিডেশন সহ)
+  void _sendOTP() {
     if (_emailController.text.isEmpty || !_emailController.text.contains("@")) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Please enter a valid email address")),
       );
       return;
     }
-
+    // এখানে আপনার Go Backend এর /auth/email-request API কল হবে
     setState(() {
-      _isLoading = true;
+      _currentStep = AuthStep.otpStep;
     });
-
-    try {
-      final response = await http.post(
-        Uri.parse("$_baseUrl/api/v1/auth/email-request"),
-        headers: {"Content-Type": "application/json"},
-        body: jsonEncode({"email": _emailController.text.trim()}),
-      );
-
-      if (!mounted) return;
-      final data = jsonDecode(response.body);
-
-      if (response.statusCode == 200 || data['status'] == true) {
-        setState(() {
-          _currentStep = AuthStep.otpStep;
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(data['message'] ?? "OTP sent successfully!")),
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(data['message'] ?? "Failed to send OTP")),
-        );
-      }
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Network Error: $e")),
-      );
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
-    }
   }
 
-  // ২. ওটিপি ভেরিফাই করে টোকেন লোকাল স্টোরেজে সেভ করার কমপ্লিট লজিক
-  Future<void> _verifyOTP() async {
+  // ওটিপি ভেরিফাই করার ফাংশন
+  void _verifyOTP() {
     if (_otpController.text.length < 6) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Enter the 6-digit OTP code")),
       );
       return;
     }
-
-    setState(() {
-      _isLoading = true;
-    });
-
-    try {
-      final response = await http.post(
-        Uri.parse("$_baseUrl/api/v1/auth/email-verify"),
-        headers: {"Content-Type": "application/json"},
-        body: jsonEncode({
-          "email": _emailController.text.trim(),
-          "otp": _otpController.text.trim(),
-        }),
-      );
-
-      if (!mounted) return;
-      final data = jsonDecode(response.body);
-
-      if (response.statusCode == 200 || data['status'] == true) {
-        // ব্যাকএন্ড থেকে আসা এক্সেস টোকেনটি নেওয়া হলো
-        String accessToken = data['access_token'] ?? '';
-        
-        // টোকেনটি SharedPreferences-এ আজীবনের জন্য সেভ করা হচ্ছে
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString('auth_token', accessToken);
-        await prefs.setBool('is_logged_in', true);
-
-        if (!mounted) return;
-        Navigator.of(context).pop(); // সফল লগইনে পপআপ বন্ধ হবে
-        
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(data['message'] ?? "Login Successful!")),
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(data['message'] ?? "Invalid OTP code!")),
-        );
-      }
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Network Error: $e")),
-      );
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
-    }
+    // এখানে আপনার Go Backend এর /auth/email-verify API কল হবে
+    Navigator.of(context).pop();
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Login Successful!")),
+    );
   }
 
+  // ওটিপি স্ক্রিন থেকে আবার আগের ইমেইল স্ক্রিনে ফিরে যাওয়ার জন্য
   void _goBackToEmail() {
     setState(() {
       _currentStep = AuthStep.emailStep;
@@ -186,7 +102,7 @@ class _VxAuthGateContentState extends State<VxAuthGateContent> {
                 ),
               ),
 
-              // লোগো ও টেক্সট পার্ট
+              // লোগো এবং টেক্সট সেকশন
               Expanded(
                 child: Center(
                   child: SingleChildScrollView(
@@ -234,7 +150,7 @@ class _VxAuthGateContentState extends State<VxAuthGateContent> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            _buildFeatureChip("⚡ Create"),
+                            _buildFeatureChip("✨ Create"),
                             const SizedBox(width: 12),
                             _buildFeatureChip("❤️ Like"),
                             const SizedBox(width: 12),
@@ -247,7 +163,7 @@ class _VxAuthGateContentState extends State<VxAuthGateContent> {
                 ),
               ),
 
-              // এনিমেশন ইনপুট এরিয়া
+              // ডাইনামিক বটম সেকশন (Animated)
               AnimatedSwitcher(
                 duration: const Duration(milliseconds: 250),
                 child: _currentStep == AuthStep.otpStep 
@@ -261,12 +177,13 @@ class _VxAuthGateContentState extends State<VxAuthGateContent> {
     );
   }
 
-  // ইমেইল ইনপুট ভিউ
+  // ১. মেইন স্ক্রিন: গুগল বাটন + সরাসরি ইমেইল ফিল্ড (Claude AI Style)
   Widget _buildEmailStepView() {
     return Column(
       key: const ValueKey('emailStep'),
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        // Continue with Google Button
         _buildAuthButton(
           icon: MdiIcons.google,
           text: "Continue with Google",
@@ -274,6 +191,7 @@ class _VxAuthGateContentState extends State<VxAuthGateContent> {
             colors: [Color(0xFFFF4FB3), Color(0xFFB24FF3)],
           ),
           onPressed: () {
+            // Google Login Logic
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(content: Text("Google login coming soon")),
             );
@@ -281,6 +199,7 @@ class _VxAuthGateContentState extends State<VxAuthGateContent> {
         ),
         const SizedBox(height: 24),
         
+        // OR Divider text
         Row(
           children: [
             Expanded(child: Divider(color: Colors.white.withOpacity(0.1))),
@@ -296,9 +215,9 @@ class _VxAuthGateContentState extends State<VxAuthGateContent> {
         ),
         const SizedBox(height: 24),
 
+        // সরাসরি ইমেইল ইনপুট বক্স (কোনো ক্লিক ছাড়া)
         TextField(
           controller: _emailController,
-          enabled: !_isLoading, 
           style: const TextStyle(color: Colors.white),
           keyboardType: TextInputType.emailAddress,
           decoration: InputDecoration(
@@ -316,11 +235,11 @@ class _VxAuthGateContentState extends State<VxAuthGateContent> {
         ),
         const SizedBox(height: 16),
         
+        // ওটিপি পাঠানোর বাটন
         _buildAuthButton(
           icon: Icons.arrow_forward,
           text: "Continue with Email",
-          isLoading: _isLoading, 
-          gradient: null, 
+          gradient: null, // প্রিমিয়াম ডার্ক স্টাইল বাটন
           onPressed: _sendOTP,
         ),
         const SizedBox(height: 24),
@@ -340,7 +259,7 @@ class _VxAuthGateContentState extends State<VxAuthGateContent> {
     );
   }
 
-  // ওটিপি কোড ভেরিফিকেশন ভিউ
+  // ২. ওটিপি ইনপুট দেওয়ার ভিউ
   Widget _buildOtpStepView() {
     return Column(
       key: const ValueKey('otpStep'),
@@ -350,7 +269,7 @@ class _VxAuthGateContentState extends State<VxAuthGateContent> {
           children: [
             IconButton(
               icon: const Icon(Icons.arrow_back, color: Colors.white),
-              onPressed: _isLoading ? null : _goBackToEmail,
+              onPressed: _goBackToEmail,
             ),
             const Text(
               "Verify Email",
@@ -372,9 +291,9 @@ class _VxAuthGateContentState extends State<VxAuthGateContent> {
         ),
         const SizedBox(height: 20),
         
+        // ওটিপি বক্স
         TextField(
           controller: _otpController,
-          enabled: !_isLoading,
           keyboardType: TextInputType.number,
           maxLength: 6,
           textAlign: TextAlign.center,
@@ -402,10 +321,10 @@ class _VxAuthGateContentState extends State<VxAuthGateContent> {
         ),
         const SizedBox(height: 16),
         
+        // ভেরিফাই বাটন
         _buildAuthButton(
           icon: Icons.check_circle_outline,
           text: "Verify & Login",
-          isLoading: _isLoading, 
           gradient: const LinearGradient(
             colors: [Color(0xFFFF4FB3), Color(0xFFB24FF3)],
           ),
@@ -415,6 +334,7 @@ class _VxAuthGateContentState extends State<VxAuthGateContent> {
     );
   }
 
+  // Feature chip widget
   Widget _buildFeatureChip(String text) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -437,12 +357,12 @@ class _VxAuthGateContentState extends State<VxAuthGateContent> {
     );
   }
 
+  // Auth button builder
   Widget _buildAuthButton({
     required IconData icon,
     required String text,
     required VoidCallback onPressed,
     LinearGradient? gradient,
-    bool isLoading = false, 
   }) {
     return Container(
       decoration: BoxDecoration(
@@ -461,24 +381,22 @@ class _VxAuthGateContentState extends State<VxAuthGateContent> {
       ),
       child: CupertinoButton(
         padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
-        onPressed: isLoading ? null : onPressed, 
-        child: isLoading 
-            ? const CupertinoActivityIndicator(color: Colors.white) 
-            : Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(icon, color: Colors.white, size: 24),
-                  const SizedBox(width: 12),
-                  Text(
-                    text,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 17,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
+        onPressed: onPressed,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, color: Colors.white, size: 24),
+            const SizedBox(width: 12),
+            Text(
+              text,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 17,
+                fontWeight: FontWeight.w600,
               ),
+            ),
+          ],
+        ),
       ),
     );
   }
