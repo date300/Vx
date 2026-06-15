@@ -5,15 +5,41 @@ import 'package:flutter_material_design_icons/flutter_material_design_icons.dart
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'setup_profile_screen.dart';
+import '../../Layout/responsive_layout.dart';
 
 // Auth Popup দেখানোর মূল ফাংশন
 void showAuthPopup(BuildContext context) {
+  final isDesktop = ResponsiveLayout.isDesktop(context);
+  
   showGeneralDialog(
     context: context,
-    barrierDismissible: false,
-    barrierColor: Colors.black,
+    barrierDismissible: true,
+    barrierLabel: "Dismiss",
+    barrierColor: isDesktop ? Colors.black87 : Colors.black,
     transitionDuration: const Duration(milliseconds: 300),
     pageBuilder: (context, animation, secondaryAnimation) {
+      if (isDesktop) {
+        return Center(
+          child: Container(
+            width: 900,
+            height: 600,
+            clipBehavior: Clip.antiAlias,
+            decoration: BoxDecoration(
+              color: Colors.black,
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(color: Colors.white12),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.pinkAccent.withOpacity(0.1),
+                  blurRadius: 100,
+                  spreadRadius: 10,
+                )
+              ],
+            ),
+            child: const VxAuthGateContent(),
+          ),
+        );
+      }
       return const VxAuthGateContent();
     },
   );
@@ -182,105 +208,158 @@ class _VxAuthGateContentState extends State<VxAuthGateContent> {
 
   @override
   Widget build(BuildContext context) {
+    final isDesktop = ResponsiveLayout.isDesktop(context);
+    final isTablet = ResponsiveLayout.isTablet(context);
+    final useHorizontalLayout = isDesktop || isTablet;
+
     return Scaffold(
       backgroundColor: Colors.black,
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // Skip Button
-              Align(
-                alignment: Alignment.topRight,
-                child: TextButton(
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                  },
-                  child: const Text(
-                    "Skip",
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
+        child: Stack(
+          children: [
+            // Close/Skip Button
+            Positioned(
+              top: 8,
+              right: 8,
+              child: TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text(
+                  "Skip",
+                  style: TextStyle(
+                    color: Colors.white70,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ),
+            ),
 
-              // লোগো ও টেক্সট পার্ট
-              Expanded(
-                child: Center(
-                  child: SingleChildScrollView(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        ShaderMask(
-                          shaderCallback: (bounds) => const LinearGradient(
-                            colors: [
-                              Color(0xFFFF4FB3),
-                              Color(0xFFB24FF3),
-                              Color(0xFF4F9DFF),
-                            ],
-                          ).createShader(bounds),
-                          child: const Text(
-                            "Vx",
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 80,
-                              fontWeight: FontWeight.bold,
-                              letterSpacing: 2,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 40),
-                        const Text(
-                          "Welcome to Vx",
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 28,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          "Discover short videos that will\nmake your day. Join millions of\ncreators and viewers.",
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: Colors.white.withOpacity(0.7),
-                            fontSize: 16,
-                            height: 1.5,
-                          ),
-                        ),
-                        const SizedBox(height: 24),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            _buildFeatureChip("⚡ Create"),
-                            const SizedBox(width: 12),
-                            _buildFeatureChip("❤️ Like"),
-                            const SizedBox(width: 12),
-                            _buildFeatureChip("💬 Comment"),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-
-              // এনিমেশন ইনপুট এরিয়া
-              AnimatedSwitcher(
-                duration: const Duration(milliseconds: 250),
-                child: _currentStep == AuthStep.otpStep 
-                    ? _buildOtpStepView() 
-                    : _buildEmailStepView(),
-              ),
-            ],
-          ),
+            Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: useHorizontalLayout 
+                  ? _buildHorizontalLayout() 
+                  : _buildVerticalLayout(),
+            ),
+          ],
         ),
       ),
+    );
+  }
+
+  Widget _buildVerticalLayout() {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const SizedBox(height: 40),
+        Expanded(
+          child: Center(
+            child: SingleChildScrollView(child: _buildBrandInfo()),
+          ),
+        ),
+        const SizedBox(height: 24),
+        AnimatedSwitcher(
+          duration: const Duration(milliseconds: 250),
+          child: _currentStep == AuthStep.otpStep 
+              ? _buildOtpStepView() 
+              : _buildEmailStepView(),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildHorizontalLayout() {
+    return Row(
+      children: [
+        // Left Side: Brand Info
+        Expanded(
+          flex: 1,
+          child: Center(
+            child: SingleChildScrollView(child: _buildBrandInfo()),
+          ),
+        ),
+
+        // Vertical Divider
+        Container(
+          width: 1,
+          margin: const EdgeInsets.symmetric(horizontal: 40, vertical: 60),
+          color: Colors.white10,
+        ),
+
+        // Right Side: Auth Form
+        Expanded(
+          flex: 1,
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 400),
+              child: SingleChildScrollView(
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 250),
+                  child: _currentStep == AuthStep.otpStep 
+                      ? _buildOtpStepView() 
+                      : _buildEmailStepView(),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildBrandInfo() {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        ShaderMask(
+          shaderCallback: (bounds) => const LinearGradient(
+            colors: [
+              Color(0xFFFF4FB3),
+              Color(0xFFB24FF3),
+              Color(0xFF4F9DFF),
+            ],
+          ).createShader(bounds),
+          child: const Text(
+            "Vx",
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 80,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 2,
+            ),
+          ),
+        ),
+        const SizedBox(height: 40),
+        const Text(
+          "Welcome to Vx",
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 28,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 16),
+        Text(
+          "Discover short videos that will\nmake your day. Join millions of\ncreators and viewers.",
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            color: Colors.white.withOpacity(0.7),
+            fontSize: 16,
+            height: 1.5,
+          ),
+        ),
+        const SizedBox(height: 24),
+        Wrap(
+          spacing: 12,
+          runSpacing: 12,
+          alignment: WrapAlignment.center,
+          children: [
+            _buildFeatureChip("⚡ Create"),
+            _buildFeatureChip("❤️ Like"),
+            _buildFeatureChip("💬 Comment"),
+          ],
+        ),
+      ],
     );
   }
 

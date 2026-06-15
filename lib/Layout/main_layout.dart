@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart'; // নতুন যোগ করা হয়েছে
 
+import '../Layout/responsive_layout.dart';
 import '../Layout/theme_provider.dart';
 import '../Pages/Auth/auth_gate_page.dart';
 import '../Pages/home_page.dart';
@@ -99,6 +100,7 @@ class _MainLayoutState extends State<MainLayout>
   Widget build(BuildContext context) {
     final themeProvider = context.watch<ThemeProvider>();
     final isDark = _isDark(themeProvider.themeMode);
+    final isDesktop = ResponsiveLayout.isDesktop(context);
 
     _updateSystemUI(isDark);
 
@@ -121,20 +123,221 @@ class _MainLayoutState extends State<MainLayout>
       extendBody: true,
       extendBodyBehindAppBar: true,
       backgroundColor: bgColor,
-      body: IndexedStack(
-        index: _selectedIndex,
-        children: _pages,
+      body: Row(
+        children: [
+          if (isDesktop)
+            _buildSideBar(
+              isDark: isDark,
+              borderColor: borderColor,
+              activeIconColor: activeIconColor,
+              inactiveIconColor: inactiveIconColor,
+              uploadBorderColor: uploadBorderColor,
+            ),
+          Expanded(
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 1600),
+                child: IndexedStack(
+                  index: _selectedIndex,
+                  children: _pages,
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
-      bottomNavigationBar: _buildNavBar(
-        isDark: isDark,
-        navBgColor: navBgColor,
-        borderColor: borderColor,
-        activeIconColor: activeIconColor,
-        inactiveIconColor: inactiveIconColor,
-        uploadBorderColor: uploadBorderColor,
+      bottomNavigationBar: isDesktop
+          ? null
+          : _buildNavBar(
+              isDark: isDark,
+              navBgColor: navBgColor,
+              borderColor: borderColor,
+              activeIconColor: activeIconColor,
+              inactiveIconColor: inactiveIconColor,
+              uploadBorderColor: uploadBorderColor,
+            ),
+    );
+  }
+
+  Widget _buildSideBar({
+    required bool isDark,
+    required Color borderColor,
+    required Color activeIconColor,
+    required Color inactiveIconColor,
+    required Color uploadBorderColor,
+  }) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isCompact = constraints.maxWidth < 200;
+        return AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          width: isCompact ? 80 : 260,
+          decoration: BoxDecoration(
+            color: isDark ? Colors.black : Colors.white,
+            border: Border(
+              right: BorderSide(color: borderColor, width: 0.5),
+            ),
+          ),
+          child: Column(
+            children: [
+              const SizedBox(height: 40),
+              if (!isCompact)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: Row(
+                    children: [
+                      Text(
+                        'VX',
+                        style: TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.w900,
+                          color: activeIconColor,
+                          letterSpacing: -1,
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+              else
+                Icon(CupertinoIcons.infinite, color: activeIconColor, size: 32),
+              const SizedBox(height: 32),
+              _buildSideNavItem(
+                index: 0,
+                label: isCompact ? "" : 'Home',
+                icon: CupertinoIcons.house,
+                activeIcon: CupertinoIcons.house_fill,
+                activeColor: activeIconColor,
+                inactiveColor: inactiveIconColor,
+                isCompact: isCompact,
+              ),
+              _buildSideNavItem(
+                index: 1,
+                label: isCompact ? "" : 'Explore',
+                icon: CupertinoIcons.search,
+                activeIcon: CupertinoIcons.search,
+                activeColor: activeIconColor,
+                inactiveColor: inactiveIconColor,
+                isCompact: isCompact,
+              ),
+              _buildSideNavItem(
+                index: 2,
+                label: isCompact ? "" : 'Inbox',
+                icon: CupertinoIcons.bell,
+                activeIcon: CupertinoIcons.bell_fill,
+                activeColor: activeIconColor,
+                inactiveColor: inactiveIconColor,
+                isCompact: isCompact,
+              ),
+              _buildSideNavItem(
+                index: 3,
+                label: isCompact ? "" : 'Profile',
+                icon: CupertinoIcons.person,
+                activeIcon: CupertinoIcons.person_fill,
+                activeColor: activeIconColor,
+                inactiveColor: inactiveIconColor,
+                isCompact: isCompact,
+              ),
+              const Spacer(),
+              _buildSideUploadButton(
+                uploadBorderColor: uploadBorderColor,
+                activeColor: activeIconColor,
+                isCompact: isCompact,
+              ),
+              const SizedBox(height: 40),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildSideNavItem({
+    required int index,
+    required String label,
+    required IconData icon,
+    required IconData activeIcon,
+    required Color activeColor,
+    required Color inactiveColor,
+    bool isCompact = false,
+  }) {
+    final isActive = _selectedIndex == index;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      child: InkWell(
+        onTap: () => _onItemTapped(index),
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          padding: EdgeInsets.symmetric(
+            horizontal: isCompact ? 12 : 16,
+            vertical: 12,
+          ),
+          decoration: BoxDecoration(
+            color: isActive ? activeColor.withOpacity(0.08) : Colors.transparent,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Row(
+            mainAxisAlignment:
+                isCompact ? MainAxisAlignment.center : MainAxisAlignment.start,
+            children: [
+              Icon(
+                isActive ? activeIcon : icon,
+                size: 24,
+                color: isActive ? activeColor : inactiveColor,
+              ),
+              if (!isCompact) ...[
+                const SizedBox(width: 16),
+                Flexible(
+                  child: Text(
+                    label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: isActive ? FontWeight.bold : FontWeight.w500,
+                      color: isActive ? activeColor : inactiveColor,
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
       ),
     );
   }
+
+  Widget _buildSideUploadButton({
+    required Color uploadBorderColor,
+    required Color activeColor,
+    bool isCompact = false,
+  }) {
+    if (isCompact) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        child: IconButton(
+          onPressed: () => showUploadPopup(context),
+          icon: const Icon(CupertinoIcons.plus_circle_fill, size: 40, color: Color(0xFFFF4FB3)),
+        ),
+      );
+    }
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: ElevatedButton.icon(
+        onPressed: () => showUploadPopup(context),
+        icon: const Icon(CupertinoIcons.add, size: 20),
+        label: const Text('Create', style: TextStyle(fontWeight: FontWeight.bold)),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: const Color(0xFFFF4FB3),
+          foregroundColor: Colors.white,
+          minimumSize: const Size(double.infinity, 50),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          elevation: 0,
+        ),
+      ),
+    );
+  }
+
 
   Widget _buildNavBar({
     required bool isDark,

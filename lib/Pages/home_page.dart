@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:video_player/video_player.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import '../Layout/responsive_layout.dart';
 
 import 'search_page.dart';
 // ================================================================
@@ -344,6 +345,14 @@ class _VideoFeedListState extends State<_VideoFeedList>
 
   @override
   Widget build(BuildContext context) {
+    return ResponsiveLayout(
+      mobileBody: _buildVerticalFeed(),
+      tabletBody: _buildGridFeed(2),
+      desktopBody: _buildGridFeed(4),
+    );
+  }
+
+  Widget _buildVerticalFeed() {
     return PageView.builder(
       controller: _pageCtrl,
       scrollDirection: Axis.vertical,
@@ -363,6 +372,39 @@ class _VideoFeedListState extends State<_VideoFeedList>
       },
     );
   }
+
+  Widget _buildGridFeed(int crossAxisCount) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // Calculate crossAxisCount dynamically based on width for better zoom/scaling
+        int dynamicCount = (constraints.maxWidth / 300).floor().clamp(2, 6);
+        
+        return GridView.builder(
+          padding: const EdgeInsets.all(12),
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: dynamicCount,
+            childAspectRatio: 9 / 16,
+            crossAxisSpacing: 12,
+            mainAxisSpacing: 12,
+          ),
+          itemCount: widget.videos.length,
+          itemBuilder: (context, index) {
+            return ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: FeedVideoItem(
+                key: ValueKey('${widget.feedKey}_grid_$index'),
+                data: widget.videos[index],
+                controller: _pool[index],
+                isReady: _ready[index] ?? false,
+                isCurrent: index == _current,
+                isGridMode: true,
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
 }
 
 // ================================================================
@@ -373,6 +415,7 @@ class FeedVideoItem extends StatefulWidget {
   final VideoPlayerController? controller;
   final bool isReady;
   final bool isCurrent;
+  final bool isGridMode;
 
   const FeedVideoItem({
     super.key,
@@ -380,6 +423,7 @@ class FeedVideoItem extends StatefulWidget {
     required this.controller,
     required this.isReady,
     required this.isCurrent,
+    this.isGridMode = false,
   });
 
   @override
@@ -604,6 +648,9 @@ class _FeedVideoItemState extends State<FeedVideoItem>
 
   @override
   Widget build(BuildContext context) {
+    if (widget.isGridMode) {
+      return _buildGridItem();
+    }
     final size      = MediaQuery.of(context).size;
     final ctrl      = widget.controller;
     final ready     = widget.isReady && ctrl != null;
@@ -621,6 +668,8 @@ class _FeedVideoItemState extends State<FeedVideoItem>
       child: Stack(
         fit: StackFit.expand,
         children: [
+          // ... existing children ...
+
 
           // Video layer
           const ColoredBox(color: Colors.black),
@@ -795,6 +844,83 @@ class _FeedVideoItemState extends State<FeedVideoItem>
               onFollow: _onFollow,
             ),
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGridItem() {
+    final ctrl = widget.controller;
+    final ready = widget.isReady && ctrl != null;
+    return GestureDetector(
+      onTap: _togglePlay,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          const ColoredBox(color: Colors.black),
+          if (ready)
+            FittedBox(
+              fit: BoxFit.cover,
+              child: SizedBox(
+                width: ctrl.value.size.width,
+                height: ctrl.value.size.height,
+                child: VideoPlayer(ctrl),
+              ),
+            )
+          else
+            const Center(child: CircularProgressIndicator(color: Colors.pinkAccent, strokeWidth: 2)),
+          
+          // Gradient for text
+          Positioned(
+            bottom: 0, left: 0, right: 0, height: 60,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.bottomCenter,
+                  end: Alignment.topCenter,
+                  colors: [Colors.black.withOpacity(0.8), Colors.transparent],
+                ),
+              ),
+            ),
+          ),
+
+          // Info
+          Positioned(
+            bottom: 10, left: 10, right: 10,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  '@${widget.data.username}',
+                  style: const TextStyle(
+                    color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13,
+                    shadows: [Shadow(blurRadius: 4, color: Colors.black)],
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  widget.data.caption,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: Colors.white70, fontSize: 11,
+                    shadows: [Shadow(blurRadius: 4, color: Colors.black)],
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // Play icon if paused
+          if (!_isPlaying && ready)
+            Center(
+              child: Icon(
+                Icons.play_arrow_rounded,
+                size: 48,
+                color: Colors.white.withOpacity(0.7),
+              ),
+            ),
         ],
       ),
     );
@@ -1798,7 +1924,7 @@ class _ShareSheet extends StatelessWidget {
                         ),
                         child: Center(
                           child: opt.isFa
-                              ? FaIcon(opt.icon as IconData, color: Colors.white, size: 24)
+                              ? FaIcon(opt.icon as FaIconData, color: Colors.white, size: 24)
                               : Icon(opt.icon  as IconData, color: Colors.white, size: 26),
                         ),
                       ),
