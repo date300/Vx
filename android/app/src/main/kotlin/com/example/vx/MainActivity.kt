@@ -14,6 +14,7 @@ import android.view.Surface
 class MainActivity : FlutterActivity() {
     private val CHANNEL = "com.example.vx/performance"
     private val VIDEO_CHANNEL = "com.example.vx/video_texture"
+    private val HAPTIC_CHANNEL = "com.example.vx/haptics"
     private val textures = mutableMapOf<Long, TextureRegistry.SurfaceTextureEntry>()
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
@@ -52,6 +53,38 @@ class MainActivity : FlutterActivity() {
                 }
                 else -> result.notImplemented()
             }
+        }
+
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, HAPTIC_CHANNEL).setMethodCallHandler { call, result ->
+            val vibrator = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+                val vibratorManager = getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as android.os.VibratorManager
+                vibratorManager.defaultVibrator
+            } else {
+                @Suppress("DEPRECATION")
+                getSystemService(Context.VIBRATOR_SERVICE) as android.os.Vibrator
+            }
+
+            when (call.method) {
+                "impactLight" -> {
+                    vibrate(vibrator, android.os.VibrationEffect.createPredefined(android.os.VibrationEffect.EFFECT_CLICK))
+                    result.success(null)
+                }
+                "impactMedium" -> {
+                    vibrate(vibrator, android.os.VibrationEffect.createPredefined(android.os.VibrationEffect.EFFECT_DOUBLE_CLICK))
+                    result.success(null)
+                }
+                "impactHeavy" -> {
+                    vibrate(vibrator, android.os.VibrationEffect.createPredefined(android.os.VibrationEffect.EFFECT_HEAVY_CLICK))
+                    result.success(null)
+                }
+                else -> result.notImplemented()
+            }
+        }
+    }
+
+    private fun vibrate(vibrator: android.os.Vibrator, effect: android.os.VibrationEffect) {
+        if (vibrator.hasVibrator()) {
+            vibrator.vibrate(effect)
         }
     }
 

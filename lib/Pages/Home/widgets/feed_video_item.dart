@@ -296,6 +296,8 @@ class _FeedVideoItemState extends State<FeedVideoItem>
     final controller = TextEditingController(text: widget.data.caption);
     showDialog(
       context: context,
+      barrierDismissible: true,
+      barrierLabel: "Edit Caption",
       builder: (context) => AlertDialog(
         title: const Text("Edit Caption"),
         content: TextField(
@@ -321,6 +323,8 @@ class _FeedVideoItemState extends State<FeedVideoItem>
   void _showDeleteConfirmation() {
     showDialog(
       context: context,
+      barrierDismissible: true,
+      barrierLabel: "Delete Video",
       builder: (context) => AlertDialog(
         title: const Text("Delete Video?"),
         content: const Text("Are you sure you want to permanently delete this video?"),

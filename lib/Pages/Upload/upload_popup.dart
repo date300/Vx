@@ -1,16 +1,22 @@
-import 'package:flutter/cupertino.dart';
+import 'dart:ffi';
+import 'package:ffi/ffi.dart';
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
-import 'dart:math' as math;
+import 'package:image_picker/image_picker.dart';
+import '../../Services/haptic_service.dart';
 import '../../Services/native_service.dart';
+import '../../Services/filter_library.dart';
+import 'widgets/vx_animated_logo.dart';
+import 'widgets/upload_side_actions.dart';
+import 'widgets/upload_bottom_controls.dart';
 
 // ==================== POPUP ENTRY POINT ====================
-// যেকোনো জায়গা থেকে এভাবে কল করুন: showUploadPopup(context);
 void showUploadPopup(BuildContext context) {
   showGeneralDialog(
     context: context,
-    barrierDismissible: true,      // বাইরে ট্যাপ করলে বন্ধ হবে
-    barrierColor: Colors.black,     // ব্যাকগ্রাউন্ড কালো
+    barrierDismissible: true,
+    barrierLabel: "Upload",
+    barrierColor: Colors.black,
     transitionDuration: const Duration(milliseconds: 300),
     pageBuilder: (context, animation, secondaryAnimation) {
       return const VxUploadPopupContent();
@@ -32,6 +38,10 @@ class _VxUploadPopupContentState extends State<VxUploadPopupContent>
   List<CameraDescription>? cameras;
   bool _isInitialized = false;
   bool _isRecording = false;
+  int _selectedCameraIndex = 0;
+  FlashMode _flashMode = FlashMode.off;
+  int _selectedFilterIndex = 0;
+  final ImagePicker _picker = ImagePicker();
 
   @override
   void initState() {
@@ -44,15 +54,62 @@ class _VxUploadPopupContentState extends State<VxUploadPopupContent>
       cameras = await availableCameras();
       if (cameras != null && cameras!.isNotEmpty) {
         _controller = CameraController(
-          cameras![0],
+          cameras![_selectedCameraIndex],
           ResolutionPreset.high,
+          enableAudio: true,
         );
         await _controller!.initialize();
+        await _controller!.setFlashMode(_flashMode);
+        
         if (!mounted) return;
         setState(() => _isInitialized = true);
       }
     } catch (e) {
       debugPrint("Camera Error: $e");
+    }
+  }
+
+  Future<void> _toggleCamera() async {
+    if (cameras == null || cameras!.length < 2) return;
+    
+    HapticService.impactLight();
+    _selectedCameraIndex = (_selectedCameraIndex + 1) % cameras!.length;
+    
+    setState(() => _isInitialized = false);
+    await _controller?.dispose();
+    await _initializeCamera();
+  }
+
+  Future<void> _toggleFlash() async {
+    if (_controller == null || !_isInitialized) return;
+    
+    HapticService.impactLight();
+    setState(() {
+      _flashMode = (_flashMode == FlashMode.off) ? FlashMode.torch : FlashMode.off;
+    });
+    await _controller!.setFlashMode(_flashMode);
+  }
+
+  Future<void> _handleRecording() async {
+    if (_controller == null || !_isInitialized) return;
+
+    if (_isRecording) {
+      HapticService.impactHeavy();
+      final XFile file = await _controller!.stopVideoRecording();
+      setState(() => _isRecording = false);
+      debugPrint("Video recorded to: ${file.path}");
+    } else {
+      HapticService.impactMedium();
+      await _controller!.startVideoRecording();
+      setState(() => _isRecording = true);
+    }
+  }
+
+  Future<void> _pickFromGallery() async {
+    HapticService.impactLight();
+    final XFile? video = await _picker.pickVideo(source: ImageSource.gallery);
+    if (video != null) {
+      debugPrint("Video picked: ${video.path}");
     }
   }
 
@@ -75,227 +132,91 @@ class _VxUploadPopupContentState extends State<VxUploadPopupContent>
       backgroundColor: Colors.black,
       body: Stack(
         children: [
-          // Camera Preview
+          // 9:16 Camera Preview (TikTok Style)
           SizedBox.expand(
-            child: CameraPreview(_controller!),
+            child: Center(
+              child: Builder(
+                builder: (context) {
+                  final size = MediaQuery.of(context).size;
+                  final outWidthPtr = calloc<Double>();
+                  final outHeightPtr = calloc<Double>();
+
+                  try {
+                    // Use Native C++ to calculate standard 9:16 dimensions
+                    nativeService.calculateVideoDimensions(
+                      1080, 1920, // Target 9:16
+                      size.width, size.height,
+                      outWidthPtr, outHeightPtr,
+                    );
+
+                    return SizedBox(
+                      width: outWidthPtr.value,
+                      height: outHeightPtr.value,
+                      child: ColorFiltered(
+                        colorFilter: ColorFilter.matrix(
+                          FilterLibrary.presets[_selectedFilterIndex].matrix,
+                        ),
+                        child: CameraPreview(_controller!),
+                      ),
+                    );
+                  } finally {
+                    calloc.free(outWidthPtr);
+                    calloc.free(outHeightPtr);
+                  }
+                },
+              ),
+            ),
           ),
 
-          // Close Button (Popup বন্ধ করবে)
+          // Close Button
           Positioned(
             top: 50,
             left: 20,
             child: IconButton(
               icon: const Icon(Icons.close, color: Colors.white, size: 30),
-              onPressed: () => Navigator.of(context).pop(), // পপআপ বন্ধ
+              onPressed: () {
+                HapticService.impactLight();
+                Navigator.of(context).pop();
+              },
             ),
           ),
 
           // Vx Logo
-          Positioned(
+          const Positioned(
             top: 50,
             left: 0,
             right: 0,
             child: Center(child: VxSmallAnimatedLogo()),
           ),
 
-          // Side Icons (Flip, Flash, etc.)
+          // Side Icons (Filters button removed here, moved to bottom)
           Positioned(
             top: 60,
             right: 15,
-            child: Column(
-              children: [
-                _buildSideIcon(CupertinoIcons.switch_camera, "Flip"),
-                _buildSideIcon(CupertinoIcons.bolt_fill, "Flash"),
-                _buildSideIcon(CupertinoIcons.speedometer, "Speed"),
-                _buildSideIcon(Icons.filter_vintage_outlined, "Filters"),
-                _buildSideIcon(CupertinoIcons.timer, "Timer"),
-              ],
+            child: UploadSideActions(
+              flashMode: _flashMode,
+              onToggleCamera: _toggleCamera,
+              onToggleFlash: _toggleFlash,
             ),
           ),
 
-          // Bottom Controls
+          // Bottom Controls (Integrated TikTok Style)
           Positioned(
-            bottom: 40,
+            bottom: 0,
             left: 0,
             right: 0,
-            child: Column(
-              children: [
-                // Mode Selector
-                const SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text("Story", style: TextStyle(color: Colors.white54)),
-                      SizedBox(width: 20),
-                      Text("Video", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                      SizedBox(width: 20),
-                      Text("Photo", style: TextStyle(color: Colors.white54)),
-                      SizedBox(width: 20),
-                      Text("Template", style: TextStyle(color: Colors.white54)),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 25),
-
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    // Effects
-                    _buildBottomAction(Icons.sentiment_satisfied_alt, "Effects"),
-
-                    // Record Button
-                    GestureDetector(
-                      onTap: () {
-                        setState(() => _isRecording = !_isRecording);
-                      },
-                      child: Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          Container(
-                            width: 85,
-                            height: 85,
-                            decoration: const BoxDecoration(
-                              color: Colors.white30,
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                          AnimatedContainer(
-                            duration: const Duration(milliseconds: 200),
-                            width: _isRecording ? 40 : 70,
-                            height: _isRecording ? 40 : 70,
-                            decoration: BoxDecoration(
-                              color: Colors.red,
-                              borderRadius: BorderRadius.circular(_isRecording ? 8 : 50),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    // Upload
-                    _buildBottomAction(CupertinoIcons.photo, "Upload"),
-                  ],
-                ),
-              ],
+            child: UploadBottomControls(
+              isRecording: _isRecording,
+              onRecordTap: _handleRecording,
+              onGalleryTap: _pickFromGallery,
+              selectedFilterIndex: _selectedFilterIndex,
+              onFilterSelected: (index) {
+                setState(() => _selectedFilterIndex = index);
+              },
             ),
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildSideIcon(IconData icon, String label) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 22),
-      child: Column(
-        children: [
-          Icon(icon, color: Colors.white, size: 28),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 11,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBottomAction(IconData icon, String label) {
-    return Column(
-      children: [
-        Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.2),
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Icon(icon, color: Colors.white, size: 30),
-        ),
-        const SizedBox(height: 6),
-        Text(
-          label,
-          style: const TextStyle(color: Colors.white, fontSize: 12),
-        ),
-      ],
-    );
-  }
-}
-
-// ==================== ANIMATED LOGO ====================
-class VxSmallAnimatedLogo extends StatefulWidget {
-  const VxSmallAnimatedLogo({super.key});
-
-  @override
-  State<VxSmallAnimatedLogo> createState() => _VxSmallAnimatedLogoState();
-}
-
-class _VxSmallAnimatedLogoState extends State<VxSmallAnimatedLogo>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 2),
-    )..repeat();
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _controller,
-      builder: (context, child) {
-        // Use C++ fast math for even smoother rotation values if needed
-        // nativeService.fastLerp could be used for advanced easing
-        return Container(
-          width: 45,
-          height: 45,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            gradient: SweepGradient(
-              colors: const [
-                Colors.blueAccent,
-                Colors.pinkAccent,
-                Colors.blueAccent,
-              ],
-              transform: GradientRotation(_controller.value * 2 * math.pi),
-            ),
-          ),
-          child: Center(
-            child: Container(
-              width: 41,
-              height: 41,
-              decoration: const BoxDecoration(
-                color: Colors.black,
-                shape: BoxShape.circle,
-              ),
-              child: const Center(
-                child: Text(
-                  "Vx",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ),
-          ),
-        );
-      },
     );
   }
 }

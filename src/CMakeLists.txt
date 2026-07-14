@@ -7,15 +7,19 @@ set(FFMPEG_LIBS_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../android/app/libs)
 set(FFMPEG_INCLUDE_DIR ${FFMPEG_LIBS_DIR}/include)
 
 include_directories(${FFMPEG_INCLUDE_DIR})
+include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
-# Note: We are not linking against the external FFmpeg .so files
-# because they are currently 0-byte placeholders.
-# Instead, we use ffmpeg_stubs.cpp to satisfy the linker.
+# Merged FFmpeg library
+add_library(ffmpeg SHARED IMPORTED)
+set_target_properties(ffmpeg PROPERTIES IMPORTED_LOCATION ${FFMPEG_LIBS_DIR}/${ANDROID_ABI}/libffmpeg.so)
 
 add_library(vx_native SHARED
-  vx_native.cpp
-  vx_video_player.cpp
-  ffmpeg_stubs.cpp
+  vx_native_main.cpp
+  modules/physics/vx_physics.cpp
+  modules/security/vx_security.cpp
+  modules/video/vx_utils.cpp
+  modules/video/vx_video_player.cpp
+  modules/filters/vx_filters.cpp
 )
 
 set_target_properties(vx_native PROPERTIES
@@ -24,6 +28,7 @@ set_target_properties(vx_native PROPERTIES
 )
 
 target_link_libraries(vx_native
+  ffmpeg
   log
   android
 )

@@ -138,19 +138,24 @@ class _SoundTickerState extends State<SoundTicker>
         const SizedBox(width: 5),
         Expanded(
           child: ClipRect(
-            child: AnimatedBuilder(
-              animation: _ctrl,
-              builder: (ctx, _) {
-                final w      = ctx.size?.width ?? 200;
-                final offset = -_ctrl.value * w;
-                return Transform.translate(
-                  offset: Offset(offset, 0),
-                  child: Text(
-                    text,
-                    style: const TextStyle(color: Colors.white70, fontSize: 12.5),
-                    maxLines: 1, softWrap: false,
-                    overflow: TextOverflow.visible,
-                  ),
+            child: LayoutBuilder(
+              builder: (ctx, constraints) {
+                final w = constraints.maxWidth;
+                return AnimatedBuilder(
+                  animation: _ctrl,
+                  builder: (context, _) {
+                    final offset = -_ctrl.value * (w / 2);
+                    return Transform.translate(
+                      offset: Offset(offset, 0),
+                      child: Text(
+                        text,
+                        style: const TextStyle(color: Colors.white70, fontSize: 12.5),
+                        maxLines: 1,
+                        softWrap: false,
+                        overflow: TextOverflow.visible,
+                      ),
+                    );
+                  },
                 );
               },
             ),

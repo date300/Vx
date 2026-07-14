@@ -1,7 +1,7 @@
 import 'dart:ffi';
 import 'dart:io';
-import 'dart:typed_data';
 import 'package:ffi/ffi.dart';
+import 'package:flutter/foundation.dart';
 
 // Typedefs for C functions
 typedef CalculateSpringForceC = Double Function(Double distance, Double velocity, Double stiffness, Double damping);
@@ -31,26 +31,14 @@ typedef CalculateVideoDimensionsDart = void Function(
     double containerWidth, double containerHeight,
     Pointer<Double> outWidth, Pointer<Double> outHeight);
 
-typedef ShouldRotateCacheC = Bool Function(Int64 currentCacheSize, Int64 maxCacheSize, Int64 lastAccessTime, Int64 currentTime);
-typedef ShouldRotateCacheDart = bool Function(int currentCacheSize, int maxCacheSize, int lastAccessTime, int currentTime);
-
 typedef GenerateMessageHashC = Uint64 Function(Pointer<Utf8> message, Uint64 timestamp);
 typedef GenerateMessageHashDart = int Function(Pointer<Utf8> message, int timestamp);
 
 typedef SecureChatEncryptC = Void Function(Pointer<Uint8> data, Int32 length, Uint32 sessionKey);
 typedef SecureChatEncryptDart = void Function(Pointer<Uint8> data, int length, int sessionKey);
 
-typedef SyncAudioVideoTimestampC = Double Function(Double videoTime, Double audioTime, Double offset);
-typedef SyncAudioVideoTimestampDart = double Function(double videoTime, double audioTime, double offset);
-
-typedef CalculateCompressionRatioC = Float Function(Int64 originalSize, Int32 targetBitrate, Double duration);
-typedef CalculateCompressionRatioDart = double Function(int originalSize, int targetBitrate, double duration);
-
 typedef CalculateSheetEasingC = Double Function(Double time, Double duration);
 typedef CalculateSheetEasingDart = double Function(double time, double duration);
-
-typedef SortCommentsFastC = Void Function(Pointer<Int32> likeCounts, Int32 length);
-typedef SortCommentsFastDart = void Function(Pointer<Int32> likeCounts, int length);
 
 typedef CalculateMaxPreloadC = Int32 Function(Int64 availableMemoryMB, Int32 videoQuality);
 typedef CalculateMaxPreloadDart = int Function(int availableMemoryMB, int videoQuality);
@@ -95,6 +83,9 @@ typedef GetVideoDurationDart = double Function(Pointer player);
 typedef ExtractVideoThumbnailC = Bool Function(Pointer player, Pointer<Utf8> url, Pointer<Uint8> buffer, Int32 width, Int32 height, Int64 timeMs);
 typedef ExtractVideoThumbnailDart = bool Function(Pointer player, Pointer<Utf8> url, Pointer<Uint8> buffer, int width, int height, int timeMs);
 
+typedef ApplyNativeFilterC = Void Function(Pointer<Uint8> buffer, Int32 width, Int32 height, Int32 filterId);
+typedef ApplyNativeFilterDart = void Function(Pointer<Uint8> buffer, int width, int height, int filterId);
+
 class NativeService {
   static final NativeService _instance = NativeService._internal();
   factory NativeService() => _instance;
@@ -103,6 +94,7 @@ class NativeService {
   }
 
   late DynamicLibrary _nativeLib;
+  bool _libLoaded = false;
   
   // Dart functions bound to C
   late CalculateSpringForceDart calculateSpringForce;
@@ -112,16 +104,13 @@ class NativeService {
   late NativeOptimizeMemoryDart nativeOptimizeMemory;
   late NativeEncryptDataDart nativeEncryptData;
   late CalculateVideoDimensionsDart calculateVideoDimensions;
-  late ShouldRotateCacheDart shouldRotateCache;
   late GenerateMessageHashDart generateMessageHash;
   late SecureChatEncryptDart secureChatEncrypt;
-  late SyncAudioVideoTimestampDart syncAudioVideoTimestamp;
-  late CalculateCompressionRatioDart calculateCompressionRatio;
   late CalculateSheetEasingDart calculateSheetEasing;
-  late SortCommentsFastDart sortCommentsFast;
   late CalculateMaxPreloadDart calculateMaxPreload;
   late CalculateGridItemSizeDart calculateGridItemSize;
   late ShouldTriggerInstantSnapDart shouldTriggerInstantSnap;
+  late ApplyNativeFilterDart applyNativeFilter;
 
   // Video Player bindings
   late CreateVideoPlayerDart createVideoPlayer;
@@ -137,126 +126,205 @@ class NativeService {
   late ExtractVideoThumbnailDart extractVideoThumbnail;
 
   void _init() {
-    if (Platform.isAndroid) {
-      _nativeLib = DynamicLibrary.open('libvx_native.so');
-    } else if (Platform.isIOS || Platform.isMacOS) {
-      _nativeLib = DynamicLibrary.process();
-    } else {
-      _nativeLib = DynamicLibrary.open('vx_native.dll'); 
+    try {
+      if (Platform.isAndroid) {
+        _nativeLib = DynamicLibrary.open('libvx_native.so');
+      } else if (Platform.isIOS || Platform.isMacOS) {
+        _nativeLib = DynamicLibrary.process();
+      } else {
+        _nativeLib = DynamicLibrary.open('vx_native.dll'); 
+      }
+      _libLoaded = true;
+      _bindFunctions();
+      debugPrint("Native Engine initialized successfully 🚀");
+    } catch (e) {
+      debugPrint("CRITICAL: Failed to load Native Engine: $e");
+      _libLoaded = false;
+      _bindFallbacks();
+    }
+  }
+
+  void _bindFunctions() {
+    if (!_libLoaded) return;
+
+    try {
+      calculateSpringForce = _nativeLib.lookup<NativeFunction<CalculateSpringForceC>>('calculate_spring_force').asFunction();
+    } catch (_) {
+      calculateSpringForce = (d, v, s, dam) => 0.0;
     }
 
-    calculateSpringForce = _nativeLib
-        .lookup<NativeFunction<CalculateSpringForceC>>('calculate_spring_force')
-        .asFunction();
+    try {
+      calculateJigglePhysics = _nativeLib.lookup<NativeFunction<CalculateJigglePhysicsC>>('calculate_jiggle_physics').asFunction();
+    } catch (_) {
+      calculateJigglePhysics = (t, f, a, dec) => 0.0;
+    }
 
-    calculateJigglePhysics = _nativeLib
-        .lookup<NativeFunction<CalculateJigglePhysicsC>>('calculate_jiggle_physics')
-        .asFunction();
+    try {
+      fastLerp = _nativeLib.lookup<NativeFunction<FastLerpC>>('fast_lerp').asFunction();
+    } catch (_) {
+      fastLerp = (a, b, t) => a + (b - a) * t;
+    }
 
-    fastLerp = _nativeLib
-        .lookup<NativeFunction<FastLerpC>>('fast_lerp')
-        .asFunction();
+    try {
+      calculateBufferPriority = _nativeLib.lookup<NativeFunction<CalculateBufferPriorityC>>('calculate_buffer_priority').asFunction();
+    } catch (_) {
+      calculateBufferPriority = (v, i, c) => 0;
+    }
 
-    calculateBufferPriority = _nativeLib
-        .lookup<NativeFunction<CalculateBufferPriorityC>>('calculate_buffer_priority')
-        .asFunction();
+    try {
+      nativeOptimizeMemory = _nativeLib.lookup<NativeFunction<NativeOptimizeMemoryC>>('native_optimize_memory').asFunction();
+    } catch (_) {
+      nativeOptimizeMemory = () {};
+    }
 
-    nativeOptimizeMemory = _nativeLib
-        .lookup<NativeFunction<NativeOptimizeMemoryC>>('native_optimize_memory')
-        .asFunction();
+    try {
+      nativeEncryptData = _nativeLib.lookup<NativeFunction<NativeEncryptDataC>>('native_encrypt_data').asFunction();
+    } catch (_) {
+      nativeEncryptData = (d, l, k, kl) {};
+    }
 
-    nativeEncryptData = _nativeLib
-        .lookup<NativeFunction<NativeEncryptDataC>>('native_encrypt_data')
-        .asFunction();
+    try {
+      calculateVideoDimensions = _nativeLib.lookup<NativeFunction<CalculateVideoDimensionsC>>('calculate_video_dimensions').asFunction();
+    } catch (_) {
+      calculateVideoDimensions = (vw, vh, cw, ch, ow, oh) {};
+    }
 
-    calculateVideoDimensions = _nativeLib
-        .lookup<NativeFunction<CalculateVideoDimensionsC>>('calculate_video_dimensions')
-        .asFunction();
+    try {
+      generateMessageHash = _nativeLib.lookup<NativeFunction<GenerateMessageHashC>>('generate_message_hash').asFunction();
+    } catch (_) {
+      generateMessageHash = (m, t) => 0;
+    }
 
-    shouldRotateCache = _nativeLib
-        .lookup<NativeFunction<ShouldRotateCacheC>>('should_rotate_cache')
-        .asFunction();
+    try {
+      secureChatEncrypt = _nativeLib.lookup<NativeFunction<SecureChatEncryptC>>('secure_chat_encrypt').asFunction();
+    } catch (_) {
+      secureChatEncrypt = (d, l, sk) {};
+    }
 
-    generateMessageHash = _nativeLib
-        .lookup<NativeFunction<GenerateMessageHashC>>('generate_message_hash')
-        .asFunction();
+    try {
+      calculateSheetEasing = _nativeLib.lookup<NativeFunction<CalculateSheetEasingC>>('calculate_sheet_easing').asFunction();
+    } catch (_) {
+      calculateSheetEasing = (t, d) => 0.0;
+    }
 
-    secureChatEncrypt = _nativeLib
-        .lookup<NativeFunction<SecureChatEncryptC>>('secure_chat_encrypt')
-        .asFunction();
+    try {
+      calculateMaxPreload = _nativeLib.lookup<NativeFunction<CalculateMaxPreloadC>>('calculate_max_preload').asFunction();
+    } catch (_) {
+      calculateMaxPreload = (m, q) => 2;
+    }
 
-    syncAudioVideoTimestamp = _nativeLib
-        .lookup<NativeFunction<SyncAudioVideoTimestampC>>('sync_audio_video_timestamp')
-        .asFunction();
+    try {
+      calculateGridItemSize = _nativeLib.lookup<NativeFunction<CalculateGridItemSizeC>>('calculate_grid_item_size').asFunction();
+    } catch (_) {
+      calculateGridItemSize = (sw, c, s, ow) {};
+    }
 
-    calculateCompressionRatio = _nativeLib
-        .lookup<NativeFunction<CalculateCompressionRatioC>>('calculate_compression_ratio')
-        .asFunction();
+    try {
+      shouldTriggerInstantSnap = _nativeLib.lookup<NativeFunction<ShouldTriggerInstantSnapC>>('should_trigger_instant_snap').asFunction();
+    } catch (_) {
+      shouldTriggerInstantSnap = (v, d, t) => false;
+    }
 
-    calculateSheetEasing = _nativeLib
-        .lookup<NativeFunction<CalculateSheetEasingC>>('calculate_sheet_easing')
-        .asFunction();
-
-    sortCommentsFast = _nativeLib
-        .lookup<NativeFunction<SortCommentsFastC>>('sort_comments_fast')
-        .asFunction();
-
-    calculateMaxPreload = _nativeLib
-        .lookup<NativeFunction<CalculateMaxPreloadC>>('calculate_max_preload')
-        .asFunction();
-
-    calculateGridItemSize = _nativeLib
-        .lookup<NativeFunction<CalculateGridItemSizeC>>('calculate_grid_item_size')
-        .asFunction();
-
-    shouldTriggerInstantSnap = _nativeLib
-        .lookup<NativeFunction<ShouldTriggerInstantSnapC>>('should_trigger_instant_snap')
-        .asFunction();
+    try {
+      applyNativeFilter = _nativeLib.lookup<NativeFunction<ApplyNativeFilterC>>('apply_native_filter').asFunction();
+    } catch (_) {
+      applyNativeFilter = (b, w, h, id) {};
+    }
 
     // Video Player
-    createVideoPlayer = _nativeLib
-        .lookup<NativeFunction<CreateVideoPlayerC>>('create_video_player')
-        .asFunction();
+    try {
+      createVideoPlayer = _nativeLib.lookup<NativeFunction<CreateVideoPlayerC>>('create_video_player').asFunction();
+    } catch (_) {
+      createVideoPlayer = () => Pointer.fromAddress(0);
+    }
 
-    disposeVideoPlayer = _nativeLib
-        .lookup<NativeFunction<DisposeVideoPlayerC>>('dispose_video_player')
-        .asFunction();
+    try {
+      disposeVideoPlayer = _nativeLib.lookup<NativeFunction<DisposeVideoPlayerC>>('dispose_video_player').asFunction();
+    } catch (_) {
+      disposeVideoPlayer = (p) {};
+    }
 
-    openVideo = _nativeLib
-        .lookup<NativeFunction<OpenVideoC>>('open_video')
-        .asFunction();
+    try {
+      openVideo = _nativeLib.lookup<NativeFunction<OpenVideoC>>('open_video').asFunction();
+    } catch (_) {
+      openVideo = (p, u) => false;
+    }
 
-    playVideo = _nativeLib
-        .lookup<NativeFunction<PlayVideoC>>('play_video')
-        .asFunction();
+    try {
+      playVideo = _nativeLib.lookup<NativeFunction<PlayVideoC>>('play_video').asFunction();
+    } catch (_) {
+      playVideo = (p) {};
+    }
 
-    pauseVideo = _nativeLib
-        .lookup<NativeFunction<PauseVideoC>>('pause_video')
-        .asFunction();
+    try {
+      pauseVideo = _nativeLib.lookup<NativeFunction<PauseVideoC>>('pause_video').asFunction();
+    } catch (_) {
+      pauseVideo = (p) {};
+    }
 
-    seekVideo = _nativeLib
-        .lookup<NativeFunction<SeekVideoC>>('seek_video')
-        .asFunction();
+    try {
+      seekVideo = _nativeLib.lookup<NativeFunction<SeekVideoC>>('seek_video').asFunction();
+    } catch (_) {
+      seekVideo = (p, t) {};
+    }
 
-    getVideoFrame = _nativeLib
-        .lookup<NativeFunction<GetVideoFrameC>>('get_video_frame')
-        .asFunction();
+    try {
+      getVideoFrame = _nativeLib.lookup<NativeFunction<GetVideoFrameC>>('get_video_frame').asFunction();
+    } catch (_) {
+      getVideoFrame = (p, b, w, h) => false;
+    }
 
-    getVideoWidth = _nativeLib
-        .lookup<NativeFunction<GetVideoWidthC>>('get_video_width')
-        .asFunction();
+    try {
+      getVideoWidth = _nativeLib.lookup<NativeFunction<GetVideoWidthC>>('get_video_width').asFunction();
+    } catch (_) {
+      getVideoWidth = (p) => 0;
+    }
 
-    getVideoHeight = _nativeLib
-        .lookup<NativeFunction<GetVideoHeightC>>('get_video_height')
-        .asFunction();
+    try {
+      getVideoHeight = _nativeLib.lookup<NativeFunction<GetVideoHeightC>>('get_video_height').asFunction();
+    } catch (_) {
+      getVideoHeight = (p) => 0;
+    }
 
-    getVideoDuration = _nativeLib
-        .lookup<NativeFunction<GetVideoDurationC>>('get_video_duration')
-        .asFunction();
+    try {
+      getVideoDuration = _nativeLib.lookup<NativeFunction<GetVideoDurationC>>('get_video_duration').asFunction();
+    } catch (_) {
+      getVideoDuration = (p) => 0.0;
+    }
 
-    extractVideoThumbnail = _nativeLib
-        .lookup<NativeFunction<ExtractVideoThumbnailC>>('extract_video_thumbnail')
-        .asFunction();
+    try {
+      extractVideoThumbnail = _nativeLib.lookup<NativeFunction<ExtractVideoThumbnailC>>('extract_video_thumbnail').asFunction();
+    } catch (_) {
+      extractVideoThumbnail = (p, u, b, w, h, t) => false;
+    }
+  }
+
+  void _bindFallbacks() {
+    calculateSpringForce = (d, v, s, dam) => 0.0;
+    calculateJigglePhysics = (t, f, a, dec) => 0.0;
+    fastLerp = (a, b, t) => a + (b - a) * t;
+    calculateBufferPriority = (v, i, c) => 0;
+    nativeOptimizeMemory = () {};
+    nativeEncryptData = (d, l, k, kl) {};
+    calculateVideoDimensions = (vw, vh, cw, ch, ow, oh) {};
+    generateMessageHash = (m, t) => 0;
+    secureChatEncrypt = (d, l, sk) {};
+    calculateSheetEasing = (t, d) => 0.0;
+    calculateMaxPreload = (m, q) => 2;
+    calculateGridItemSize = (sw, c, s, ow) {};
+    shouldTriggerInstantSnap = (v, d, t) => false;
+    applyNativeFilter = (b, w, h, id) {};
+    createVideoPlayer = () => Pointer.fromAddress(0);
+    disposeVideoPlayer = (p) {};
+    openVideo = (p, u) => false;
+    playVideo = (p) {};
+    pauseVideo = (p) {};
+    seekVideo = (p, t) {};
+    getVideoFrame = (p, b, w, h) => false;
+    getVideoWidth = (p) => 0;
+    getVideoHeight = (p) => 0;
+    getVideoDuration = (p) => 0.0;
+    extractVideoThumbnail = (p, u, b, w, h, t) => false;
   }
 
   /// Securely hashes a message for notifications/tamper-check
@@ -264,6 +332,8 @@ class NativeService {
     final msgPtr = message.toNativeUtf8();
     try {
       return generateMessageHash(msgPtr, timestamp);
+    } catch (e) {
+      return 0;
     } finally {
       calloc.free(msgPtr);
     }
@@ -283,13 +353,15 @@ class NativeService {
     dataPtr.asTypedList(data.length).setAll(0, data);
     keyPtr.asTypedList(keyBytes.length).setAll(0, keyBytes);
 
-    nativeEncryptData(dataPtr, data.length, keyPtr, keyBytes.length);
-
-    final result = Uint8List.fromList(dataPtr.asTypedList(data.length));
-    
-    calloc.free(dataPtr);
-    calloc.free(keyPtr);
-    return result;
+    try {
+      nativeEncryptData(dataPtr, data.length, keyPtr, keyBytes.length);
+      return Uint8List.fromList(dataPtr.asTypedList(data.length));
+    } catch (e) {
+      return data;
+    } finally {
+      calloc.free(dataPtr);
+      calloc.free(keyPtr);
+    }
   }
 }
 

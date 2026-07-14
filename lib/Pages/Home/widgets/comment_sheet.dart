@@ -18,6 +18,7 @@ Future<void> showCommentPopup(BuildContext context, {
   return showGeneralDialog(
     context: context,
     barrierDismissible: true,
+    barrierLabel: "Comments",
     barrierColor: Colors.black.withValues(alpha: 0.6),
     transitionDuration: const Duration(milliseconds: 250),
     pageBuilder: (context, animation, secondaryAnimation) {
