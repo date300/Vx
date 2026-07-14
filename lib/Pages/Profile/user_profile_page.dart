@@ -55,34 +55,44 @@ class _UserProfilePageState extends State<UserProfilePage> with SingleTickerProv
     return Scaffold(
       backgroundColor: bgColor,
       appBar: AppBar(
-        backgroundColor: bgColor,
+        backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: true,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios_new_rounded, color: titleColor, size: 20),
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           widget.username,
-          style: TextStyle(color: titleColor, fontSize: 17, fontWeight: FontWeight.bold),
+          style: const TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.bold),
         ),
         actions: [
           IconButton(
-            icon: Icon(Icons.more_horiz_rounded, color: titleColor),
+            icon: const Icon(Icons.more_horiz_rounded, color: Colors.white),
             onPressed: () {},
           ),
           const SizedBox(width: 8),
         ],
       ),
+      extendBodyBehindAppBar: true,
       body: NestedScrollView(
         headerSliverBuilder: (context, innerBoxIsScrolled) {
           return [
             SliverToBoxAdapter(
               child: Column(
                 children: [
-                  const SizedBox(height: 20),
-                  _buildProfileImage(borderColor),
-                  const SizedBox(height: 15),
+                  Stack(
+                    clipBehavior: Clip.none,
+                    alignment: Alignment.center,
+                    children: [
+                      _buildCoverImage(borderColor),
+                      Positioned(
+                        bottom: -40,
+                        child: _buildProfileImage(bgColor),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 50),
                   Text(
                     "@${widget.username.toLowerCase().replaceAll(' ', '_')}",
                     style: TextStyle(color: titleColor, fontSize: 16, fontWeight: FontWeight.w600),
@@ -134,13 +144,27 @@ class _UserProfilePageState extends State<UserProfilePage> with SingleTickerProv
     );
   }
 
+  Widget _buildCoverImage(Color borderColor) {
+    return Container(
+      width: double.infinity,
+      height: 180,
+      decoration: BoxDecoration(
+        color: borderColor,
+        image: const DecorationImage(
+          image: NetworkImage("https://picsum.photos/800/400"),
+          fit: BoxFit.cover,
+        ),
+      ),
+    );
+  }
+
   Widget _buildProfileImage(Color borderColor) {
     return Container(
       width: 96,
       height: 96,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        border: Border.all(color: borderColor, width: 1),
+        border: Border.all(color: borderColor, width: 4),
         image: const DecorationImage(
           image: NetworkImage("https://picsum.photos/201"),
           fit: BoxFit.cover,

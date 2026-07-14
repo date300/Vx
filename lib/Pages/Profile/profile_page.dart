@@ -55,80 +55,91 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
     return Scaffold(
       backgroundColor: bgColor,
       body: SafeArea(
-        child: Column(
-          children: [
-            // 1. TOP BAR (Username & Menu)
-            _buildTopBar(titleColor),
-
-            Expanded(
-              child: NestedScrollView(
-                headerSliverBuilder: (context, innerBoxIsScrolled) {
-                  return [
-                    SliverToBoxAdapter(
-                      child: Column(
-                        children: [
-                          const SizedBox(height: 20),
-                          // 2. PROFILE PICTURE
-                          _buildProfileImage(borderColor),
-                          const SizedBox(height: 15),
-                          // 3. USERNAME
-                          Text(
-                            "@vx_user_pro",
-                            style: TextStyle(color: titleColor, fontSize: 18, fontWeight: FontWeight.bold),
-                          ),
-                          const SizedBox(height: 20),
-                          // 4. STATS (Following, Followers, Likes)
-                          _buildStats(titleColor, subtitleColor, borderColor),
-                          const SizedBox(height: 20),
-                          // 5. EDIT PROFILE BUTTON
-                          _buildActionButtons(context, titleColor, borderColor),
-                          const SizedBox(height: 15),
-
-                          // 5.5 VX STUDIO BANNER
-                          _buildVxStudioBanner(context, titleColor, cardColor),
-                          const SizedBox(height: 15),
-
-                          // 6. BIO
-                          Text(
-                            "Building the future of short-video apps 🚀\nC++ Native Engine Powered",
-                            textAlign: TextAlign.center,
-                            style: TextStyle(color: titleColor.withValues(alpha: 0.7), fontSize: 14),
-                          ),
-                          const SizedBox(height: 20),
-                        ],
-                      ),
-                    ),
-                    SliverPersistentHeader(
-                      pinned: true,
-                      delegate: _SliverTabBarDelegate(
-                        TabBar(
-                          controller: _tabController,
-                          indicatorColor: titleColor,
-                          indicatorWeight: 1,
-                          labelColor: titleColor,
-                          unselectedLabelColor: titleColor.withValues(alpha: 0.38),
-                          tabs: const [
-                            Tab(icon: Icon(Icons.grid_on_rounded)),
-                            Tab(icon: Icon(Icons.favorite_border_rounded)),
-                            Tab(icon: Icon(Icons.lock_outline_rounded)),
-                          ],
-                        ),
-                        bgColor: bgColor,
-                      ),
-                    ),
-                  ];
-                },
-                body: TabBarView(
-                  controller: _tabController,
+        top: false,
+        child: NestedScrollView(
+          headerSliverBuilder: (context, innerBoxIsScrolled) {
+            return [
+              SliverToBoxAdapter(
+                child: Column(
                   children: [
-                    _buildVideoGrid(),
-                    Center(child: Text("Liked Videos", style: TextStyle(color: titleColor.withValues(alpha: 0.54)))),
-                    Center(child: Text("Private Videos", style: TextStyle(color: titleColor.withValues(alpha: 0.54)))),
+                    Stack(
+                      clipBehavior: Clip.none,
+                      alignment: Alignment.center,
+                      children: [
+                        // 1. COVER PHOTO
+                        _buildCoverImage(borderColor),
+
+                        // 2. TOP BAR (Username & Menu)
+                        Positioned(
+                          top: MediaQuery.of(context).padding.top + 10,
+                          left: 0,
+                          right: 0,
+                          child: _buildTopBar(Colors.white), // Use white for better visibility on cover
+                        ),
+
+                        // 3. PROFILE PICTURE (Overlapping)
+                        Positioned(
+                          bottom: -40,
+                          child: _buildProfileImage(bgColor), // Use bgColor for the border
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 50), // Space for overlapping profile image
+                    // 4. USERNAME
+                    Text(
+                      "@vx_user_pro",
+                      style: TextStyle(color: titleColor, fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 20),
+                    // 5. STATS (Following, Followers, Likes)
+                    _buildStats(titleColor, subtitleColor, borderColor),
+                    const SizedBox(height: 20),
+                    // 6. EDIT PROFILE BUTTON
+                    _buildActionButtons(context, titleColor, borderColor),
+                    const SizedBox(height: 15),
+
+                    // 6.5 VX STUDIO BANNER
+                    _buildVxStudioBanner(context, titleColor, cardColor),
+                    const SizedBox(height: 15),
+
+                    // 7. BIO
+                    Text(
+                      "Building the future of short-video apps 🚀\nC++ Native Engine Powered",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: titleColor.withValues(alpha: 0.7), fontSize: 14),
+                    ),
+                    const SizedBox(height: 20),
                   ],
                 ),
               ),
-            ),
-          ],
+              SliverPersistentHeader(
+                pinned: true,
+                delegate: _SliverTabBarDelegate(
+                  TabBar(
+                    controller: _tabController,
+                    indicatorColor: titleColor,
+                    indicatorWeight: 1,
+                    labelColor: titleColor,
+                    unselectedLabelColor: titleColor.withValues(alpha: 0.38),
+                    tabs: const [
+                      Tab(icon: Icon(Icons.grid_on_rounded)),
+                      Tab(icon: Icon(Icons.favorite_border_rounded)),
+                      Tab(icon: Icon(Icons.lock_outline_rounded)),
+                    ],
+                  ),
+                  bgColor: bgColor,
+                ),
+              ),
+            ];
+          },
+          body: TabBarView(
+            controller: _tabController,
+            children: [
+              _buildVideoGrid(),
+              Center(child: Text("Liked Videos", style: TextStyle(color: titleColor.withValues(alpha: 0.54)))),
+              Center(child: Text("Private Videos", style: TextStyle(color: titleColor.withValues(alpha: 0.54)))),
+            ],
+          ),
         ),
       ),
     );
@@ -136,13 +147,15 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
 
   Widget _buildTopBar(Color titleColor) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Icon(Icons.person_add_alt_1_outlined, color: titleColor, size: 26),
           Text("Vx User",
-              style: TextStyle(color: titleColor, fontWeight: FontWeight.bold, fontSize: 17)),
+              style: TextStyle(color: titleColor, fontWeight: FontWeight.bold, fontSize: 17, shadows: [
+                Shadow(color: Colors.black.withValues(alpha: 0.5), blurRadius: 4, offset: const Offset(0, 1)),
+              ])),
           GestureDetector(
             onTap: () => _showSettingsMenu(context),
             child: Icon(Icons.menu_rounded, color: titleColor, size: 28),
@@ -232,13 +245,27 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
     );
   }
 
+  Widget _buildCoverImage(Color borderColor) {
+    return Container(
+      width: double.infinity,
+      height: 180,
+      decoration: BoxDecoration(
+        color: borderColor,
+        image: const DecorationImage(
+          image: NetworkImage("https://picsum.photos/800/400"),
+          fit: BoxFit.cover,
+        ),
+      ),
+    );
+  }
+
   Widget _buildProfileImage(Color borderColor) {
     return Container(
       width: 100,
       height: 100,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        border: Border.all(color: borderColor, width: 1),
+        border: Border.all(color: borderColor, width: 4),
         image: const DecorationImage(
           image: NetworkImage("https://picsum.photos/200"),
           fit: BoxFit.cover,

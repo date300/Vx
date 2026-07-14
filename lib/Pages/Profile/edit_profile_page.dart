@@ -67,8 +67,24 @@ class _EditProfilePageState extends State<EditProfilePage> {
         child: Column(
           children: [
             const SizedBox(height: 20),
-            // ── Profile Photo ──
-            _buildPhotoSection(titleColor, subtitleColor),
+            // ── Photos Section ──
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                _buildPhotoSection(
+                  label: "Change photo",
+                  imageUrl: "https://picsum.photos/200",
+                  titleColor: titleColor,
+                  isCircle: true,
+                ),
+                _buildPhotoSection(
+                  label: "Change cover",
+                  imageUrl: "https://picsum.photos/800/400",
+                  titleColor: titleColor,
+                  isCircle: false,
+                ),
+              ],
+            ),
             const SizedBox(height: 30),
 
             // ── Fields ──
@@ -118,29 +134,36 @@ class _EditProfilePageState extends State<EditProfilePage> {
     );
   }
 
-  Widget _buildPhotoSection(Color titleColor, Color subtitleColor) {
+  Widget _buildPhotoSection({
+    required String label,
+    required String imageUrl,
+    required Color titleColor,
+    bool isCircle = true,
+  }) {
     return Column(
       children: [
         Stack(
           alignment: Alignment.center,
           children: [
             Container(
-              width: 90,
-              height: 90,
+              width: 100,
+              height: 100,
               decoration: BoxDecoration(
-                shape: BoxShape.circle,
+                shape: isCircle ? BoxShape.circle : BoxShape.rectangle,
+                borderRadius: isCircle ? null : BorderRadius.circular(8),
                 color: titleColor.withValues(alpha: 0.1),
-                image: const DecorationImage(
-                  image: NetworkImage("https://picsum.photos/200"),
+                image: DecorationImage(
+                  image: NetworkImage(imageUrl),
                   fit: BoxFit.cover,
                 ),
               ),
             ),
             Container(
-              width: 90,
-              height: 90,
+              width: 100,
+              height: 100,
               decoration: BoxDecoration(
-                shape: BoxShape.circle,
+                shape: isCircle ? BoxShape.circle : BoxShape.rectangle,
+                borderRadius: isCircle ? null : BorderRadius.circular(8),
                 color: Colors.black.withValues(alpha: 0.3),
               ),
               child: const Icon(CupertinoIcons.camera, color: Colors.white, size: 30),
@@ -149,7 +172,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
         ),
         const SizedBox(height: 12),
         Text(
-          "Change photo",
+          label,
           style: TextStyle(color: titleColor, fontSize: 14, fontWeight: FontWeight.w500),
         ),
       ],

@@ -12,6 +12,7 @@ import 'comment_sheet.dart';
 import 'share_sheet.dart';
 import 'seek_overlay.dart';
 import 'progress_bars.dart';
+import '../../Profile/user_profile_page.dart';
 
 class FeedVideoItem extends StatefulWidget {
   final VideoData data;
@@ -34,7 +35,7 @@ class FeedVideoItem extends StatefulWidget {
 }
 
 class _FeedVideoItemState extends State<FeedVideoItem>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   late final ValueNotifier<bool> _likedNotifier;
   late final ValueNotifier<int>  _likeCountNotifier;
   late final ValueNotifier<bool> _savedNotifier;
@@ -43,8 +44,13 @@ class _FeedVideoItemState extends State<FeedVideoItem>
   late final ValueNotifier<bool>   _isPrivateNotifier;
 
   late final AnimationController _heartCtrl;
-  late final Animation<double>   _heartScale;
-  late final Animation<double>   _heartOpacity;
+  late Animation<double>   _heartScale;
+  late Animation<double>   _heartOpacity;
+
+  late final AnimationController _commentAnimCtrl;
+  late Animation<double>   _videoScale;
+  late Animation<double>   _videoTranslate;
+  late Animation<double>   _uiOpacity;
 
   Offset _tapPosition     = Offset.zero;
   bool   _isPlaying       = true;
@@ -58,6 +64,8 @@ class _FeedVideoItemState extends State<FeedVideoItem>
   double _dragStartX        = 0.0;
   double _seekStartProgress = 0.0;
   double _screenWidth       = 0.0;
+  double _screenHeight      = 0.0;
+  double _totalHorizontalDelta = 0.0;
 
   final List<CommentItem> _comments = [];
 
@@ -82,11 +90,23 @@ class _FeedVideoItemState extends State<FeedVideoItem>
       TweenSequenceItem(tween: Tween(begin: 1.3, end: 1.0).chain(CurveTween(curve: Curves.easeIn)),  weight: 30),
       TweenSequenceItem(tween: Tween(begin: 1.0, end: 0.0).chain(CurveTween(curve: Curves.easeIn)),  weight: 20),
     ]).animate(_heartCtrl);
+
     _heartOpacity = TweenSequence([
       TweenSequenceItem(tween: Tween(begin: 0.0, end: 1.0), weight: 20),
       TweenSequenceItem(tween: Tween(begin: 1.0, end: 1.0), weight: 60),
       TweenSequenceItem(tween: Tween(begin: 1.0, end: 0.0), weight: 20),
     ]).animate(_heartCtrl);
+
+    _commentAnimCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 400),
+    );
+    _videoScale = Tween<double>(begin: 1.0, end: 0.55).animate(
+      CurvedAnimation(parent: _commentAnimCtrl, curve: const Interval(0.0, 1.0, curve: Curves.easeOutCubic)),
+    );
+    _uiOpacity = Tween<double>(begin: 1.0, end: 0.0).animate(
+      CurvedAnimation(parent: _commentAnimCtrl, curve: const Interval(0.0, 0.4, curve: Curves.easeOut)),
+    );
 
     _comments.addAll([
       CommentItem("@user_1",        "This is amazing! ?", 342),
@@ -99,6 +119,10 @@ class _FeedVideoItemState extends State<FeedVideoItem>
   void didChangeDependencies() {
     super.didChangeDependencies();
     _screenWidth = MediaQuery.of(context).size.width;
+    _screenHeight = MediaQuery.of(context).size.height;
+    _videoTranslate = Tween<double>(begin: 0.0, end: -_screenHeight * 0.15).animate(
+      CurvedAnimation(parent: _commentAnimCtrl, curve: const Interval(0.0, 1.0, curve: Curves.easeOutCubic)),
+    );
   }
 
   @override
@@ -112,6 +136,7 @@ class _FeedVideoItemState extends State<FeedVideoItem>
   @override
   void dispose() {
     _heartCtrl.dispose();
+    _commentAnimCtrl.dispose();
     _likedNotifier.dispose();
     _likeCountNotifier.dispose();
     _savedNotifier.dispose();
@@ -128,19 +153,102 @@ class _FeedVideoItemState extends State<FeedVideoItem>
     _isPlaying ? ctrl.play() : ctrl.pause();
   }
 
-  void _onLongPressStart(LongPressStartDetails d) {
+  void _onLongPress() {
     final ctrl = widget.controller;
-    if (ctrl == null || !widget.isReady) return;
-    HapticFeedback.mediumImpact();
+    HapticFeedback.heavyImpact();
     setState(() => _isHolding = true);
-    ctrl.pause();
+    ctrl?.pause();
+    _showContextMenu();
+  }
+
+  void _showContextMenu() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bgColor = isDark ? const Color(0xFF1E1E1E) : Colors.white;
+    final textColor = isDark ? Colors.white : Colors.black;
+
+    showModalBottomSheet(
+      context: context,
+      useRootNavigator: true,
+      backgroundColor: bgColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return Container(
+          padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: textColor.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 25),
+              _buildMenuOption(
+                icon: Icons.download_rounded,
+                title: "Download video",
+                color: textColor,
+                onTap: () {
+                  Navigator.pop(context);
+                  _showMockFeedback("Starting download...");
+                },
+              ),
+              _buildMenuOption(
+                icon: Icons.bookmark_border_rounded,
+                title: "Save video",
+                color: textColor,
+                onTap: () {
+                  Navigator.pop(context);
+                  _onSave();
+                },
+              ),
+              _buildMenuOption(
+                icon: Icons.report_gmailerrorred_rounded,
+                title: "Report",
+                color: textColor,
+                onTap: () {
+                  Navigator.pop(context);
+                  _showMockFeedback("Report submitted");
+                },
+              ),
+              _buildMenuOption(
+                icon: Icons.block_flipped,
+                title: "Not interested",
+                color: textColor,
+                onTap: () {
+                  Navigator.pop(context);
+                  _showMockFeedback("We will show fewer videos like this");
+                },
+              ),
+              const SizedBox(height: 10),
+            ],
+          ),
+        );
+      },
+    ).then((_) {
+      if (mounted) {
+        setState(() => _isHolding = false);
+        if (_isPlaying) widget.controller?.play();
+      }
+    });
+  }
+
+  void _showMockFeedback(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(message),
+      duration: const Duration(seconds: 2),
+      behavior: SnackBarBehavior.floating,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      backgroundColor: Colors.black87,
+    ));
   }
 
   void _onLongPressEnd(LongPressEndDetails d) {
-    final ctrl = widget.controller;
-    if (ctrl == null || !widget.isReady) return;
-    setState(() => _isHolding = false);
-    if (_isPlaying) ctrl.play();
+    // Handled by menu completion if menu was shown
   }
 
   void _onDoubleTapDown(TapDownDetails d) => _tapPosition = d.localPosition;
@@ -174,7 +282,7 @@ class _FeedVideoItemState extends State<FeedVideoItem>
 
   void _onComment() {
     final wasPlaying = _isPlaying;
-    widget.controller?.pause();
+    _commentAnimCtrl.forward();
     showCommentPopup(
       context,
       comments: _comments,
@@ -184,6 +292,7 @@ class _FeedVideoItemState extends State<FeedVideoItem>
         _commentCount += 1;
       }),
     ).then((_) {
+      _commentAnimCtrl.reverse();
       if (wasPlaying && mounted) {
         widget.controller?.play();
         setState(() => _isPlaying = true);
@@ -366,6 +475,7 @@ class _FeedVideoItemState extends State<FeedVideoItem>
     final dur = ctrl.value.duration.inMilliseconds;
     if (dur == 0) return;
     _dragStartX = d.localPosition.dx;
+    _totalHorizontalDelta = 0.0;
     _seekStartProgress = ctrl.value.position.inMilliseconds / dur;
     _seekProgressNotifier.value = _seekStartProgress;
     _isSeekingNotifier.value = true;
@@ -374,6 +484,7 @@ class _FeedVideoItemState extends State<FeedVideoItem>
 
   void _onSeekDragUpdate(DragUpdateDetails d) {
     if (!_isSeekingNotifier.value) return;
+    _totalHorizontalDelta += d.delta.dx;
     final delta = d.delta.dx / _screenWidth;
     const double sensitivity = 3.0;
     final newProg = (nativeService.fastLerp(_seekProgressNotifier.value, _seekProgressNotifier.value + delta * sensitivity, 1.0)).clamp(0.0, 1.0);
@@ -383,9 +494,27 @@ class _FeedVideoItemState extends State<FeedVideoItem>
   void _onSeekDragEnd(DragEndDetails d) {
     final ctrl = widget.controller;
     if (ctrl == null || !_isSeekingNotifier.value) return;
+
+    // Detect swipe (Left to Right)
+    if (_totalHorizontalDelta > 100 && d.velocity.pixelsPerSecond.dx > 500) {
+      _isSeekingNotifier.value = false;
+      _navigateToProfile();
+      if (_isPlaying) ctrl.play();
+      return;
+    }
+
     ctrl.seekTo(ctrl.value.duration * _seekProgressNotifier.value);
     _isSeekingNotifier.value = false;
     if (_isPlaying) ctrl.play();
+  }
+
+  void _navigateToProfile() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => UserProfilePage(username: widget.data.username),
+      ),
+    );
   }
 
   @override
@@ -398,161 +527,178 @@ class _FeedVideoItemState extends State<FeedVideoItem>
     final ready     = widget.isReady && ctrl != null;
     final bottomPad = MediaQuery.of(context).padding.bottom;
 
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        GestureDetector(
-          onTap: _togglePlay,
-          onDoubleTapDown: _onDoubleTapDown,
-          onDoubleTap: _onDoubleTap,
-          onLongPressStart: _onLongPressStart,
-          onLongPressEnd: _onLongPressEnd,
-          onHorizontalDragStart: _onSeekDragStart,
-          onHorizontalDragUpdate: _onSeekDragUpdate,
-          onHorizontalDragEnd: _onSeekDragEnd,
-          behavior: HitTestBehavior.opaque,
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              const ColoredBox(color: Colors.black),
-              if (widget.data.isImage && widget.data.images != null)
-                ImageSlideshow(images: widget.data.images!)
-              else if (ready)
-                RepaintBoundary(
-                  child: SizedBox.expand(
-                    child: Center(
-                      child: Builder(
-                        builder: (context) {
-                          final videoWidth = ctrl.value.size.width;
-                          final videoHeight = ctrl.value.size.height;
-                          final containerWidth = size.width;
-                          final containerHeight = size.height;
+    return GestureDetector(
+      onLongPress: _onLongPress,
+      behavior: HitTestBehavior.opaque,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          AnimatedBuilder(
+            animation: _commentAnimCtrl,
+            builder: (context, child) {
+              return Transform.translate(
+                offset: Offset(0, _videoTranslate.value),
+                child: Transform.scale(
+                  scale: _videoScale.value,
+                  alignment: Alignment.topCenter,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(_commentAnimCtrl.value * 20),
+                    child: child,
+                  ),
+                ),
+              );
+            },
+            child: GestureDetector(
+              onTap: _togglePlay,
+              onDoubleTapDown: _onDoubleTapDown,
+              onDoubleTap: _onDoubleTap,
+              onHorizontalDragStart: _onSeekDragStart,
+              onHorizontalDragUpdate: _onSeekDragUpdate,
+              onHorizontalDragEnd: _onSeekDragEnd,
+              behavior: HitTestBehavior.opaque,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                const ColoredBox(color: Colors.black),
+                if (widget.data.isImage && widget.data.images != null)
+                  ImageSlideshow(images: widget.data.images!)
+                else if (ready)
+                  RepaintBoundary(
+                    child: SizedBox.expand(
+                      child: Center(
+                        child: Builder(
+                          builder: (context) {
+                            final videoWidth = ctrl.value.size.width;
+                            final videoHeight = ctrl.value.size.height;
+                            final containerWidth = size.width;
+                            final containerHeight = size.height;
 
-                          final outWidthPtr = calloc<Double>();
-                          final outHeightPtr = calloc<Double>();
+                            final outWidthPtr = calloc<Double>();
+                            final outHeightPtr = calloc<Double>();
 
-                          try {
-                            nativeService.calculateVideoDimensions(
-                              videoWidth, videoHeight,
-                              containerWidth, containerHeight,
-                              outWidthPtr, outHeightPtr,
-                            );
+                            try {
+                              nativeService.calculateVideoDimensions(
+                                videoWidth, videoHeight,
+                                containerWidth, containerHeight,
+                                outWidthPtr, outHeightPtr,
+                              );
 
-                            final finalWidth = outWidthPtr.value;
-                            final finalHeight = outHeightPtr.value;
+                              final finalWidth = outWidthPtr.value;
+                              final finalHeight = outHeightPtr.value;
 
-                            return SizedBox(
-                              width: finalWidth,
-                              height: finalHeight,
-                              child: VideoPlayer(ctrl),
-                            );
-                          } finally {
-                            calloc.free(outWidthPtr);
-                            calloc.free(outHeightPtr);
-                          }
-                        },
+                              return SizedBox(
+                                width: finalWidth,
+                                height: finalHeight,
+                                child: VideoPlayer(ctrl),
+                              );
+                            } finally {
+                              calloc.free(outWidthPtr);
+                              calloc.free(outHeightPtr);
+                            }
+                          },
+                        ),
+                      ),
+                    ),
+                  )
+                else
+                  const Center(
+                    child: CircularProgressIndicator(
+                      color: Colors.pinkAccent, strokeWidth: 2.5,
+                    ),
+                  ),
+
+                Positioned(
+                  bottom: 0, left: 0, right: 0,
+                  height: size.height * 0.60,
+                  child: const DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.bottomCenter,
+                        end: Alignment.topCenter,
+                        colors: [Color(0xE6000000), Color(0x80000000), Colors.transparent],
+                        stops: [0.0, 0.5, 1.0],
                       ),
                     ),
                   ),
-                )
-              else
-                const Center(
-                  child: CircularProgressIndicator(
-                    color: Colors.pinkAccent, strokeWidth: 2.5,
-                  ),
                 ),
 
-              Positioned(
-                bottom: 0, left: 0, right: 0,
-                height: size.height * 0.60,
-                child: const DecoratedBox(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.bottomCenter,
-                      end: Alignment.topCenter,
-                      colors: [Color(0xE6000000), Color(0x80000000), Colors.transparent],
-                      stops: [0.0, 0.5, 1.0],
-                    ),
-                  ),
-                ),
-              ),
-
-              Positioned(
-                top: 0, left: 0, right: 0,
-                height: size.height * 0.25,
-                child: const DecoratedBox(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [Color(0x80000000), Colors.transparent],
-                    ),
-                  ),
-                ),
-              ),
-
-              SeekOverlayLayer(
-                isSeekingNotifier: _isSeekingNotifier,
-                seekProgressNotifier: _seekProgressNotifier,
-                seekStartProgress: _seekStartProgress,
-                ready: ready,
-                ctrl: ctrl,
-              ),
-
-              if (_isHolding)
-                ColoredBox(
-                  color: Colors.black.withValues(alpha: 0.3),
-                  child: const Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.pause_rounded,
-                          size: 72,
-                          color: Colors.white,
-                          shadows: [Shadow(color: Colors.black54, blurRadius: 20)],
-                        ),
-                        SizedBox(height: 12),
-                        Text(
-                          "Hold to pause",
-                          style: TextStyle(color: Colors.white70, fontSize: 13),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-
-              if (!_isPlaying && !_isHolding)
-                const Center(
-                  child: Icon(
-                    Icons.play_arrow_rounded,
-                    size: 72,
-                    color: Colors.white,
-                    shadows: [Shadow(color: Colors.black54, blurRadius: 20)],
-                  ),
-                ),
-
-              if (_showHeart)
                 Positioned(
-                  left: _tapPosition.dx - 55,
-                  top:  _tapPosition.dy - 55,
-                  child: IgnorePointer(
-                    child: AnimatedBuilder(
-                      animation: _heartCtrl,
-                      builder: (_, __) => Opacity(
-                        opacity: _heartOpacity.value,
-                        child: Transform.scale(
-                          scale: _heartScale.value,
-                          child: const Icon(
-                            Icons.favorite_rounded, size: 110,
+                  top: 0, left: 0, right: 0,
+                  height: size.height * 0.25,
+                  child: const DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [Color(0x80000000), Colors.transparent],
+                      ),
+                    ),
+                  ),
+                ),
+
+                SeekOverlayLayer(
+                  isSeekingNotifier: _isSeekingNotifier,
+                  seekProgressNotifier: _seekProgressNotifier,
+                  seekStartProgress: _seekStartProgress,
+                  ready: ready,
+                  ctrl: ctrl,
+                ),
+
+                if (_isHolding)
+                  ColoredBox(
+                    color: Colors.black.withValues(alpha: 0.3),
+                    child: const Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.pause_rounded,
+                            size: 72,
                             color: Colors.white,
+                            shadows: [Shadow(color: Colors.black54, blurRadius: 20)],
+                          ),
+                          SizedBox(height: 12),
+                          Text(
+                            "Hold to pause",
+                            style: TextStyle(color: Colors.white70, fontSize: 13),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                if (!_isPlaying && !_isHolding)
+                  const Center(
+                    child: Icon(
+                      Icons.play_arrow_rounded,
+                      size: 72,
+                      color: Colors.white,
+                      shadows: [Shadow(color: Colors.black54, blurRadius: 20)],
+                    ),
+                  ),
+
+                if (_showHeart)
+                  Positioned(
+                    left: _tapPosition.dx - 55,
+                    top:  _tapPosition.dy - 55,
+                    child: IgnorePointer(
+                      child: AnimatedBuilder(
+                        animation: _heartCtrl,
+                        builder: (_, __) => Opacity(
+                          opacity: _heartOpacity.value,
+                          child: Transform.scale(
+                            scale: _heartScale.value,
+                            child: const Icon(
+                              Icons.favorite_rounded, size: 110,
+                              color: Colors.white,
+                            ),
                           ),
                         ),
                       ),
                     ),
                   ),
-                ),
-            ],
+              ],
+            ),
           ),
         ),
 
@@ -560,10 +706,13 @@ class _FeedVideoItemState extends State<FeedVideoItem>
           Positioned(
             left: 0, right: 0,
             bottom: bottomPad,
-            child: BottomBarSwitcher(
-              isSeekingNotifier: _isSeekingNotifier,
-              seekProgressNotifier: _seekProgressNotifier,
-              ctrl: ctrl,
+            child: FadeTransition(
+              opacity: _uiOpacity,
+              child: BottomBarSwitcher(
+                isSeekingNotifier: _isSeekingNotifier,
+                seekProgressNotifier: _seekProgressNotifier,
+                ctrl: ctrl,
+              ),
             ),
           ),
 
@@ -571,20 +720,23 @@ class _FeedVideoItemState extends State<FeedVideoItem>
           right: 8,
           bottom: bottomPad + 16,
           child: RepaintBoundary(
-            child: RightActions(
-              username:          widget.data.username,
-              likedNotifier:     _likedNotifier,
-              likeCountNotifier: _likeCountNotifier,
-              savedNotifier:     _savedNotifier,
-              commentCount:      _commentCount,
-              shareCount:        _shareCount,
-              isFollowing:       _isFollowing,
-              onLike:    _onLike,
-              onComment: _onComment,
-              onShare:   _onShare,
-              onSave:    _onSave,
-              onFollow:  _onFollow,
-              onMore:    widget.data.username == "Vx User" ? _showManageMenu : null,
+            child: FadeTransition(
+              opacity: _uiOpacity,
+              child: RightActions(
+                username:          widget.data.username,
+                likedNotifier:     _likedNotifier,
+                likeCountNotifier: _likeCountNotifier,
+                savedNotifier:     _savedNotifier,
+                commentCount:      _commentCount,
+                shareCount:        _shareCount,
+                isFollowing:       _isFollowing,
+                onLike:    _onLike,
+                onComment: _onComment,
+                onShare:   _onShare,
+                onSave:    _onSave,
+                onFollow:  _onFollow,
+                onMore:    widget.data.username == "Vx User" ? _showManageMenu : null,
+              ),
             ),
           ),
         ),
@@ -592,16 +744,20 @@ class _FeedVideoItemState extends State<FeedVideoItem>
         Positioned(
           left: 14, right: 80,
           bottom: bottomPad + 12,
-          child: BottomInfo(
-            data: widget.data,
-            isFollowing: _isFollowing,
-            expanded: _captionExpanded,
-            onToggleCaption: () =>
-                setState(() => _captionExpanded = !_captionExpanded),
-            onFollow: _onFollow,
+          child: FadeTransition(
+            opacity: _uiOpacity,
+            child: BottomInfo(
+              data: widget.data,
+              isFollowing: _isFollowing,
+              expanded: _captionExpanded,
+              onToggleCaption: () =>
+                  setState(() => _captionExpanded = !_captionExpanded),
+              onFollow: _onFollow,
+            ),
           ),
         ),
       ],
+    ),
     );
   }
 
