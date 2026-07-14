@@ -8,10 +8,10 @@ import 'setup_profile_screen.dart';
 import '../../Layout/responsive_layout.dart';
 
 // Auth Popup দেখানোর মূল ফাংশন
-void showAuthPopup(BuildContext context) {
+Future<void> showAuthPopup(BuildContext context) async {
   final isDesktop = ResponsiveLayout.isDesktop(context);
   
-  showGeneralDialog(
+  await showGeneralDialog(
     context: context,
     barrierDismissible: true,
     barrierLabel: "Dismiss",
@@ -30,7 +30,7 @@ void showAuthPopup(BuildContext context) {
               border: Border.all(color: Colors.white12),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.pinkAccent.withOpacity(0.1),
+                  color: Colors.pinkAccent.withValues(alpha: 0.1),
                   blurRadius: 100,
                   spreadRadius: 10,
                 )
@@ -343,7 +343,7 @@ class _VxAuthGateContentState extends State<VxAuthGateContent> {
           "Discover short videos that will\nmake your day. Join millions of\ncreators and viewers.",
           textAlign: TextAlign.center,
           style: TextStyle(
-            color: Colors.white.withOpacity(0.7),
+            color: Colors.white.withValues(alpha: 0.7),
             fontSize: 16,
             height: 1.5,
           ),
@@ -384,15 +384,15 @@ class _VxAuthGateContentState extends State<VxAuthGateContent> {
         
         Row(
           children: [
-            Expanded(child: Divider(color: Colors.white.withOpacity(0.1))),
+            Expanded(child: Divider(color: Colors.white.withValues(alpha: 0.1))),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
               child: Text(
                 "OR",
-                style: TextStyle(color: Colors.white.withOpacity(0.3), fontSize: 13),
+                style: TextStyle(color: Colors.white.withValues(alpha: 0.3), fontSize: 13),
               ),
             ),
-            Expanded(child: Divider(color: Colors.white.withOpacity(0.1))),
+            Expanded(child: Divider(color: Colors.white.withValues(alpha: 0.1))),
           ],
         ),
         const SizedBox(height: 24),
@@ -404,10 +404,10 @@ class _VxAuthGateContentState extends State<VxAuthGateContent> {
           keyboardType: TextInputType.emailAddress,
           decoration: InputDecoration(
             hintText: "Enter your email address",
-            hintStyle: TextStyle(color: Colors.white.withOpacity(0.3)),
+            hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.3)),
             filled: true,
             fillColor: const Color(0xFF1E1E1E),
-            prefixIcon: Icon(Icons.email_outlined, color: Colors.white.withOpacity(0.5)),
+            prefixIcon: Icon(Icons.email_outlined, color: Colors.white.withValues(alpha: 0.5)),
             contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(30),
@@ -431,7 +431,7 @@ class _VxAuthGateContentState extends State<VxAuthGateContent> {
             "By continuing you agree to our\nTerms of Service and Privacy Policy",
             textAlign: TextAlign.center,
             style: TextStyle(
-              color: Colors.white.withOpacity(0.5),
+              color: Colors.white.withValues(alpha: 0.5),
               fontSize: 13,
               height: 1.4,
             ),
@@ -467,7 +467,7 @@ class _VxAuthGateContentState extends State<VxAuthGateContent> {
           padding: const EdgeInsets.symmetric(horizontal: 12.0),
           child: Text(
             "We sent a 6-digit code to ${_emailController.text}",
-            style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 14),
+            style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 14),
           ),
         ),
         const SizedBox(height: 20),
@@ -488,7 +488,7 @@ class _VxAuthGateContentState extends State<VxAuthGateContent> {
             counterText: "",
             hintText: "000000",
             hintStyle: TextStyle(
-              color: Colors.white.withOpacity(0.2),
+              color: Colors.white.withValues(alpha: 0.2),
               letterSpacing: 10,
             ),
             filled: true,
@@ -519,10 +519,10 @@ class _VxAuthGateContentState extends State<VxAuthGateContent> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.1),
+        color: Colors.white.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: Colors.white.withOpacity(0.2),
+          color: Colors.white.withValues(alpha: 0.2),
           width: 1,
         ),
       ),
@@ -552,7 +552,7 @@ class _VxAuthGateContentState extends State<VxAuthGateContent> {
         boxShadow: gradient != null
             ? [
                 BoxShadow(
-                  color: const Color(0xFFFF4FB3).withOpacity(0.3),
+                  color: const Color(0xFFFF4FB3).withValues(alpha: 0.3),
                   blurRadius: 20,
                   offset: const Offset(0, 8),
                 ),

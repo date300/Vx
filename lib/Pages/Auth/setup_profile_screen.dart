@@ -42,6 +42,7 @@ class _SetupProfileScreenState extends State<SetupProfileScreen> {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
+        if (!mounted) return;
         setState(() {
           // আপনার গো ব্যাকএন্ড থেকে আসা "data" কী (Key) রিড করা হচ্ছে
           _categories = data['data'] ?? []; 
@@ -51,8 +52,8 @@ class _SetupProfileScreenState extends State<SetupProfileScreen> {
         throw Exception("Failed to load categories");
       }
     } catch (e) {
-      setState(() => _isPageLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error: $e")));
+      if (mounted) setState(() => _isPageLoading = false);
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error: $e")));
     }
   }
 
@@ -127,16 +128,15 @@ class _SetupProfileScreenState extends State<SetupProfileScreen> {
                   children: [
                     const Text("Setup Profile", style: TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold)),
                     const SizedBox(height: 8),
-                    Text("Complete your TikTok style identity", style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 14)),
+                    Text("Complete your TikTok style identity", style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 14)),
                     const SizedBox(height: 24),
                     
-                    // নিকনেম ইনপুট ফিল্ড
                     TextField(
                       controller: _nicknameController,
                       style: const TextStyle(color: Colors.white),
                       decoration: InputDecoration(
                         hintText: "Enter Nickname (e.g. Sohan)",
-                        hintStyle: TextStyle(color: Colors.white.withOpacity(0.3)),
+                        hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.3)),
                         filled: true,
                         fillColor: const Color(0xFF1E1E1E),
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide.none),
@@ -150,7 +150,7 @@ class _SetupProfileScreenState extends State<SetupProfileScreen> {
                       style: const TextStyle(color: Colors.white),
                       decoration: InputDecoration(
                         hintText: "Enter Unique Username (e.g. sohan_dev)",
-                        hintStyle: TextStyle(color: Colors.white.withOpacity(0.3)),
+                        hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.3)),
                         filled: true,
                         fillColor: const Color(0xFF1E1E1E),
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide.none),

@@ -8,19 +8,20 @@ import 'package:shared_preferences/shared_preferences.dart'; // নতুন য
 import '../Layout/responsive_layout.dart';
 import '../Layout/theme_provider.dart';
 import '../Pages/Auth/auth_gate_page.dart';
-import '../Pages/home_page.dart';
-import '../Pages/explore_page.dart';
-import '../Pages/inbox_page.dart';
-import '../Pages/profile_page.dart';
-import '../Pages/upload_popup.dart';
+import '../Pages/Home/home_page.dart';
+import '../Pages/Explore/explore_page.dart';
+import '../Pages/Inbox/inbox_page.dart';
+import '../Pages/Profile/profile_page.dart';
+import '../Pages/Upload/upload_popup.dart';
 
 class AuthService {
-  static bool isLoggedIn = false;
+  static bool isLoggedIn = true; // ডিফল্টভাবে ট্রু করে রাখা হয়েছে UI ডিজাইনের জন্য
 
-  // অ্যাপ স্টার্ট হওয়ার সময় লগইন স্ট্যাটাস চেক করবে
+  // অ্যাপ স্টার্ট হওয়ার সময় লগইন স্ট্যাটাস চেক করবে (আপাতত বন্ধ)
   static Future<void> checkLoginStatus() async {
-    final prefs = await SharedPreferences.getInstance();
-    isLoggedIn = prefs.getBool('is_logged_in') ?? false;
+    // final prefs = await SharedPreferences.getInstance();
+    // isLoggedIn = prefs.getBool('is_logged_in') ?? false;
+    isLoggedIn = true; 
   }
 }
 
@@ -68,22 +69,21 @@ class _MainLayoutState extends State<MainLayout>
   ];
 
   void _onItemTapped(int index) async {
-    // ইনবক্স (2) বা প্রোফাইল (3)-এ ক্লিক করলে এবং লগইন না থাকলে Auth Popup দেখাবে
+    // লগইন চেক আপাতত বন্ধ রাখা হয়েছে UI ডিজাইনের জন্য
+    /*
     if ((index == 2 || index == 3) && !AuthService.isLoggedIn) {
-      showAuthPopup(context);
+      await showAuthPopup(context);
       
-      // পপআপ বন্ধ হওয়ার পর আবার স্ট্যাটাস চেক করে নেবে (যাতে সাথে সাথেই লগইন হয়ে যায়)
       final prefs = await SharedPreferences.getInstance();
       AuthService.isLoggedIn = prefs.getBool('is_logged_in') ?? false;
       
-      // যদি পপআপ থেকে ইউজার লগইন করে ফেলে, তাহলে প্রোফাইল বা ইনবক্সে নিয়ে যাবে
-      if (AuthService.isLoggedIn) {
+      if (AuthService.isLoggedIn && mounted) {
         setState(() => _selectedIndex = index);
       }
       return;
     }
+    */
     
-    // লগইন করা থাকলে বা অন্য ট্যাবে ক্লিক করলে নরমালি সিলেক্ট হবে
     setState(() => _selectedIndex = index);
   }
 
@@ -106,18 +106,24 @@ class _MainLayoutState extends State<MainLayout>
 
     final bgColor = isDark ? Colors.black : Colors.white;
     final navBgColor = isDark
-        ? Colors.black.withOpacity(0.55)
-        : Colors.white.withOpacity(0.75);
+        ? Colors.black.withValues(alpha: 0.55)
+        : Colors.white.withValues(alpha: 0.75);
     final borderColor = isDark
-        ? Colors.white.withOpacity(0.07)
-        : Colors.black.withOpacity(0.07);
+        ? Colors.white.withValues(alpha: 0.07)
+        : Colors.black.withValues(alpha: 0.07);
     final activeIconColor = isDark ? Colors.white : Colors.black;
     final inactiveIconColor = isDark
-        ? Colors.white.withOpacity(0.42)
-        : Colors.black.withOpacity(0.35);
+        ? Colors.white.withValues(alpha: 0.42)
+        : Colors.black.withValues(alpha: 0.35);
     final uploadBorderColor = isDark
-        ? Colors.white.withOpacity(0.38)
-        : Colors.black.withOpacity(0.30);
+        ? Colors.white.withValues(alpha: 0.38)
+        : Colors.black.withValues(alpha: 0.30);
+
+    final uploadGradient = LinearGradient(
+      colors: [const Color(0xFFFF4FB3), const Color(0xFF9B4DFF)],
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+    );
 
     return Scaffold(
       extendBody: true,
@@ -273,7 +279,7 @@ class _MainLayoutState extends State<MainLayout>
             vertical: 12,
           ),
           decoration: BoxDecoration(
-            color: isActive ? activeColor.withOpacity(0.08) : Colors.transparent,
+            color: isActive ? activeColor.withValues(alpha: 0.08) : Colors.transparent,
             borderRadius: BorderRadius.circular(12),
           ),
           child: Row(
@@ -317,22 +323,40 @@ class _MainLayoutState extends State<MainLayout>
         padding: const EdgeInsets.symmetric(horizontal: 12),
         child: IconButton(
           onPressed: () => showUploadPopup(context),
-          icon: const Icon(CupertinoIcons.plus_circle_fill, size: 40, color: Color(0xFFFF4FB3)),
+          icon: Container(
+            decoration: const BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: LinearGradient(
+                colors: [Color(0xFFFF4FB3), Color(0xFF9B4DFF)],
+              ),
+            ),
+            padding: const EdgeInsets.all(4),
+            child: const Icon(CupertinoIcons.plus, size: 28, color: Colors.white),
+          ),
         ),
       );
     }
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
-      child: ElevatedButton.icon(
-        onPressed: () => showUploadPopup(context),
-        icon: const Icon(CupertinoIcons.add, size: 20),
-        label: const Text('Create', style: TextStyle(fontWeight: FontWeight.bold)),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFFFF4FB3),
-          foregroundColor: Colors.white,
-          minimumSize: const Size(double.infinity, 50),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          elevation: 0,
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          gradient: const LinearGradient(
+            colors: [Color(0xFFFF4FB3), Color(0xFF9B4DFF)],
+          ),
+        ),
+        child: ElevatedButton.icon(
+          onPressed: () => showUploadPopup(context),
+          icon: const Icon(CupertinoIcons.add, size: 20),
+          label: const Text('Create', style: TextStyle(fontWeight: FontWeight.bold)),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.transparent,
+            foregroundColor: Colors.white,
+            shadowColor: Colors.transparent,
+            minimumSize: const Size(double.infinity, 50),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            elevation: 0,
+          ),
         ),
       ),
     );
@@ -378,10 +402,7 @@ class _MainLayoutState extends State<MainLayout>
                   activeColor: activeIconColor,
                   inactiveColor: inactiveIconColor,
                 ),
-                _buildUploadButton(
-                  uploadBorderColor: uploadBorderColor,
-                  inactiveColor: inactiveIconColor,
-                ),
+                _buildUploadButton(),
                 _buildNavItem(
                   index: 2,
                   icon: CupertinoIcons.bell,
@@ -389,7 +410,10 @@ class _MainLayoutState extends State<MainLayout>
                   activeColor: activeIconColor,
                   inactiveColor: inactiveIconColor,
                 ),
-                _buildProfileItem(
+                _buildNavItem(
+                  index: 3,
+                  icon: CupertinoIcons.person,
+                  activeIcon: CupertinoIcons.person_fill,
                   activeColor: activeIconColor,
                   inactiveColor: inactiveIconColor,
                 ),
@@ -446,10 +470,7 @@ class _MainLayoutState extends State<MainLayout>
     );
   }
 
-  Widget _buildUploadButton({
-    required Color uploadBorderColor,
-    required Color inactiveColor,
-  }) {
+  Widget _buildUploadButton() {
     return GestureDetector(
       onTap: () => showUploadPopup(context),
       behavior: HitTestBehavior.opaque,
@@ -458,23 +479,20 @@ class _MainLayoutState extends State<MainLayout>
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 180),
-              curve: Curves.easeOut,
+            Container(
               width: 44,
               height: 30,
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(9),
-                border: Border.all(
-                  color: uploadBorderColor,
-                  width: 1.6,
+                gradient: const LinearGradient(
+                  colors: [Color(0xFFFF4FB3), Color(0xFF9B4DFF)],
                 ),
               ),
-              child: Center(
+              child: const Center(
                 child: Icon(
                   CupertinoIcons.add,
-                  size: 19,
-                  color: inactiveColor,
+                  size: 20,
+                  color: Colors.white,
                 ),
               ),
             ),
@@ -485,54 +503,6 @@ class _MainLayoutState extends State<MainLayout>
     );
   }
 
-  Widget _buildProfileItem({
-    required Color activeColor,
-    required Color inactiveColor,
-  }) {
-    final isActive = _selectedIndex == 3;
+  // Removed _buildProfileItem as it's now covered by _buildNavItem with custom icons
 
-    return GestureDetector(
-      onTap: () => _onItemTapped(3),
-      behavior: HitTestBehavior.opaque,
-      child: SizedBox(
-        width: 52,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 220),
-              curve: Curves.easeOut,
-              width: 28,
-              height: 28,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: isActive ? activeColor : Colors.transparent,
-                  width: 2.0,
-                ),
-              ),
-              child: Center(
-                child: Icon(
-                  CupertinoIcons.person_fill,
-                  size: 20,
-                  color: isActive ? activeColor : inactiveColor,
-                ),
-              ),
-            ),
-            const SizedBox(height: 5),
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 220),
-              curve: Curves.easeOut,
-              width: isActive ? 4 : 0,
-              height: isActive ? 4 : 0,
-              decoration: BoxDecoration(
-                color: activeColor,
-                shape: BoxShape.circle,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 }

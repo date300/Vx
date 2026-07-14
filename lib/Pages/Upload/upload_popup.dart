@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'dart:math' as math;
+import '../../Services/native_service.dart';
 
 // ==================== POPUP ENTRY POINT ====================
 // যেকোনো জায়গা থেকে এভাবে কল করুন: showUploadPopup(context);
@@ -257,6 +258,8 @@ class _VxSmallAnimatedLogoState extends State<VxSmallAnimatedLogo>
     return AnimatedBuilder(
       animation: _controller,
       builder: (context, child) {
+        // Use C++ fast math for even smoother rotation values if needed
+        // nativeService.fastLerp could be used for advanced easing
         return Container(
           width: 45,
           height: 45,

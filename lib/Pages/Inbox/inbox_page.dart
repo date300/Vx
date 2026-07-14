@@ -1,7 +1,8 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../Layout/theme_provider.dart';
+import '../../Layout/theme_provider.dart';
+import 'chat_detail_screen.dart';
 
 class _Message {
   final String name;
@@ -94,79 +95,111 @@ class InboxPage extends StatelessWidget {
     final bgColor = isDark ? Colors.black : Colors.white;
     final titleColor = isDark ? Colors.white : Colors.black;
     final avatarBgColor = isDark
-        ? Colors.white.withOpacity(0.10)
-        : Colors.black.withOpacity(0.07);
+        ? Colors.white.withValues(alpha: 0.10)
+        : Colors.black.withValues(alpha: 0.07);
     final avatarBorderColor = isDark
-        ? Colors.white.withOpacity(0.15)
-        : Colors.black.withOpacity(0.10);
+        ? Colors.white.withValues(alpha: 0.15)
+        : Colors.black.withValues(alpha: 0.10);
     final highlightColor = isDark
-        ? Colors.white.withOpacity(0.05)
-        : Colors.black.withOpacity(0.04);
+        ? Colors.white.withValues(alpha: 0.05)
+        : Colors.black.withValues(alpha: 0.04);
     final onlineBorderColor = isDark ? Colors.black : Colors.white;
     final badgeBgColor = isDark ? Colors.white : Colors.black;
     final badgeTextColor = isDark ? Colors.black : Colors.white;
     final emptyIconColor = isDark
-        ? Colors.white.withOpacity(0.2)
-        : Colors.black.withOpacity(0.15);
+        ? Colors.white.withValues(alpha: 0.2)
+        : Colors.black.withValues(alpha: 0.15);
     final emptyTitleColor = isDark
-        ? Colors.white.withOpacity(0.5)
-        : Colors.black.withOpacity(0.4);
+        ? Colors.white.withValues(alpha: 0.5)
+        : Colors.black.withValues(alpha: 0.4);
     final emptySubtitleColor = isDark
-        ? Colors.white.withOpacity(0.3)
-        : Colors.black.withOpacity(0.3);
+        ? Colors.white.withValues(alpha: 0.3)
+        : Colors.black.withValues(alpha: 0.3);
 
     return Scaffold(
       backgroundColor: bgColor,
       appBar: AppBar(
         backgroundColor: bgColor,
         elevation: 0,
-        centerTitle: true,
+        centerTitle: false,
         title: Text(
-          "Inbox",
+          "Messages",
           style: TextStyle(
             color: titleColor,
-            fontSize: 17,
-            fontWeight: FontWeight.w600,
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
           ),
         ),
         actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 16),
-            child: Icon(
+          IconButton(
+            icon: Icon(
               CupertinoIcons.pencil_ellipsis_rectangle,
               color: titleColor,
               size: 24,
             ),
+            onPressed: () {},
+          ),
+          const SizedBox(width: 8),
+        ],
+      ),
+      body: Column(
+        children: [
+          _buildSearchBar(isDark, titleColor, highlightColor),
+          Expanded(
+            child: _messages.isEmpty
+                ? _buildEmptyState(
+                    emptyIconColor: emptyIconColor,
+                    emptyTitleColor: emptyTitleColor,
+                    emptySubtitleColor: emptySubtitleColor,
+                  )
+                : ListView.builder(
+                    padding: const EdgeInsets.only(top: 8, bottom: 100),
+                    itemCount: _messages.length,
+                    itemBuilder: (context, index) {
+                      return _buildMessageTile(
+                        context,
+                        _messages[index],
+                        isDark: isDark,
+                        titleColor: titleColor,
+                        avatarBgColor: avatarBgColor,
+                        avatarBorderColor: avatarBorderColor,
+                        highlightColor: highlightColor,
+                        onlineBorderColor: onlineBorderColor,
+                        badgeBgColor: badgeBgColor,
+                        badgeTextColor: badgeTextColor,
+                      );
+                    },
+                  ),
           ),
         ],
       ),
-      body: _messages.isEmpty
-          ? _buildEmptyState(
-              emptyIconColor: emptyIconColor,
-              emptyTitleColor: emptyTitleColor,
-              emptySubtitleColor: emptySubtitleColor,
-            )
-          : ListView.builder(
-              padding: const EdgeInsets.only(top: 8, bottom: 100),
-              itemCount: _messages.length,
-              itemBuilder: (context, index) {
-                return _buildMessageTile(
-                  _messages[index],
-                  isDark: isDark,
-                  titleColor: titleColor,
-                  avatarBgColor: avatarBgColor,
-                  avatarBorderColor: avatarBorderColor,
-                  highlightColor: highlightColor,
-                  onlineBorderColor: onlineBorderColor,
-                  badgeBgColor: badgeBgColor,
-                  badgeTextColor: badgeTextColor,
-                );
-              },
-            ),
+    );
+  }
+
+  Widget _buildSearchBar(bool isDark, Color titleColor, Color highlightColor) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        decoration: BoxDecoration(
+          color: highlightColor,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: TextField(
+          style: TextStyle(color: titleColor),
+          decoration: InputDecoration(
+            hintText: "Search messages...",
+            hintStyle: TextStyle(color: titleColor.withValues(alpha: 0.4), fontSize: 15),
+            border: InputBorder.none,
+            icon: Icon(CupertinoIcons.search, color: titleColor.withValues(alpha: 0.4), size: 20),
+          ),
+        ),
+      ),
     );
   }
 
   Widget _buildMessageTile(
+    BuildContext context,
     _Message msg, {
     required bool isDark,
     required Color titleColor,
@@ -179,15 +212,23 @@ class InboxPage extends StatelessWidget {
   }) {
     final nameColor = titleColor;
     final msgColor = msg.isUnread
-        ? titleColor.withOpacity(0.8)
-        : titleColor.withOpacity(0.4);
+        ? titleColor.withValues(alpha: 0.8)
+        : titleColor.withValues(alpha: 0.4);
     final timeColor = msg.isUnread
         ? titleColor
-        : titleColor.withOpacity(0.35);
+        : titleColor.withValues(alpha: 0.35);
 
     return InkWell(
       onTap: () {
-        // TODO: চ্যাট পেজে navigate করো
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ChatDetailScreen(
+              userName: msg.name,
+              avatar: msg.avatar,
+            ),
+          ),
+        );
       },
       splashColor: Colors.transparent,
       highlightColor: highlightColor,

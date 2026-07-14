@@ -4,6 +4,8 @@ import 'package:provider/provider.dart';
 
 import 'screen/splash_screen.dart';
 import 'Layout/theme_provider.dart';
+import 'Layout/main_layout.dart';
+import 'Services/performance_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -19,6 +21,10 @@ void main() async {
       systemNavigationBarIconBrightness: Brightness.light,
     ),
   );
+
+  // Initialize Performance Service
+  final perf = PerformanceService();
+  await perf.optimizeMemory(); // Clean up on startup
 
   runApp(
     ChangeNotifierProvider(
@@ -39,6 +45,9 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'VX',
       themeMode: themeProvider.themeMode,
+      routes: {
+        '/home': (context) => const MainLayout(),
+      },
 
       // ── Light Theme ──
       theme: ThemeData(
@@ -70,9 +79,9 @@ class MyApp extends StatelessWidget {
           }),
           trackColor: WidgetStateProperty.resolveWith((states) {
             if (states.contains(WidgetState.selected)) {
-              return const Color(0xFFFF4FB3).withOpacity(0.3);
+              return const Color(0xFFFF4FB3).withValues(alpha: 0.3);
             }
-            return Colors.grey.withOpacity(0.3);
+            return Colors.grey.withValues(alpha: 0.3);
           }),
         ),
       ),
@@ -107,9 +116,9 @@ class MyApp extends StatelessWidget {
           }),
           trackColor: WidgetStateProperty.resolveWith((states) {
             if (states.contains(WidgetState.selected)) {
-              return const Color(0xFFFF4FB3).withOpacity(0.3);
+              return const Color(0xFFFF4FB3).withValues(alpha: 0.3);
             }
-            return Colors.grey.withOpacity(0.3);
+            return Colors.grey.withValues(alpha: 0.3);
           }),
         ),
       ),
