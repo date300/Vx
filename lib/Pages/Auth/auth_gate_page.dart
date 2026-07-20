@@ -3,7 +3,8 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_material_design_icons/flutter_material_design_icons.dart';
 import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
+import '../../Core/constants.dart' as constants;
+import '../../Services/auth_service.dart';
 import 'setup_profile_screen.dart';
 import '../../Layout/responsive_layout.dart';
 
@@ -60,7 +61,6 @@ class _VxAuthGateContentState extends State<VxAuthGateContent> {
   final TextEditingController _otpController = TextEditingController();
   
   bool _isLoading = false; 
-  final String _baseUrl = "https://app.easysarvice.com";
 
   // ১. ইমেইলে ওটিপি রিকোয়েস্ট পাঠানোর ফাংশন
   Future<void> _sendOTP() async {
@@ -77,7 +77,7 @@ class _VxAuthGateContentState extends State<VxAuthGateContent> {
 
     try {
       final response = await http.post(
-        Uri.parse("$_baseUrl/api/v1/auth/email-request"),
+        Uri.parse("${constants.baseUrl}/auth/email-request"),
         headers: {"Content-Type": "application/json"},
         body: jsonEncode({"email": _emailController.text.trim()}),
       );
@@ -88,6 +88,10 @@ class _VxAuthGateContentState extends State<VxAuthGateContent> {
       if (response.statusCode == 200 || data['status'] == true) {
         setState(() {
           _currentStep = AuthStep.otpStep;
+          // Development mode: Auto-fill OTP if provided in response
+          if (data['otp_code'] != null) {
+            _otpController.text = data['otp_code'].toString();
+          }
         });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(data['message'] ?? "OTP sent successfully!")),
@@ -126,7 +130,7 @@ class _VxAuthGateContentState extends State<VxAuthGateContent> {
 
     try {
       final response = await http.post(
-        Uri.parse("$_baseUrl/api/v1/auth/email-verify"),
+        Uri.parse("${constants.baseUrl}/auth/email-verify"),
         headers: {"Content-Type": "application/json"},
         body: jsonEncode({
           "email": _emailController.text.trim(),
@@ -143,15 +147,12 @@ class _VxAuthGateContentState extends State<VxAuthGateContent> {
         String accessToken = data['access_token'] ?? '';
         String refreshToken = data['refresh_token'] ?? '';
         int userId = data['user']?['id'] ?? 0;
+        String? username = data['user']?['username'];
         
         // 🎯 ব্যাকএন্ড থেকে পাঠানো 'is_new_user' ফ্ল্যাগটি রিড করা হলো
         bool isNewUser = data['is_new_user'] ?? true; 
         
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString('auth_token', accessToken);
-        await prefs.setString('refresh_token', refreshToken);
-        await prefs.setInt('user_id', userId);
-        await prefs.setBool('is_logged_in', true);
+        await AuthService.saveToken(accessToken, refreshToken, userId, username: username);
 
         if (!mounted) return;
         
@@ -174,7 +175,7 @@ class _VxAuthGateContentState extends State<VxAuthGateContent> {
           const SnackBar(content: Text("Login Successful! 🚀")),
         );
       } else {
-        String errorMsg = data['message'] ?? "Invalid OTP! (Status: ${response.statusCode})";
+        String errorMsg = data['message'] ?? data['error'] ?? "Invalid OTP! (Status: ${response.statusCode})";
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(errorMsg)),
         );
@@ -449,7 +450,7 @@ class _VxAuthGateContentState extends State<VxAuthGateContent> {
         Row(
           children: [
             IconButton(
-              icon: const Icon(Icons.arrow_back, color: Colors.white),
+              icon: const Icon(Icons.arrow_back_rounded, color: Colors.white, size: 28),
               onPressed: _isLoading ? null : _goBackToEmail,
             ),
             const Text(

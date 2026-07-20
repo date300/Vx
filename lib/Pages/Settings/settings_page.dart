@@ -1,10 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../Layout/theme_provider.dart';
 
 class SettingsPage extends StatefulWidget {
-  const SettingsPage({super.key});
+  final bool isDesktopOverlay;
+  final VoidCallback? onClose;
+
+  const SettingsPage({
+    super.key,
+    this.isDesktopOverlay = false,
+    this.onClose,
+  });
 
   @override
   State<SettingsPage> createState() => _SettingsPageState();
@@ -16,7 +24,8 @@ class _SettingsPageState extends State<SettingsPage> {
   bool _autoPlay = true;
   bool _dataSaver = false;
 
-  static const Color _pink = Color(0xFFFF4FB3);
+  static const Color _primaryPink = Color(0xFFFE2C55);
+  static const Color _accentPink = Color(0xFFFF4FB3);
 
   @override
   void initState() {
@@ -48,384 +57,279 @@ class _SettingsPageState extends State<SettingsPage> {
     return mode == ThemeMode.dark;
   }
 
-  Color get _bgColor => _isDark ? Colors.black : Colors.white;
-  Color get _surfaceColor =>
-      _isDark ? const Color(0xFF1A1A1A) : const Color(0xFFF5F5F5);
-  Color get _iconBgColor => _isDark
-      ? Colors.white.withOpacity(0.06)
-      : Colors.black.withOpacity(0.06);
+  Color get _bgColor => _isDark ? Colors.black : const Color(0xFFF8F8F8);
+  Color get _cardColor => _isDark ? const Color(0xFF121212) : Colors.white;
   Color get _titleColor => _isDark ? Colors.white : Colors.black;
-  Color get _subtitleColor => _isDark ? Colors.white38 : Colors.black38;
-  Color get _sectionTitleColor => _isDark ? Colors.white54 : Colors.black54;
-  Color get _arrowColor => _isDark ? Colors.white38 : Colors.black38;
-  Color get _iconColor => _isDark ? Colors.white70 : Colors.black54;
+  Color get _subtitleColor => _isDark ? Colors.white54 : Colors.black54;
 
   @override
   Widget build(BuildContext context) {
     context.watch<ThemeProvider>();
+    final top = MediaQuery.of(context).padding.top;
 
     return Scaffold(
       backgroundColor: _bgColor,
-      appBar: AppBar(
-        backgroundColor: _bgColor,
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: _titleColor),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: Text(
-          "Settings and privacy",
-          style: TextStyle(
-            color: _titleColor,
-            fontWeight: FontWeight.bold,
-            fontSize: 20,
-          ),
-        ),
-        centerTitle: true,
-      ),
-      body: SingleChildScrollView(
+      body: CustomScrollView(
         physics: const BouncingScrollPhysics(),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // ── Account ──
-            _buildSectionTitle("Account"),
-            _buildMenuItem(
-              icon: Icons.person_outline,
-              title: "Manage account",
-              subtitle: "Password, security, personal info",
-              onTap: () => _showSnackBar("Manage account"),
-            ),
-            _buildMenuItem(
-              icon: Icons.verified_user_outlined,
-              title: "Privacy",
-              subtitle: "Visibility, interactions, blocked accounts",
-              onTap: () => _showSnackBar("Privacy"),
-            ),
-            _buildMenuItem(
-              icon: Icons.security_outlined,
-              title: "Security and login",
-              subtitle: "Two-factor auth, login activity",
-              onTap: () => _showSnackBar("Security and login"),
-            ),
-            _buildMenuItem(
-              icon: Icons.payment_outlined,
-              title: "Balance",
-              subtitle: "Coins, gifts, transactions",
-              onTap: () => _showSnackBar("Balance"),
-            ),
-            _buildMenuItem(
-              icon: Icons.qr_code_scanner,
-              title: "QR code",
-              subtitle: "Scan or share your profile QR",
-              onTap: () => _showSnackBar("QR code"),
-            ),
-
-            const SizedBox(height: 8),
-
-            // ── Content & Activity ──
-            _buildSectionTitle("Content & Activity"),
-            _buildMenuItem(
-              icon: Icons.favorite_border,
-              title: "Liked videos",
-              subtitle: "Videos you have liked",
-              onTap: () => _showSnackBar("Liked videos"),
-            ),
-            _buildMenuItem(
-              icon: Icons.bookmark_border,
-              title: "Collections",
-              subtitle: "Your saved collections",
-              onTap: () => _showSnackBar("Collections"),
-            ),
-            _buildMenuItem(
-              icon: Icons.history,
-              title: "Watch history",
-              subtitle: "Clear or manage watch history",
-              onTap: () => _showSnackBar("Watch history"),
-            ),
-            _buildMenuItem(
-              icon: Icons.comment_outlined,
-              title: "Comments",
-              subtitle: "Manage your comments",
-              onTap: () => _showSnackBar("Comments"),
-            ),
-
-            const SizedBox(height: 8),
-
-            // ── Preferences ──
-            _buildSectionTitle("Preferences"),
-            _buildThemeSelector(),
-            _buildToggleItem(
-              icon: Icons.notifications_outlined,
-              title: "Push notifications",
-              value: _notifications,
-              onChanged: (val) {
-                setState(() => _notifications = val);
-                _saveBool('notifications', val);
-              },
-            ),
-            _buildToggleItem(
-              icon: Icons.lock_outline,
-              title: "Private account",
-              value: _privateAccount,
-              onChanged: (val) {
-                setState(() => _privateAccount = val);
-                _saveBool('private_account', val);
-              },
-            ),
-            _buildToggleItem(
-              icon: Icons.play_circle_outline,
-              title: "Auto-play videos",
-              value: _autoPlay,
-              onChanged: (val) {
-                setState(() => _autoPlay = val);
-                _saveBool('auto_play', val);
-              },
-            ),
-            _buildToggleItem(
-              icon: Icons.data_saver_off_outlined,
-              title: "Data saver",
-              value: _dataSaver,
-              onChanged: (val) {
-                setState(() => _dataSaver = val);
-                _saveBool('data_saver', val);
-              },
-            ),
-            _buildMenuItem(
-              icon: Icons.language,
-              title: "Language",
-              subtitle: "English",
-              onTap: () => _showSnackBar("Language"),
-            ),
-
-            const SizedBox(height: 8),
-
-            // ── Support & About ──
-            _buildSectionTitle("Support & About"),
-            _buildMenuItem(
-              icon: Icons.help_outline,
-              title: "Help Center",
-              subtitle: "FAQs, contact support, report a problem",
-              onTap: () => _showSnackBar("Help Center"),
-            ),
-            _buildMenuItem(
-              icon: Icons.policy_outlined,
-              title: "Terms of Service",
-              onTap: () => _showSnackBar("Terms of Service"),
-            ),
-            _buildMenuItem(
-              icon: Icons.privacy_tip_outlined,
-              title: "Privacy Policy",
-              onTap: () => _showSnackBar("Privacy Policy"),
-            ),
-            _buildMenuItem(
-              icon: Icons.info_outline,
-              title: "About",
-              subtitle: "Version 1.0.0",
-              onTap: () => _showSnackBar("About"),
-            ),
-
-            const SizedBox(height: 8),
-
-            // ── Danger Zone ──
-            _buildSectionTitle("Danger Zone"),
-            _buildDangerItem(
-              icon: Icons.logout,
-              title: "Log out",
-              onTap: () => _showLogoutDialog(context),
-            ),
-            _buildDangerItem(
-              icon: Icons.delete_forever,
-              title: "Delete account",
-              color: Colors.redAccent,
-              onTap: () => _showSnackBar("Delete account"),
-            ),
-
-            const SizedBox(height: 40),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildThemeSelector() {
-    final themeProvider = context.watch<ThemeProvider>();
-    final currentMode = themeProvider.themeMode;
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      child: Container(
-        decoration: BoxDecoration(
-          color: _surfaceColor,
-          borderRadius: BorderRadius.circular(14),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
-              child: Row(
+        slivers: [
+          _buildSliverAppBar(top),
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: _iconBgColor,
-                      borderRadius: BorderRadius.circular(10),
+                  _buildSectionHeader("ACCOUNT"),
+                  _buildModernContainer([
+                    _buildModernMenuItem(
+                      icon: CupertinoIcons.person,
+                      title: "Manage account",
+                      subtitle: "Password, security, personal info",
+                      onTap: () => _showSnackBar("Manage account"),
                     ),
-                    child: Icon(Icons.brightness_6_outlined,
-                        color: _iconColor, size: 22),
-                  ),
-                  const SizedBox(width: 14),
-                  Text(
-                    "Theme",
-                    style: TextStyle(
-                      color: _titleColor,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 15,
+                    _buildDivider(),
+                    _buildModernMenuItem(
+                      icon: CupertinoIcons.shield,
+                      title: "Privacy",
+                      subtitle: "Visibility, interactions, blocked",
+                      onTap: () => _showSnackBar("Privacy"),
                     ),
-                  ),
+                    _buildDivider(),
+                    _buildModernMenuItem(
+                      icon: CupertinoIcons.lock_shield,
+                      title: "Security and login",
+                      subtitle: "Two-factor auth, login activity",
+                      onTap: () => _showSnackBar("Security and login"),
+                    ),
+                    _buildDivider(),
+                    _buildModernMenuItem(
+                      icon: CupertinoIcons.creditcard,
+                      title: "Balance",
+                      subtitle: "Coins, gifts, transactions",
+                      onTap: () => _showSnackBar("Balance"),
+                    ),
+                  ]),
+
+                  const SizedBox(height: 30),
+                  _buildSectionHeader("CONTENT & ACTIVITY"),
+                  _buildModernContainer([
+                    _buildModernMenuItem(
+                      icon: CupertinoIcons.heart,
+                      title: "Liked videos",
+                      onTap: () => _showSnackBar("Liked videos"),
+                    ),
+                    _buildDivider(),
+                    _buildModernMenuItem(
+                      icon: CupertinoIcons.bookmark,
+                      title: "Collections",
+                      onTap: () => _showSnackBar("Collections"),
+                    ),
+                    _buildDivider(),
+                    _buildModernMenuItem(
+                      icon: CupertinoIcons.clock,
+                      title: "Watch history",
+                      onTap: () => _showSnackBar("Watch history"),
+                    ),
+                  ]),
+
+                  const SizedBox(height: 30),
+                  _buildSectionHeader("PREFERENCES"),
+                  _buildModernContainer([
+                    _buildThemeSelector(),
+                    _buildDivider(),
+                    _buildToggleItem(
+                      icon: CupertinoIcons.bell,
+                      title: "Push notifications",
+                      value: _notifications,
+                      onChanged: (val) {
+                        setState(() => _notifications = val);
+                        _saveBool('notifications', val);
+                      },
+                    ),
+                    _buildDivider(),
+                    _buildToggleItem(
+                      icon: CupertinoIcons.eye_slash,
+                      title: "Private account",
+                      value: _privateAccount,
+                      onChanged: (val) {
+                        setState(() => _privateAccount = val);
+                        _saveBool('private_account', val);
+                      },
+                    ),
+                    _buildDivider(),
+                    _buildToggleItem(
+                      icon: CupertinoIcons.play_circle,
+                      title: "Auto-play videos",
+                      value: _autoPlay,
+                      onChanged: (val) {
+                        setState(() => _autoPlay = val);
+                        _saveBool('auto_play', val);
+                      },
+                    ),
+                  ]),
+
+                  const SizedBox(height: 30),
+                  _buildSectionHeader("SUPPORT"),
+                  _buildModernContainer([
+                    _buildModernMenuItem(
+                      icon: CupertinoIcons.question_circle,
+                      title: "Help Center",
+                      onTap: () => _showSnackBar("Help Center"),
+                    ),
+                    _buildDivider(),
+                    _buildModernMenuItem(
+                      icon: CupertinoIcons.doc_text,
+                      title: "Terms of Service",
+                      onTap: () => _showSnackBar("Terms of Service"),
+                    ),
+                  ]),
+
+                  const SizedBox(height: 40),
+                  _buildDangerZone(),
+                  const SizedBox(height: 60),
                 ],
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: _isDark
-                      ? Colors.white.withOpacity(0.04)
-                      : Colors.black.withOpacity(0.04),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                padding: const EdgeInsets.all(4),
-                child: Row(
-                  children: [
-                    _buildThemeOption(
-                      icon: Icons.dark_mode,
-                      label: "Dark",
-                      mode: ThemeMode.dark,
-                      currentMode: currentMode,
-                      themeProvider: themeProvider,
-                    ),
-                    _buildThemeOption(
-                      icon: Icons.light_mode,
-                      label: "Light",
-                      mode: ThemeMode.light,
-                      currentMode: currentMode,
-                      themeProvider: themeProvider,
-                    ),
-                    _buildThemeOption(
-                      icon: Icons.phone_android,
-                      label: "System",
-                      mode: ThemeMode.system,
-                      currentMode: currentMode,
-                      themeProvider: themeProvider,
-                    ),
-                  ],
-                ),
-              ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSliverAppBar(double top) {
+    return SliverAppBar(
+      expandedHeight: widget.isDesktopOverlay ? 80.0 : 120.0,
+      floating: false,
+      pinned: true,
+      elevation: 0,
+      backgroundColor: _bgColor,
+      automaticallyImplyLeading: false,
+      leading: widget.isDesktopOverlay
+          ? null
+          : IconButton(
+              icon: Icon(CupertinoIcons.back, color: _titleColor),
+              onPressed: () => Navigator.pop(context),
             ),
-          ],
+      actions: [
+        if (widget.isDesktopOverlay)
+          IconButton(
+            icon: Icon(CupertinoIcons.xmark, color: _titleColor),
+            onPressed: widget.onClose,
+          ),
+      ],
+      flexibleSpace: FlexibleSpaceBar(
+        centerTitle: true,
+        title: Text(
+          "Settings",
+          style: TextStyle(
+            color: _titleColor,
+            fontWeight: FontWeight.bold,
+            fontSize: 18,
+            letterSpacing: -0.5,
+          ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildThemeOption({
-    required IconData icon,
-    required String label,
-    required ThemeMode mode,
-    required ThemeMode currentMode,
-    required ThemeProvider themeProvider,
-  }) {
-    final bool isSelected = currentMode == mode;
-
-    return Expanded(
-      child: GestureDetector(
-        onTap: () => themeProvider.setTheme(mode),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 250),
-          curve: Curves.easeInOut,
-          padding: const EdgeInsets.symmetric(vertical: 10),
+        background: Container(
           decoration: BoxDecoration(
-            color: isSelected ? _pink : Colors.transparent,
-            borderRadius: BorderRadius.circular(9),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                icon,
-                size: 20,
-                color: isSelected
-                    ? Colors.white
-                    : (_isDark ? Colors.white38 : Colors.black38),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight:
-                      isSelected ? FontWeight.w700 : FontWeight.w400,
-                  color: isSelected
-                      ? Colors.white
-                      : (_isDark ? Colors.white38 : Colors.black38),
-                ),
-              ),
-            ],
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                _primaryPink.withValues(alpha: 0.05),
+                _bgColor,
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildSectionTitle(String title) {
+  Widget _buildSectionHeader(String title) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
+      padding: const EdgeInsets.only(left: 8, bottom: 12),
       child: Text(
         title,
         style: TextStyle(
-          color: _sectionTitleColor,
-          fontSize: 13,
-          fontWeight: FontWeight.w600,
-          letterSpacing: 0.5,
+          color: _subtitleColor,
+          fontSize: 12,
+          fontWeight: FontWeight.w800,
+          letterSpacing: 1.2,
         ),
       ),
     );
   }
 
-  Widget _buildMenuItem({
+  Widget _buildModernContainer(List<Widget> children) {
+    return Container(
+      decoration: BoxDecoration(
+        color: _cardColor,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: _isDark ? 0.3 : 0.05),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+        ],
+        border: Border.all(
+          color: _isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.02),
+          width: 1,
+        ),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(24),
+        child: Column(children: children),
+      ),
+    );
+  }
+
+  Widget _buildModernMenuItem({
     required IconData icon,
     required String title,
     String? subtitle,
     required VoidCallback onTap,
   }) {
-    return ListTile(
-      leading: Container(
-        width: 40,
-        height: 40,
-        decoration: BoxDecoration(
-          color: _iconBgColor,
-          borderRadius: BorderRadius.circular(10),
-        ),
-        child: Icon(icon, color: _iconColor, size: 22),
-      ),
-      title: Text(
-        title,
-        style: TextStyle(
-          color: _titleColor,
-          fontWeight: FontWeight.w600,
-          fontSize: 15,
-        ),
-      ),
-      subtitle: subtitle != null
-          ? Text(subtitle,
-              style: TextStyle(color: _subtitleColor, fontSize: 12))
-          : null,
-      trailing:
-          Icon(Icons.arrow_forward_ios, color: _arrowColor, size: 14),
+    return InkWell(
       onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: _primaryPink.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(icon, color: _primaryPink, size: 22),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      color: _titleColor,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 16,
+                    ),
+                  ),
+                  if (subtitle != null) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      style: TextStyle(color: _subtitleColor, fontSize: 13),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            Icon(CupertinoIcons.chevron_forward, color: _subtitleColor, size: 16),
+          ],
+        ),
+      ),
     );
   }
 
@@ -435,110 +339,213 @@ class _SettingsPageState extends State<SettingsPage> {
     required bool value,
     required ValueChanged<bool> onChanged,
   }) {
-    return ListTile(
-      leading: Container(
-        width: 40,
-        height: 40,
-        decoration: BoxDecoration(
-          color: _iconBgColor,
-          borderRadius: BorderRadius.circular(10),
-        ),
-        child: Icon(icon, color: _iconColor, size: 22),
-      ),
-      title: Text(
-        title,
-        style: TextStyle(
-          color: _titleColor,
-          fontWeight: FontWeight.w600,
-          fontSize: 15,
-        ),
-      ),
-      trailing: Switch(
-        value: value,
-        onChanged: onChanged,
-        activeColor: _pink,
-        activeTrackColor: _pink.withOpacity(0.3),
-        inactiveThumbColor: Colors.grey,
-        inactiveTrackColor: Colors.grey.withOpacity(0.3),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: _primaryPink.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(icon, color: _primaryPink, size: 22),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Text(
+              title,
+              style: TextStyle(
+                color: _titleColor,
+                fontWeight: FontWeight.w700,
+                fontSize: 16,
+              ),
+            ),
+          ),
+          CupertinoSwitch(
+            value: value,
+            onChanged: onChanged,
+            activeColor: _primaryPink,
+            trackColor: _isDark ? Colors.white10 : Colors.black12,
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildDangerItem({
-    required IconData icon,
-    required String title,
-    Color color = Colors.white,
-    required VoidCallback onTap,
-  }) {
-    return ListTile(
-      leading: Container(
-        width: 40,
-        height: 40,
-        decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(10),
-        ),
-        child: Icon(icon, color: color, size: 22),
+  Widget _buildDivider() {
+    return Divider(
+      height: 1,
+      thickness: 1,
+      indent: 60,
+      endIndent: 20,
+      color: _isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.03),
+    );
+  }
+
+  Widget _buildThemeSelector() {
+    final themeProvider = context.watch<ThemeProvider>();
+    final currentMode = themeProvider.themeMode;
+
+    return Padding(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: _primaryPink.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(CupertinoIcons.paintbrush, color: _primaryPink, size: 22),
+              ),
+              const SizedBox(width: 16),
+              Text(
+                "Theme",
+                style: TextStyle(
+                  color: _titleColor,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 16,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Container(
+            decoration: BoxDecoration(
+              color: _isDark ? Colors.white.withValues(alpha: 0.03) : Colors.black.withValues(alpha: 0.03),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            padding: const EdgeInsets.all(4),
+            child: Row(
+              children: [
+                _buildThemeOption(CupertinoIcons.moon, "Dark", ThemeMode.dark, currentMode, themeProvider),
+                _buildThemeOption(CupertinoIcons.sun_max, "Light", ThemeMode.light, currentMode, themeProvider),
+                _buildThemeOption(CupertinoIcons.device_phone_portrait, "System", ThemeMode.system, currentMode, themeProvider),
+              ],
+            ),
+          ),
+        ],
       ),
-      title: Text(
-        title,
-        style: TextStyle(
-          color: color,
-          fontWeight: FontWeight.w600,
-          fontSize: 15,
+    );
+  }
+
+  Widget _buildThemeOption(IconData icon, String label, ThemeMode mode, ThemeMode currentMode, ThemeProvider themeProvider) {
+    final bool isSelected = currentMode == mode;
+    return Expanded(
+      child: GestureDetector(
+        onTap: () => themeProvider.setTheme(mode),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 300),
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          decoration: BoxDecoration(
+            color: isSelected ? _primaryPink : Colors.transparent,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: isSelected ? [
+              BoxShadow(
+                color: _primaryPink.withValues(alpha: 0.3),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              )
+            ] : null,
+          ),
+          child: Column(
+            children: [
+              Icon(
+                icon,
+                size: 18,
+                color: isSelected ? Colors.white : _subtitleColor,
+              ),
+              const SizedBox(height: 4),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: isSelected ? FontWeight.w800 : FontWeight.w500,
+                  color: isSelected ? Colors.white : _subtitleColor,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
-      onTap: onTap,
+    );
+  }
+
+  Widget _buildDangerZone() {
+    return Column(
+      children: [
+        InkWell(
+          onTap: () => _showLogoutDialog(context),
+          borderRadius: BorderRadius.circular(20),
+          child: Container(
+            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+            decoration: BoxDecoration(
+              border: Border.all(color: Colors.redAccent.withValues(alpha: 0.3)),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: const Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(CupertinoIcons.power, color: Colors.redAccent, size: 20),
+                SizedBox(width: 12),
+                Text(
+                  "Log Out",
+                  style: TextStyle(
+                    color: Colors.redAccent,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 16,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+        TextButton(
+          onPressed: () => _showSnackBar("Delete account"),
+          child: Text(
+            "Delete Account",
+            style: TextStyle(color: _subtitleColor, fontSize: 13, decoration: TextDecoration.underline),
+          ),
+        ),
+      ],
     );
   }
 
   void _showSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text("$message coming soon"),
-        duration: const Duration(seconds: 1),
-        backgroundColor: const Color(0xFF2A2A2A),
+        content: Text(message),
+        duration: const Duration(seconds: 2),
+        backgroundColor: _isDark ? const Color(0xFF1E1E1E) : Colors.black87,
         behavior: SnackBarBehavior.floating,
-        shape:
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
       ),
     );
   }
 
   void _showLogoutDialog(BuildContext context) {
-    showDialog(
+    showCupertinoDialog(
       context: context,
-      barrierDismissible: true,
-      barrierLabel: "Logout",
-      builder: (context) => AlertDialog(
-        backgroundColor: _surfaceColor,
-        shape:
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text(
-          "Log out",
-          style: TextStyle(
-              color: _titleColor, fontWeight: FontWeight.bold),
-        ),
-        content: Text(
-          "Are you sure you want to log out?",
-          style: TextStyle(color: _subtitleColor),
-        ),
+      builder: (context) => CupertinoAlertDialog(
+        title: const Text("Log Out"),
+        content: const Text("Are you sure you want to log out of your account?"),
         actions: [
-          TextButton(
+          CupertinoDialogAction(
+            child: const Text("Cancel"),
             onPressed: () => Navigator.pop(context),
-            child: Text("Cancel",
-                style: TextStyle(color: _sectionTitleColor)),
           ),
-          TextButton(
+          CupertinoDialogAction(
+            isDestructiveAction: true,
+            child: const Text("Log Out"),
             onPressed: () {
               Navigator.pop(context);
               _showSnackBar("Logged out");
             },
-            child: const Text(
-              "Log out",
-              style: TextStyle(
-                  color: Colors.redAccent, fontWeight: FontWeight.bold),
-            ),
           ),
         ],
       ),

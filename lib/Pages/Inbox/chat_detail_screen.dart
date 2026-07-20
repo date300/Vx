@@ -1,16 +1,24 @@
+import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:http/http.dart' as http;
+import '../../Core/constants.dart' as constants;
 import '../../Layout/theme_provider.dart';
+import '../../Services/auth_service.dart';
+import '../../Services/websocket_service.dart';
 
 class ChatDetailScreen extends StatefulWidget {
   final String userName;
   final String avatar;
+  final int targetId;
 
   const ChatDetailScreen({
     super.key,
     required this.userName,
     required this.avatar,
+    required this.targetId,
   });
 
   @override
@@ -19,23 +27,114 @@ class ChatDetailScreen extends StatefulWidget {
 
 class _ChatDetailScreenState extends State<ChatDetailScreen> {
   final TextEditingController _messageController = TextEditingController();
-  final List<Map<String, dynamic>> _messages = [
-    {"text": "Hey! How are you?", "isMe": false, "time": "10:00 AM"},
-    {"text": "I'm good, thanks! What about you?", "isMe": true, "time": "10:01 AM"},
-    {"text": "Doing great! Loved your recent video on Vx! 🔥", "isMe": false, "time": "10:02 AM"},
-    {"text": "Thank you so much! More content coming soon.", "isMe": true, "time": "10:05 AM"},
-  ];
+  final ScrollController _scrollController = ScrollController();
+  List<Map<String, dynamic>> _messages = [];
+  StreamSubscription? _wsSubscription;
 
-  void _sendMessage() {
-    if (_messageController.text.trim().isEmpty) return;
+  @override
+  void initState() {
+    super.initState();
+    _fetchMessages();
+    _listenToWS();
+  }
+
+  @override
+  void dispose() {
+    _wsSubscription?.cancel();
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _listenToWS() {
+    _wsSubscription = webSocketService.eventStream.listen((event) {
+      if (event['type'] == 'chat_message') {
+        final payload = event['payload'];
+        if (payload['sender_id'] == widget.targetId) {
+          setState(() {
+            _messages.add({
+              "id": payload['id'],
+              "text": payload['text'],
+              "isMe": false,
+              "time": "Just now",
+            });
+          });
+          _scrollToBottom();
+        }
+      }
+    });
+  }
+
+  void _scrollToBottom() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_scrollController.hasClients) {
+        _scrollController.animateTo(
+          _scrollController.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
+      }
+    });
+  }
+
+  Future<void> _fetchMessages() async {
+    final token = await AuthService.getToken();
+    if (token == null) return;
+
+    try {
+      final response = await http.get(
+        Uri.parse('${constants.baseUrl}/inbox/messages/${widget.targetId}'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token'
+        },
+      );
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final List<dynamic> list = data['data'] ?? [];
+        
+        setState(() {
+          _messages = list.map((m) => {
+            "id": m['id'],
+            "text": m['text'],
+            "isMe": m['sender_id'] != widget.targetId,
+            "time": "Just now", 
+          }).toList();
+        });
+        _scrollToBottom();
+      }
+    } catch (e) {}
+  }
+
+  Future<void> _sendMessage() async {
+    final text = _messageController.text.trim();
+    if (text.isEmpty) return;
+    
+    final token = await AuthService.getToken();
+    if (token == null) return;
+
     setState(() {
       _messages.add({
-        "text": _messageController.text.trim(),
+        "text": text,
         "isMe": true,
         "time": "Just now",
       });
       _messageController.clear();
     });
+    _scrollToBottom();
+
+    try {
+      await http.post(
+        Uri.parse('${constants.baseUrl}/inbox/send'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode({
+          'receiver_id': widget.targetId,
+          'text': text,
+        }),
+      );
+    } catch (e) {}
   }
 
   bool _isDark(BuildContext context) {
@@ -64,8 +163,8 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
         children: [
           Expanded(
             child: ListView.builder(
+              controller: _scrollController,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-              reverse: false,
               itemCount: _messages.length,
               itemBuilder: (context, index) {
                 final msg = _messages[index];
@@ -84,7 +183,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
       backgroundColor: isDark ? Colors.black : Colors.white,
       elevation: 0,
       leading: IconButton(
-        icon: Icon(Icons.arrow_back_ios_new_rounded, color: titleColor, size: 20),
+        icon: Icon(Icons.arrow_back_rounded, color: titleColor, size: 24),
         onPressed: () => Navigator.pop(context),
       ),
       titleSpacing: 0,
@@ -93,10 +192,13 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
           CircleAvatar(
             radius: 18,
             backgroundColor: titleColor.withValues(alpha: 0.1),
-            child: Text(
-              widget.avatar,
-              style: TextStyle(color: titleColor, fontSize: 14, fontWeight: FontWeight.bold),
-            ),
+            backgroundImage: widget.avatar.isNotEmpty ? NetworkImage(widget.avatar) : null,
+            child: widget.avatar.isEmpty
+                ? Text(
+                    widget.userName.isNotEmpty ? widget.userName[0].toUpperCase() : "?",
+                    style: TextStyle(color: titleColor, fontSize: 14, fontWeight: FontWeight.bold),
+                  )
+                : null,
           ),
           const SizedBox(width: 12),
           Column(

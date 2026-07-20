@@ -13,7 +13,8 @@ class ShareOption {
 }
 
 class ShareSheet extends StatelessWidget {
-  const ShareSheet({super.key});
+  final VoidCallback? onMore;
+  const ShareSheet({super.key, this.onMore});
 
   static const _options = [
     ShareOption(icon: Icons.link_rounded,         label: "Copy Link",   bgColor: Color(0xFF333333), isFa: false),
@@ -59,16 +60,20 @@ class ShareSheet extends StatelessWidget {
                 return GestureDetector(
                   onTap: () {
                     Navigator.pop(context);
-                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                      content: Text("Shared via ${opt.label} ?"),
-                      duration: const Duration(milliseconds: 900),
-                      backgroundColor: opt.bgColor == const Color(0xFF333333)
-                          ? Colors.pinkAccent : opt.bgColor,
-                      behavior: SnackBarBehavior.floating,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12)),
-                      margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                    ));
+                    if (opt.label == "More" && onMore != null) {
+                      onMore!();
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                        content: Text("Shared via ${opt.label} ?"),
+                        duration: const Duration(milliseconds: 900),
+                        backgroundColor: opt.bgColor == const Color(0xFF333333)
+                            ? Colors.pinkAccent : opt.bgColor,
+                        behavior: SnackBarBehavior.floating,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
+                        margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                      ));
+                    }
                   },
                   child: Column(
                     children: [

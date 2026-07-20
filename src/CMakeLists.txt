@@ -16,6 +16,7 @@ set_target_properties(ffmpeg PROPERTIES IMPORTED_LOCATION ${FFMPEG_LIBS_DIR}/${A
 add_library(vx_native SHARED
   vx_native_main.cpp
   modules/physics/vx_physics.cpp
+  modules/physics/vx_touch.cpp
   modules/security/vx_security.cpp
   modules/video/vx_utils.cpp
   modules/video/vx_video_player.cpp
@@ -31,4 +32,7 @@ target_link_libraries(vx_native
   ffmpeg
   log
   android
+  OpenSLES
+  atomic
+  mediandk
 )

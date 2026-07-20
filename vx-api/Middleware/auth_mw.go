@@ -12,22 +12,23 @@ import (
 
 func AuthRequired() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		tokenString := ""
 		authorization := strings.TrimSpace(c.GetHeader("Authorization"))
-		if !strings.HasPrefix(strings.ToLower(authorization), "bearer ") {
-			c.JSON(http.StatusUnauthorized, gin.H{"status": false, "error": "টোকেন পাওয়া যায়নি! দয়া করে লগইন করুন।"})
-			c.Abort()
-			return
+
+		if strings.HasPrefix(strings.ToLower(authorization), "bearer ") {
+			parts := strings.SplitN(authorization, " ", 2)
+			if len(parts) == 2 {
+				tokenString = strings.TrimSpace(parts[1])
+			}
 		}
 
-		parts := strings.SplitN(authorization, " ", 2)
-		if len(parts) != 2 {
-			c.JSON(http.StatusUnauthorized, gin.H{"status": false, "error": "অবৈধ টোকেন ফরম্যাট।"})
-			c.Abort()
-			return
-		}
-		tokenString := strings.TrimSpace(parts[1])
+		// Fallback to query parameter (useful for WebSockets)
 		if tokenString == "" {
-			c.JSON(http.StatusUnauthorized, gin.H{"status": false, "error": "অবৈধ টোকেন।"})
+			tokenString = c.Query("token")
+		}
+
+		if tokenString == "" {
+			c.JSON(http.StatusUnauthorized, gin.H{"status": false, "error": "টোকেন পাওয়া যায়নি! দয়া করে লগইন করুন।"})
 			c.Abort()
 			return
 		}
@@ -61,6 +62,49 @@ func AuthRequired() gin.HandlerFunc {
 		}
 
 		c.Set("userID", userID)
+		c.Next()
+	}
+}
+
+// OptionalAuth: টোকেন থাকলে userID সেট করবে, না থাকলে অথবা অবৈধ হলে কিছু করবে না (Next() করবে)
+func OptionalAuth() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		tokenString := ""
+		authorization := strings.TrimSpace(c.GetHeader("Authorization"))
+
+		if strings.HasPrefix(strings.ToLower(authorization), "bearer ") {
+			parts := strings.SplitN(authorization, " ", 2)
+			if len(parts) == 2 {
+				tokenString = strings.TrimSpace(parts[1])
+			}
+		}
+
+		if tokenString == "" {
+			tokenString = c.Query("token")
+		}
+
+		if tokenString == "" {
+			c.Next()
+			return
+		}
+
+		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+			return []byte(Config.JWTSecret), nil
+		})
+
+		if err == nil && token.Valid {
+			if claims, ok := token.Claims.(jwt.MapClaims); ok {
+				if val, ok := claims["user_id"]; ok {
+					switch v := val.(type) {
+					case float64:
+						c.Set("userID", uint(v))
+					case int:
+						c.Set("userID", uint(v))
+					}
+				}
+			}
+		}
+
 		c.Next()
 	}
 }

@@ -2,20 +2,42 @@ package main
 
 import (
 	"fmt"
-
 	"vx-api/Auth"
 	"vx-api/Config"
-	"vx-api/Database"
+	"vx-api/Explore"
 	"vx-api/Home"
+	"vx-api/Inbox"
 	"vx-api/Middleware"
 	"vx-api/Profile"
+	"vx-api/Realtime"
+	"vx-api/Settings"
 	"vx-api/Upload"
 
 	"github.com/gin-gonic/gin"
 )
 
 func main() {
-	Database.InitDB()
+	Config.InitDB()
+
+	// Ensure essential tables are migrated
+	
+	// Auto-Migrate all models
+	Config.DB.AutoMigrate(
+		&Profile.User{},
+		&Profile.Category{},
+		&Profile.Video{},
+		&Home.Comment{},
+		&Home.Like{},
+		&Home.CommentLike{},
+		&Profile.Follow{},
+		&Inbox.Notification{},
+		&Inbox.Conversation{},
+		&Inbox.Message{},
+		&Explore.Hashtag{},
+		&Explore.VideoHashtag{},
+		&Settings.UserSettings{},
+	)
+
 
 	if Config.AppEnv == "production" {
 		gin.SetMode(gin.ReleaseMode)
@@ -25,36 +47,34 @@ func main() {
 
 	r := gin.Default()
 
+	// Enable CORS
+	r.Use(Middleware.CORSMiddleware())
+
+	// Initialize Realtime Hub
+	go Realtime.MainHub.Run()
+
+	// Static files for avatars, covers, and videos
+	r.Static("/public", "./public")
+	r.Static("/uploads", "./public/uploads")
+	r.Static("/thumbnails", "./public/uploads/thumbnails")
+
+	// Global API Group - Top level /api
 	api := r.Group("/api/v1")
 	{
-		// পাবলিক রাউটস
-		homeGroup := api.Group("/home")
-		{
-			homeGroup.GET("/foryou", Home.GetForYouVideos)
-		}
+		// Module routers
+		Auth.RegisterRoutes(api)
+		Home.RegisterRoutes(api)
+		Profile.RegisterRoutes(api)    // Profile actions (Consolidated)
+		Explore.RegisterRoutes(api)    // Explore & Search
+		Inbox.RegisterRoutes(api)      // Inbox & Notifications
+		Settings.RegisterRoutes(api)   // User Settings
+		Upload.RegisterRoutes(api)
+		Realtime.RegisterRoutes(api)
 
-		// পাবলিক অথেনটিকেশন রাউটস
-		authGroup := api.Group("/auth")
-		{
-			authGroup.POST("/email-request", Auth.RequestEmailOTP)
-			authGroup.POST("/email-verify", Auth.VerifyEmailOTP)
-			authGroup.POST("/social", Auth.SocialAuth)
-		}
-
-		// সুরক্ষিত রাউটস (টোকেন লাগবে)
-		userGroup := api.Group("/user", Middleware.AuthRequired())
-		{
-			userGroup.GET("/profile", Profile.GetProfile)          // প্রোফাইল দেখতে
-			userGroup.PUT("/profile", Profile.UpdateProfile)       // প্রোফাইল আপডেট করতে
-			userGroup.GET("/categories", Profile.GetCategories)    // ক্যাটাগরি লিস্ট দেখতে
-			userGroup.POST("/onboard", Profile.SaveOnboardingData) // অনবোর্ডিং সাবমিট করতে
-		}
-
-		// সুরক্ষিত আপলোড রাউটস
-		uploadGroup := api.Group("/upload", Middleware.AuthRequired())
-		{
-			uploadGroup.POST("/video", Upload.Upload)
-		}
+		// Explicit debug route to test if DELETE works at all
+		api.DELETE("/test-delete/:id", func(c *gin.Context) {
+			c.JSON(200, gin.H{"status": true, "message": "Delete reached", "id": c.Param("id")})
+		})
 	}
 
 	fmt.Printf("VX API Engine Running on %s:%s...\n", Config.ServerHost, Config.ServerPort)

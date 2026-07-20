@@ -1,37 +1,40 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import '../../Profile/user_profile_page.dart';
+import 'package:flutter/cupertino.dart';
+import '../../Profile/profile_page.dart';
+import '../sound_detail_page.dart';
 
 class RightActions extends StatelessWidget {
   final String              username;
+  final String              avatarUrl;
   final ValueNotifier<bool> likedNotifier;
   final ValueNotifier<int>  likeCountNotifier;
   final ValueNotifier<bool> savedNotifier;
   final int                 commentCount;
   final int                 shareCount;
   final bool                isFollowing;
+  final bool                isSelf;
   final VoidCallback onLike;
   final VoidCallback onComment;
   final VoidCallback onShare;
   final VoidCallback onSave;
   final VoidCallback onFollow;
-  final VoidCallback? onMore;
 
   const RightActions({
     super.key,
     required this.username,
+    required this.avatarUrl,
     required this.likedNotifier,
     required this.likeCountNotifier,
     required this.savedNotifier,
     required this.commentCount,
     required this.shareCount,
     required this.isFollowing,
+    this.isSelf = false,
     required this.onLike,
     required this.onComment,
     required this.onShare,
     required this.onSave,
     required this.onFollow,
-    this.onMore,
   });
 
   String _fmt(int n) {
@@ -42,115 +45,72 @@ class RightActions extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final initial = username.length > 1 ? username[1].toUpperCase() : "U";
-
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        GestureDetector(
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => UserProfilePage(username: username),
-              ),
-            );
-          },
-          child: Stack(
-            clipBehavior: Clip.none,
-            alignment: Alignment.center,
-            children: [
-              Container(
-                width: 52, height: 52,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: const LinearGradient(
-                    colors: [Colors.pinkAccent, Colors.deepPurpleAccent],
-                    begin: Alignment.topLeft, end: Alignment.bottomRight,
-                  ),
-                  border: Border.all(color: Colors.white, width: 2.5),
-                  boxShadow: [
-                    BoxShadow(color: Colors.pinkAccent.withValues(alpha: 0.4), blurRadius: 10, spreadRadius: 1),
-                  ],
-                ),
-                alignment: Alignment.center,
-                child: Text(initial,
-                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 22)),
-              ),
-              if (!isFollowing)
-                Positioned(
-                  bottom: -9,
-                  child: Container(
-                    width: 24, height: 24,
-                    decoration: BoxDecoration(
-                      color: Colors.pinkAccent,
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.black, width: 1.5),
-                    ),
-                    child: const Icon(Icons.add, color: Colors.white, size: 16),
-                  ),
-                ),
-            ],
-          ),
-        ),
-
-        const SizedBox(height: 28),
-
+        // 1. Like Button
         ValueListenableBuilder<bool>(
           valueListenable: likedNotifier,
           builder: (_, liked, __) => ValueListenableBuilder<int>(
             valueListenable: likeCountNotifier,
             builder: (_, count, __) => AnimatedActionBtn(
-              icon:  liked ? Icons.favorite_rounded : Icons.favorite_outline_rounded,
+              icon:  liked ? CupertinoIcons.heart_fill : CupertinoIcons.heart,
               label: _fmt(count),
-              color: liked ? Colors.redAccent : Colors.white,
+              color: liked ? const Color(0xFFFE2C55) : Colors.white.withValues(alpha: 0.9),
               onTap: onLike,
+              isPremium: true,
             ),
           ),
         ),
 
-        const SizedBox(height: 20),
+        const SizedBox(height: 10),
 
+        // 2. Comment Button
         ActionBtn(
-          icon: Icons.chat_bubble_outline_rounded,
+          icon: CupertinoIcons.chat_bubble_fill,
           label: _fmt(commentCount),
           onTap: onComment,
         ),
 
-        const SizedBox(height: 20),
+        const SizedBox(height: 10),
 
+        // 3. Save Button
         ValueListenableBuilder<bool>(
           valueListenable: savedNotifier,
           builder: (_, saved, __) => AnimatedActionBtn(
-            icon:  saved ? Icons.bookmark_rounded : Icons.bookmark_outline_rounded,
+            icon:  saved ? CupertinoIcons.bookmark_fill : CupertinoIcons.bookmark,
             label: "Save",
-            color: saved ? Colors.amberAccent : Colors.white,
+            color: saved ? const Color(0xFFFFE100) : Colors.white.withValues(alpha: 0.9),
             onTap: onSave,
-            glowColor: saved ? Colors.yellow : null,
+            isPremium: true,
           ),
         ),
 
-        const SizedBox(height: 20),
+        const SizedBox(height: 10),
 
+        // 4. Share Button
         ActionBtn(
-          icon: Icons.share_outlined,
+          icon: CupertinoIcons.reply,
           label: _fmt(shareCount),
           onTap: onShare,
           flip: true,
         ),
 
-        if (onMore != null) ...[
-          const SizedBox(height: 20),
-          ActionBtn(
-            icon: Icons.more_horiz_rounded,
-            label: "",
-            onTap: onMore!,
-          ),
-        ],
+        const SizedBox(height: 18),
 
-        const SizedBox(height: 20),
-
-        const SpinningDisc(),
+        SpinningDisc(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => SoundDetailPage(
+                  soundTitle: "Original Sound",
+                  username: username,
+                ),
+              ),
+            );
+          },
+        ),
       ],
     );
   }
@@ -161,7 +121,7 @@ class AnimatedActionBtn extends StatefulWidget {
   final String       label;
   final Color        color;
   final VoidCallback onTap;
-  final Color?       glowColor;
+  final bool         isPremium;
 
   const AnimatedActionBtn({
     super.key,
@@ -169,7 +129,7 @@ class AnimatedActionBtn extends StatefulWidget {
     required this.label,
     required this.color,
     required this.onTap,
-    this.glowColor,
+    this.isPremium = false,
   });
 
   @override
@@ -185,8 +145,8 @@ class _AnimatedActionBtnState extends State<AnimatedActionBtn>
     super.initState();
     _ctrl = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 80),
-      lowerBound: 0.82,
+      duration: const Duration(milliseconds: 100),
+      lowerBound: 0.8,
       upperBound: 1.0,
       value: 1.0,
     );
@@ -205,23 +165,27 @@ class _AnimatedActionBtnState extends State<AnimatedActionBtn>
     return GestureDetector(
       onTap: _onTap,
       behavior: HitTestBehavior.opaque,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 6),
-        child: ScaleTransition(
-          scale: _ctrl,
-          child: Column(
-            children: [
-              Icon(
-                widget.icon, color: widget.color, size: 36,
-              ),
-              if (widget.label.isNotEmpty) ...[
-                const SizedBox(height: 4),
-                Text(widget.label, style: TextStyle(
-                  color: widget.color, fontSize: 12, fontWeight: FontWeight.w700,
-                )),
+      child: ScaleTransition(
+        scale: _ctrl,
+        child: Column(
+          children: [
+            Icon(
+              widget.icon, color: widget.color.withValues(alpha: 0.85), size: 28,
+              shadows: [
+                Shadow(
+                  color: Colors.black.withValues(alpha: 0.4),
+                  blurRadius: 6,
+                ),
               ],
+            ),
+            if (widget.label.isNotEmpty) ...[
+              const SizedBox(height: 2),
+              Text(widget.label, style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.7), fontSize: 10, fontWeight: FontWeight.bold,
+                shadows: const [Shadow(color: Colors.black38, blurRadius: 2)],
+              )),
             ],
-          ),
+          ],
         ),
       ),
     );
@@ -245,29 +209,36 @@ class ActionBtn extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 6),
-        child: Column(
-          children: [
-            Transform.scale(
-              scaleX: flip ? -1 : 1,
-              child: Icon(icon, color: Colors.white, size: 36),
+      child: Column(
+        children: [
+          Transform.scale(
+            scaleX: flip ? -1 : 1,
+            child: Icon(
+              icon, color: Colors.white.withValues(alpha: 0.85), size: 28,
+              shadows: [
+                Shadow(
+                  color: Colors.black.withValues(alpha: 0.4),
+                  blurRadius: 6,
+                ),
+              ],
             ),
-            if (label.isNotEmpty) ...[
-              const SizedBox(height: 4),
-              Text(label, style: const TextStyle(
-                color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700,
-              )),
-            ],
+          ),
+          if (label.isNotEmpty) ...[
+            const SizedBox(height: 2),
+            Text(label, style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.7), fontSize: 10, fontWeight: FontWeight.bold,
+              shadows: const [Shadow(color: Colors.black38, blurRadius: 2)],
+            )),
           ],
-        ),
+        ],
       ),
     );
   }
 }
 
 class SpinningDisc extends StatefulWidget {
-  const SpinningDisc({super.key});
+  final VoidCallback? onTap;
+  const SpinningDisc({super.key, this.onTap});
 
   @override
   State<SpinningDisc> createState() => _SpinningDiscState();
@@ -289,26 +260,31 @@ class _SpinningDiscState extends State<SpinningDisc>
 
   @override
   Widget build(BuildContext context) {
-    return RotationTransition(
-      turns: _ctrl,
-      child: Container(
-        width: 46, height: 46,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          gradient: const LinearGradient(
-            colors: [Color(0xFF2A2A2A), Color(0xFF111111)],
-            begin: Alignment.topLeft, end: Alignment.bottomRight,
-          ),
-          border: Border.all(color: Colors.white24, width: 1.5),
-          boxShadow: [BoxShadow(color: Colors.pinkAccent.withValues(alpha: 0.3), blurRadius: 8)],
-        ),
-        child: const Center(
-          child: SizedBox(
-            width: 14, height: 14,
-            child: DecoratedBox(
-              decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.white24),
-              child: Center(
-                child: Icon(Icons.music_note_rounded, color: Colors.white70, size: 9)),
+    return GestureDetector(
+      onTap: widget.onTap,
+      child: RepaintBoundary(
+        child: RotationTransition(
+          turns: _ctrl,
+          child: Container(
+            width: 40, height: 40,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: const LinearGradient(
+                colors: [Color(0xFF2A2A2A), Color(0xFF111111)],
+                begin: Alignment.topLeft, end: Alignment.bottomRight,
+              ),
+              border: Border.all(color: Colors.white10, width: 1.2),
+              boxShadow: [BoxShadow(color: Colors.pinkAccent.withValues(alpha: 0.2), blurRadius: 6)],
+            ),
+            child: const Center(
+              child: SizedBox(
+                width: 12, height: 12,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.white10),
+                  child: Center(
+                    child: Icon(Icons.music_note_rounded, color: Colors.white60, size: 8)),
+                ),
+              ),
             ),
           ),
         ),

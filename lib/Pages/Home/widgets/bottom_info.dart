@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import '../../Profile/user_profile_page.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import '../../Profile/profile_page.dart';
 import '../models/video_data.dart';
 
 class BottomInfo extends StatelessWidget {
@@ -20,144 +22,98 @@ class BottomInfo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            Colors.transparent,
-            Colors.black.withValues(alpha: 0.2),
-            Colors.black.withValues(alpha: 0.5),
-          ],
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          GestureDetector(
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => UserProfilePage(username: data.username),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // Premium Username Row
+        GestureDetector(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => ProfilePage(username: data.username),
+              ),
+            );
+          },
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Small Avatar (Instagram Style)
+              Container(
+                width: 32,
+                height: 32,
+                margin: const EdgeInsets.only(right: 10),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.white, width: 1.5),
                 ),
-              );
-            },
-            child: Row(
-              children: [
-                Flexible(
-                  child: Text(
-                    data.username,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 0.2,
-                      shadows: [Shadow(color: Colors.black87, blurRadius: 8)],
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                  ),
+                child: ClipOval(
+                  child: data.avatarUrl.isNotEmpty
+                      ? CachedNetworkImage(
+                          imageUrl: data.avatarUrl,
+                          fit: BoxFit.cover,
+                          placeholder: (context, url) => Container(color: Colors.white10),
+                          errorWidget: (context, url, error) => const Icon(Icons.person, color: Colors.white, size: 20),
+                        )
+                      : const Icon(Icons.person, color: Colors.white, size: 20),
                 ),
-                const SizedBox(width: 4),
-                const Icon(
-                  Icons.verified,
-                  color: Colors.blueAccent,
-                  size: 16,
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 6),
-          GestureDetector(
-            onTap: onToggleCaption,
-            child: AnimatedSize(
-              duration: const Duration(milliseconds: 180),
-              curve: Curves.easeOut,
-              child: RichText(
-                maxLines: expanded ? null : 2,
-                overflow: expanded ? TextOverflow.visible : TextOverflow.ellipsis,
-                text: TextSpan(
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 14, // Slightly increased for modern look
-                    height: 1.45,
-                    fontFamily: 'Roboto', // Modern font feel
-                    shadows: [Shadow(color: Colors.black, blurRadius: 6)],
-                  ),
-                  children: [
-                    TextSpan(text: data.caption),
-                    if (!expanded)
-                      const TextSpan(
-                        text: " ...more",
-                        style: TextStyle(color: Colors.white70, fontWeight: FontWeight.w600, fontSize: 13),
-                      ),
+              ),
+              Text(
+                '@${data.username}',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 17,
+                  shadows: [
+                    Shadow(color: Colors.black, blurRadius: 10, offset: Offset(0, 2)),
                   ],
                 ),
               ),
-            ),
+              const Padding(
+                padding: EdgeInsets.only(left: 6),
+                child: Icon(Icons.verified, color: Colors.blueAccent, size: 16),
+              ),
+              if (!isFollowing)
+                GestureDetector(
+                  onTap: onFollow,
+                  child: Container(
+                    margin: const EdgeInsets.only(left: 12),
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.white, width: 1.2),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: const Text(
+                      "Follow",
+                      style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ),
+            ],
           ),
-          const SizedBox(height: 12),
-          SoundTicker(sound: data.sound),
-        ],
-      ),
-    );
-  }
-}
+        ),
 
-class SoundTicker extends StatefulWidget {
-  final String sound;
-  const SoundTicker({super.key, required this.sound});
+        const SizedBox(height: 10),
 
-  @override
-  State<SoundTicker> createState() => _SoundTickerState();
-}
-
-class _SoundTickerState extends State<SoundTicker>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _ctrl;
-
-  @override
-  void initState() {
-    super.initState();
-    _ctrl = AnimationController(
-      vsync: this, duration: const Duration(seconds: 8))..repeat();
-  }
-
-  @override
-  void dispose() { _ctrl.dispose(); super.dispose(); }
-
-  @override
-  Widget build(BuildContext context) {
-    final text = "${widget.sound}          ${widget.sound}";
-    return Row(
-      children: [
-        const Icon(Icons.music_note_rounded, color: Colors.white70, size: 13),
-        const SizedBox(width: 5),
-        Expanded(
-          child: ClipRect(
-            child: LayoutBuilder(
-              builder: (ctx, constraints) {
-                final w = constraints.maxWidth;
-                return AnimatedBuilder(
-                  animation: _ctrl,
-                  builder: (context, _) {
-                    final offset = -_ctrl.value * (w / 2);
-                    return Transform.translate(
-                      offset: Offset(offset, 0),
-                      child: Text(
-                        text,
-                        style: const TextStyle(color: Colors.white70, fontSize: 12.5),
-                        maxLines: 1,
-                        softWrap: false,
-                        overflow: TextOverflow.visible,
-                      ),
-                    );
-                  },
-                );
-              },
+        // Gradient Caption
+        GestureDetector(
+          onTap: onToggleCaption,
+          child: AnimatedSize(
+            duration: const Duration(milliseconds: 200),
+            alignment: Alignment.topLeft,
+            child: Text(
+              data.caption,
+              maxLines: expanded ? 10 : 2,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 15,
+                height: 1.4,
+                shadows: [
+                  Shadow(color: Colors.black54, blurRadius: 8, offset: Offset(0, 1)),
+                ],
+              ),
             ),
           ),
         ),

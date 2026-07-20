@@ -1,5 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import '../../Upload/widgets/vx_premium_loader.dart';
 
 class ImageSlideshow extends StatefulWidget {
   final List<String> images;
@@ -46,52 +48,52 @@ class _ImageSlideshowState extends State<ImageSlideshow> {
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
-    return Stack(
-      children: [
-        PageView.builder(
-          controller: _pageController,
-          itemCount: widget.images.length,
-          onPageChanged: (index) {
-            setState(() {
-              _currentPage = index;
-            });
-          },
-          itemBuilder: (context, index) {
-            return Center(
-              child: Image.network(
-                widget.images[index],
-                fit: BoxFit.contain,
-                width: size.width,
-                height: size.height,
-                loadingBuilder: (context, child, loadingProgress) {
-                  if (loadingProgress == null) return child;
-                  return const Center(child: CircularProgressIndicator(color: Colors.white24));
-                },
-              ),
-            );
-          },
-        ),
-        if (widget.images.length > 1)
-          Positioned(
-            bottom: 120, // Moved from top: 100 to bottom: 120
-            left: 0,
-            right: 0,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: widget.images.asMap().entries.map((entry) {
-                return Container(
-                  width: 6.0,
-                  height: 6.0,
-                  margin: const EdgeInsets.symmetric(horizontal: 3.0),
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Colors.white.withValues(alpha: _currentPage == entry.key ? 0.9 : 0.4),
-                  ),
-                );
-              }).toList(),
-            ),
+    return RepaintBoundary(
+      child: Stack(
+        children: [
+          PageView.builder(
+            controller: _pageController,
+            itemCount: widget.images.length,
+            onPageChanged: (index) {
+              setState(() {
+                _currentPage = index;
+              });
+            },
+            itemBuilder: (context, index) {
+              return Center(
+                child: CachedNetworkImage(
+                  imageUrl: widget.images[index],
+                  fit: BoxFit.contain,
+                  width: size.width,
+                  height: size.height,
+                  placeholder: (context, url) => const Center(child: VxPremiumLoader(color: Colors.white24)),
+                  errorWidget: (context, url, error) => const Icon(Icons.error, color: Colors.white24),
+                ),
+              );
+            },
           ),
-      ],
+          if (widget.images.length > 1)
+            Positioned(
+              bottom: 120, // Moved from top: 100 to bottom: 120
+              left: 0,
+              right: 0,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: widget.images.asMap().entries.map((entry) {
+                  return Container(
+                    width: 6.0,
+                    height: 6.0,
+                    margin: const EdgeInsets.symmetric(horizontal: 3.0),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.white.withValues(alpha: _currentPage == entry.key ? 0.9 : 0.4),
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
+        ],
+      ),
     );
   }
 }

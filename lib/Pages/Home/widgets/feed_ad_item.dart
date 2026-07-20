@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 import '../models/video_data.dart';
-import 'right_actions.dart';
-import 'bottom_info.dart';
+import '../../Upload/widgets/vx_premium_loader.dart';
 
 class FeedAdItem extends StatefulWidget {
   final VideoData data;
@@ -49,14 +48,14 @@ class _FeedAdItemState extends State<FeedAdItem> {
               child: FittedBox(
                 fit: BoxFit.cover,
                 child: SizedBox(
-                  width: ctrl.value.size.width,
-                  height: ctrl.value.size.height,
+                  width: ctrl.value.size.width > 0 ? ctrl.value.size.width : 1280,
+                  height: ctrl.value.size.height > 0 ? ctrl.value.size.height : 720,
                   child: VideoPlayer(ctrl),
                 ),
               ),
             )
           else
-            const Center(child: CircularProgressIndicator(color: Colors.amber, strokeWidth: 2)),
+            const Center(child: VxPremiumLoader(color: Colors.amber)),
 
           // Ad Label (Top Left)
           Positioned(
@@ -65,7 +64,7 @@ class _FeedAdItemState extends State<FeedAdItem> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.5),
+                color: Colors.black.withValues(alpha: 0.5),
                 borderRadius: BorderRadius.circular(4),
                 border: Border.all(color: Colors.white24),
               ),
@@ -122,7 +121,7 @@ class _FeedAdItemState extends State<FeedAdItem> {
                     color: Colors.blueAccent,
                     borderRadius: BorderRadius.circular(8),
                     boxShadow: [
-                      BoxShadow(color: Colors.blueAccent.withOpacity(0.3), blurRadius: 8, spreadRadius: 1),
+                      BoxShadow(color: Colors.blueAccent.withValues(alpha: 0.3), blurRadius: 8, spreadRadius: 1),
                     ],
                   ),
                   child: Row(

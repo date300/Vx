@@ -1,9 +1,8 @@
 import 'dart:async';
-import 'dart:ffi';
-import 'dart:typed_data';
 import 'package:flutter/material.dart';
-import 'package:ffi/ffi.dart';
 import 'vx_video_player.dart';
+import 'native_service.dart';
+import '../Pages/Upload/widgets/vx_premium_loader.dart';
 
 class VxVideoPlayerWidget extends StatefulWidget {
   final String url;
@@ -57,7 +56,7 @@ class _VxVideoPlayerWidgetState extends State<VxVideoPlayerWidget> {
   @override
   Widget build(BuildContext context) {
     if (!_isInitialized) {
-      return Center(child: CircularProgressIndicator());
+      return const Center(child: VxPremiumLoader());
     }
 
     return AspectRatio(

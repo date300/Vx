@@ -17,23 +17,26 @@ extern "C" {
 #include <libavformat/avformat.h>
 #include <libavcodec/avcodec.h>
 #include <libswscale/swscale.h>
+#include <libswresample/swresample.h>
 #include <libavutil/imgutils.h>
 #include <libavutil/time.h>
 #include <libavutil/hwcontext.h>
+#include <libavutil/opt.h>
+#include <libavutil/pixdesc.h>
 }
+
+#include <SLES/OpenSLES.h>
+#include <SLES/OpenSLES_Android.h>
 
 /**
  * Zero-copy video frame with reference counting.
- * Uses a pooled buffer to eliminate per-frame heap allocations.
  */
 struct VxVideoFrame {
     std::vector<uint8_t> data;
     int width = 0;
     int height = 0;
-    int64_t ptsMs = 0;          // Presentation timestamp in milliseconds
-    double timestamp = 0.0;     // Absolute playback time
-
-    // Pool linkage - managed by VxVideoPlayer
+    int64_t ptsMs = 0;
+    double timestamp = 0.0;
     std::atomic<bool> inUse{false};
 };
 
@@ -42,88 +45,33 @@ public:
     VxVideoPlayer();
     ~VxVideoPlayer();
 
-    // -----------------------------------------------------------------
-    // Initialization
-    // -----------------------------------------------------------------
     bool open(const std::string& url);
-
-    /**
-     * Open with hardware acceleration.
-     * @param hwDevice Hardware device type: "cuda", "d3d11va", "dxva2", "videotoolbox", "vaapi"
-     */
     bool open(const std::string& url, const std::string& hwDevice);
     void close();
 
-    // -----------------------------------------------------------------
-    // Playback Control
-    // -----------------------------------------------------------------
     void play();
     void pause();
     void stop();
-
-    /**
-     * Seek to absolute timestamp. Non-blocking; actual seek happens on decoder thread.
-     */
     void seek(int64_t timestampMs);
 
-    // -----------------------------------------------------------------
-    // Frame Retrieval
-    // -----------------------------------------------------------------
+    void setVolume(double vol);
+    void setLooping(bool loop);
 
-    /**
-     * Non-blocking frame retrieval. Returns nullptr if no frame is ready.
-     * Uses frame pool for zero-copy operation.
-     */
     std::shared_ptr<VxVideoFrame> getNextFrame();
-
-    /**
-     * Legacy blocking interface. Copies frame into user-provided buffer.
-     */
     bool getNextFrame(uint8_t* buffer, int width, int height);
 
-    // -----------------------------------------------------------------
-    // Thumbnail Extraction
-    // -----------------------------------------------------------------
-
-    /**
-     * Synchronous thumbnail extraction. Blocks until decoded.
-     */
     bool extractThumbnail(const std::string& url, uint8_t* outBuffer,
                           int targetWidth, int targetHeight, int64_t timeMs);
 
     using ThumbnailCallback = std::function<void(std::shared_ptr<VxVideoFrame>)>;
-
-    /**
-     * Asynchronous thumbnail extraction. Runs on internal thread.
-     */
     void extractThumbnailAsync(const std::string& url, int targetWidth,
                                int targetHeight, int64_t timeMs,
                                ThumbnailCallback callback);
 
-    // -----------------------------------------------------------------
-    // Performance Configuration
-    // -----------------------------------------------------------------
-
-    /**
-     * Set queue sizes for backpressure control.
-     * Default: 500 packets / 10 frames.
-     */
     void setQueueSizes(size_t maxPackets, size_t maxFrames);
-
-    /**
-     * Enable frame dropping when decoder cannot keep up with playback.
-     * Essential for real-time performance on slow systems.
-     */
     void setDropLateFrames(bool enable);
-
-    /**
-     * Playback speed multiplier. 1.0 = normal.
-     */
     void setPlaybackSpeed(double speed);
 
-    // -----------------------------------------------------------------
-    // State Queries
-    // -----------------------------------------------------------------
     int getVideoWidth() const;
     int getVideoHeight() const;
     double getDuration() const;
@@ -132,86 +80,116 @@ public:
     int64_t getCurrentTimeMs() const;
     double getFps() const;
 
-    // -----------------------------------------------------------------
-    // Performance Metrics
-    // -----------------------------------------------------------------
-    size_t getPacketQueueSize() const;
+    size_t getPacketQueueSize() const;   // video+audio combined
     size_t getFrameQueueSize() const;
     int64_t getDecodedFrameCount() const;
     int64_t getDroppedFrameCount() const;
+    static void setCacheDirectory(const std::string& path);
 
 private:
-    // -----------------------------------------------------------------
-    // Thread Workers (3-stage pipeline)
-    // -----------------------------------------------------------------
-    void readPacketLoop();      // Stage 1: Demuxing (I/O bound)
-    void decodeFrameLoop();     // Stage 2: Decoding (CPU/GPU bound)
-    void thumbnailLoop(const std::string& url, int w, int h, int64_t t,
-                       ThumbnailCallback cb);
+    static std::string cacheDirectory;
+    static std::mutex cacheDirMutex;      // FIX: cacheDirectory is static/global and
+    // was being read/written without any
+    // synchronization -> data race if
+    // setCacheDirectory() is called from another
+    // thread while open() is running.
 
-    // -----------------------------------------------------------------
-    // Queue Management
-    // -----------------------------------------------------------------
+    void readPacketLoop();
+    void decodeFrameLoop();
+    void decodeAudioLoop();
+    void thumbnailLoop(const std::string& url, int w, int h, int64_t t, ThumbnailCallback cb);
+
     void flushQueues();
-    void clearPacketQueue();
+    void clearVideoPacketQueue();
+    void clearAudioPacketQueue();
     void clearFrameQueue();
+    void clearAudioFrameQueue();
 
-    // -----------------------------------------------------------------
-    // Frame Pool (Zero-Copy)
-    // -----------------------------------------------------------------
+    bool initAudioOutput();
+    void shutdownAudioOutput();
+    static void bqPlayerCallback(SLAndroidSimpleBufferQueueItf bq, void* context);
+
     std::shared_ptr<VxVideoFrame> acquireFrame();
     void releaseFrame(std::shared_ptr<VxVideoFrame> frame);
     void initFramePool(size_t count);
 
-    // -----------------------------------------------------------------
-    // Synchronization Primitives
-    // -----------------------------------------------------------------
+    // FIX: helper that converts a decoded AVFrame (which may live on a
+    // MediaCodec hardware surface, i.e. AV_PIX_FMT_MEDIACODEC) into a
+    // CPU-readable software frame before it is hit with sws_scale().
+    // The old code called sws_scale() directly on whatever the decoder
+    // produced, which segfaults / produces garbage for any frame that
+    // came out of the h264_mediacodec / hevc_mediacodec / vp9_mediacodec
+    // hardware decoders.
+    AVFrame* toSoftwareFrame(AVFrame* src, AVFrame* scratch);
+
     mutable std::mutex stateMutex;
-    std::condition_variable packetCond;   // Packet queue not empty/full
-    std::condition_variable frameCond;    // Frame queue not empty/full
-    std::condition_variable seekCond;     // Seek completion signaling
 
-    // -----------------------------------------------------------------
-    // FFmpeg Handles
-    // -----------------------------------------------------------------
+    // FIX: video and audio packets used to share a single queue/condvar,
+    // and each decode thread would pop-and-delete any packet that did not
+    // belong to it. That silently threw away roughly half of all packets
+    // (whichever thread happened to wake up first), causing missing audio,
+    // frozen/skippy video, and effectively random A/V desync. They are now
+    // fully independent queues.
+    std::condition_variable videoPacketCond;
+    std::condition_variable audioPacketCond;
+    std::condition_variable frameCond;
+    std::condition_variable audioFrameCond;
+    std::condition_variable seekCond;
+
     AVFormatContext* fmtCtx = nullptr;
-    AVCodecContext* decCtx = nullptr;      // Software decoder
-    AVCodecContext* hwCtx = nullptr;       // Hardware decoder context
+    AVCodecContext* decCtx = nullptr;      // Video
+    AVCodecContext* audioDecCtx = nullptr; // Audio
+    SwrContext* swrCtx = nullptr;
     SwsContext* swsCtx = nullptr;
-    int videoStreamIdx = -1;
-    std::string hwDeviceName;
-    AVBufferRef* hwDeviceCtx = nullptr;
-    AVFrame* hwFrame = nullptr;            // Hardware frame buffer
+    enum AVPixelFormat swsSrcFormat = AV_PIX_FMT_NONE; // FIX: track format used to
+    // build swsCtx so we rebuild
+    // it if the decoder's output
+    // format changes mid-stream.
 
-    // -----------------------------------------------------------------
-    // Queues with Backpressure
-    // -----------------------------------------------------------------
-    std::queue<AVPacket*> packetQueue;
+    int videoStreamIdx = -1;
+    int audioStreamIdx = -1;
+
+    AVBufferRef* hwDeviceCtx = nullptr;
+
+    std::queue<AVPacket*> videoPacketQueue;
+    std::queue<AVPacket*> audioPacketQueue;
     std::queue<AVFrame*> frameQueue;
+    std::queue<AVFrame*> audioFrameQueue;
+
     size_t maxPacketQueue = 500;
     size_t maxFrameQueue = 10;
-    mutable std::mutex packetQueueMutex;
-    mutable std::mutex frameQueueMutex;
+    size_t maxAudioFrameQueue = 20;
 
-    // -----------------------------------------------------------------
-    // Frame Pool
-    // -----------------------------------------------------------------
+    mutable std::mutex videoPacketMutex;
+    mutable std::mutex audioPacketMutex;
+    mutable std::mutex frameQueueMutex;
+    mutable std::mutex audioFrameQueueMutex;
+
     std::vector<std::shared_ptr<VxVideoFrame>> framePool;
+    static constexpr size_t kMaxFramePool = 32; // FIX: cap runaway pool growth
     std::mutex poolMutex;
 
-    // -----------------------------------------------------------------
-    // Video Properties
-    // -----------------------------------------------------------------
+    // Audio Output (OpenSL ES)
+    SLObjectItf engineObject = nullptr;
+    SLEngineItf engineEngine = nullptr;
+    SLObjectItf outputMixObject = nullptr;
+    SLObjectItf bqPlayerObject = nullptr;
+    SLPlayItf bqPlayerPlay = nullptr;
+    SLAndroidSimpleBufferQueueItf bqPlayerBufferQueue = nullptr;
+    SLVolumeItf bqPlayerVolume = nullptr;
+
+    int audioChannels = 2;      // FIX: was hard-coded "* 4" (2ch * 16-bit) magic number
+    int audioBytesPerSample = 2; // S16 = 2 bytes
+
     int videoWidth = 0;
     int videoHeight = 0;
     double duration = 0.0;
     double frameRate = 0.0;
-    int64_t currentTimeMs = 0;
-    AVRational timeBase;
+    std::atomic<int64_t> currentTimeMs{0};
+    std::atomic<int64_t> audioClockMs{0};
+    AVRational timeBase{1, 1};
+    AVRational audioTimeBase{1, 1};
 
-    // -----------------------------------------------------------------
-    // Atomic State Flags (Lock-Free Queries)
-    // -----------------------------------------------------------------
     std::atomic<bool> playing{false};
     std::atomic<bool> paused{false};
     std::atomic<bool> stopRequested{false};
@@ -219,24 +197,19 @@ private:
     std::atomic<int64_t> seekTargetMs{0};
     std::atomic<bool> dropLateFrames{false};
     std::atomic<double> playbackSpeed{1.0};
+    std::atomic<double> volume{1.0};
+    std::atomic<bool> looping{true};
     std::atomic<bool> seekComplete{true};
+    std::atomic<bool> usingHwDecoder{false};
 
-    // -----------------------------------------------------------------
-    // Threads
-    // -----------------------------------------------------------------
     std::thread readerThread;
     std::thread decoderThread;
+    std::thread audioDecoderThread;
     std::thread thumbnailThread;
 
-    // -----------------------------------------------------------------
-    // Performance Counters
-    // -----------------------------------------------------------------
     std::atomic<int64_t> decodedFrames{0};
     std::atomic<int64_t> droppedFrames{0};
 
-    // -----------------------------------------------------------------
-    // Context
-    // -----------------------------------------------------------------
     std::string currentUrl;
 };
 

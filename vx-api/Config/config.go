@@ -47,7 +47,9 @@ var (
 	JWTSecret    = getEnv("JWT_SECRET", "vx_super_secret_key_2026")
 	ServerHost   = getEnv("HOST", "0.0.0.0")
 	ServerPort   = getEnv("PORT", "8080")
+	BaseURL      = "http://192.168.0.140:8080"
 	DatabaseDSN  = getDatabaseDSN()
+	UploadDir    = "./public/uploads"
 	SMTPHost     = getEnv("SMTP_HOST", "")
 	SMTPPort     = getEnv("SMTP_PORT", "587")
 	SMTPUsername = getEnv("SMTP_USERNAME", "")

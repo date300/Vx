@@ -32,7 +32,7 @@ class VxStudioPage extends StatelessWidget {
         elevation: 0,
         centerTitle: true,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios_new_rounded, color: titleColor, size: 20),
+          icon: Icon(Icons.arrow_back_rounded, color: titleColor, size: 24),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(

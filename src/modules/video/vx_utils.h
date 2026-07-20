@@ -11,6 +11,7 @@ FFI_EXPORT void calculate_video_dimensions(double videoWidth, double videoHeight
 FFI_EXPORT void calculate_grid_item_size(double screenWidth, int32_t crossAxisCount, double spacing, double* outWidth);
 FFI_EXPORT bool should_trigger_instant_snap(double velocity, double dragDistance, double threshold);
 FFI_EXPORT double calculate_sheet_easing(double time, double duration);
+FFI_EXPORT int32_t trim_video(const char* inputPath, const char* outputPath, double startTime, double duration);
 }
 
 #endif // VX_VIDEO_UTILS_H

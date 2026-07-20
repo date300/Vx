@@ -2,13 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
+import 'Services/cache_service.dart';
 import 'screen/splash_screen.dart';
 import 'Layout/theme_provider.dart';
 import 'Layout/main_layout.dart';
+import 'Pages/Profile/profile_provider.dart';
+import 'Pages/Home/home_provider.dart';
 import 'Services/performance_service.dart';
+import 'Services/notification_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await CacheService.init();
 
   // TikTok-style true full screen
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
@@ -27,8 +32,13 @@ void main() async {
   await perf.optimizeMemory(); // Clean up on startup
 
   runApp(
-    ChangeNotifierProvider(
-      create: (_) => ThemeProvider(),
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => ThemeProvider()),
+        ChangeNotifierProvider(create: (_) => ProfileProvider()),
+        ChangeNotifierProvider(create: (_) => HomeProvider()),
+        ChangeNotifierProvider(create: (_) => notificationService),
+      ],
       child: const MyApp(),
     ),
   );

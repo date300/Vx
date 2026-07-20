@@ -2,6 +2,8 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../Core/constants.dart' as constants;
+import '../Upload/widgets/vx_premium_loader.dart';
 
 class SetupProfileScreen extends StatefulWidget {
   const SetupProfileScreen({super.key});
@@ -13,7 +15,6 @@ class SetupProfileScreen extends StatefulWidget {
 class _SetupProfileScreenState extends State<SetupProfileScreen> {
   final TextEditingController _nicknameController = TextEditingController();
   final TextEditingController _usernameController = TextEditingController();
-  final String _baseUrl = "https://app.easysarvice.com"; // আপনার বেজ ইউআরএল
   
   List<dynamic> _categories = []; 
   final Set<int> _selectedCategoryIds = {}; 
@@ -33,7 +34,7 @@ class _SetupProfileScreenState extends State<SetupProfileScreen> {
       String token = prefs.getString('auth_token') ?? '';
 
       final response = await http.get(
-        Uri.parse("$_baseUrl/api/v1/user/categories"),
+        Uri.parse("${constants.baseUrl}/user/categories"),
         headers: {
           "Content-Type": "application/json",
           "Authorization": "Bearer $token",
@@ -49,7 +50,8 @@ class _SetupProfileScreenState extends State<SetupProfileScreen> {
           _isPageLoading = false;
         });
       } else {
-        throw Exception("Failed to load categories");
+        final data = jsonDecode(response.body);
+        throw Exception(data['message'] ?? data['error'] ?? "Failed to load categories");
       }
     } catch (e) {
       if (mounted) setState(() => _isPageLoading = false);
@@ -83,7 +85,7 @@ class _SetupProfileScreenState extends State<SetupProfileScreen> {
       String token = prefs.getString('auth_token') ?? '';
 
       final response = await http.post(
-        Uri.parse("$_baseUrl/api/v1/user/onboard"),
+        Uri.parse("${constants.baseUrl}/user/onboard"),
         headers: {
           "Content-Type": "application/json",
           "Authorization": "Bearer $token",
@@ -91,7 +93,7 @@ class _SetupProfileScreenState extends State<SetupProfileScreen> {
         body: jsonEncode({
           "nickname": nickname,
           "username": username,
-          "category_ids": _selectedCategoryIds.toList(), // আপনার গো স্ট্রাক্টের matching key
+          "interests": _selectedCategoryIds.toList(), // আপনার গো স্ট্রাক্টের matching key
         }),
       );
 
@@ -104,7 +106,7 @@ class _SetupProfileScreenState extends State<SetupProfileScreen> {
       } else {
         // ব্যাকএন্ড থেকে আসা এরর মেসেজ (যেমন: Username already taken!) দেখাবে
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(data['message'] ?? "Failed to save profile")),
+          SnackBar(content: Text(data['message'] ?? data['error'] ?? "Failed to save profile")),
         );
       }
     } catch (e) {
@@ -120,7 +122,7 @@ class _SetupProfileScreenState extends State<SetupProfileScreen> {
       backgroundColor: Colors.black,
       body: SafeArea(
         child: _isPageLoading
-            ? const Center(child: CircularProgressIndicator(color: Colors.pinkAccent))
+            ? const Center(child: VxPremiumLoader(color: Colors.pinkAccent))
             : Padding(
                 padding: const EdgeInsets.all(24.0),
                 child: Column(
@@ -166,8 +168,8 @@ class _SetupProfileScreenState extends State<SetupProfileScreen> {
                       spacing: 10,
                       runSpacing: 10,
                       children: _categories.map((category) {
-                        int id = category['ID'] ?? 0; // GORM ডিফল্ট আইডি uppercase ID দেয়
-                        String name = category['Name'] ?? '';
+                        int id = category['id'] ?? 0; // GORM ডিফল্ট আইডি uppercase ID দেয়
+                        String name = category['name'] ?? '';
                         final isSelected = _selectedCategoryIds.contains(id);
                         
                         return FilterChip(
@@ -200,7 +202,7 @@ class _SetupProfileScreenState extends State<SetupProfileScreen> {
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
                       ),
                       child: _isSubmitLoading 
-                          ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                          ? const VxPremiumLoader(color: Colors.white, size: 8)
                           : const Text("Complete Setup", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
                     ),
                   ],

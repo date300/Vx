@@ -1,7 +1,5 @@
 import 'dart:async';
-import 'dart:ffi';
-import 'dart:typed_data';
-import 'package:ffi/ffi.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'native_service.dart';
 
@@ -27,10 +25,12 @@ class NativeVideoPlayer {
         duration = nativeService.getVideoDuration(_playerHandle);
         
         // Register texture on platform side
-        textureId = await _channel.invokeMethod('createTexture', {
-          'width': width,
-          'height': height,
-        });
+        if (!kIsWeb) {
+          textureId = await _channel.invokeMethod('createTexture', {
+            'width': width,
+            'height': height,
+          });
+        }
         
         isInitialized = true;
       }
@@ -64,7 +64,7 @@ class NativeVideoPlayer {
   }
 
   Future<void> dispose() async {
-    if (textureId != null) {
+    if (textureId != null && !kIsWeb) {
       await _channel.invokeMethod('disposeTexture', {'textureId': textureId});
     }
     nativeService.disposeVideoPlayer(_playerHandle);

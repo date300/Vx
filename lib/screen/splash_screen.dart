@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../Layout/main_layout.dart';
 import '../Layout/theme_provider.dart';
+import '../Pages/Home/home_provider.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -34,6 +35,11 @@ class _SplashScreenState extends State<SplashScreen>
     );
 
     _controller.forward();
+
+    // Start pre-fetching the feed immediately while splash is showing
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<HomeProvider>().fetchHomeFeed();
+    });
 
     Future.delayed(const Duration(milliseconds: 1000), () {
       if (!mounted) return;
