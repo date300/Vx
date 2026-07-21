@@ -15,7 +15,7 @@ import 'sound_picker_page.dart';
 import '../../Services/sound_service.dart';
 
 // ==================== POPUP ENTRY POINT ====================
-Future<void> showUploadPopup(BuildContext context, {String? initialSound}) async {
+Future<void> showUploadPopup(BuildContext context, {String? initialSound, int? initialSoundId}) async {
   await showGeneralDialog(
     context: context,
     barrierDismissible: true,
@@ -25,7 +25,7 @@ Future<void> showUploadPopup(BuildContext context, {String? initialSound}) async
     pageBuilder: (context, animation, secondaryAnimation) {
       return FadeTransition(
         opacity: animation,
-        child: VxUploadPopupContent(initialSound: initialSound),
+        child: VxUploadPopupContent(initialSound: initialSound, initialSoundId: initialSoundId),
       );
     },
   );
@@ -34,7 +34,8 @@ Future<void> showUploadPopup(BuildContext context, {String? initialSound}) async
 // ==================== POPUP CONTENT WIDGET ====================
 class VxUploadPopupContent extends StatefulWidget {
   final String? initialSound;
-  const VxUploadPopupContent({super.key, this.initialSound});
+  final int? initialSoundId;
+  const VxUploadPopupContent({super.key, this.initialSound, this.initialSoundId});
 
   @override
   State<VxUploadPopupContent> createState() => _VxUploadPopupContentState();
@@ -50,15 +51,18 @@ class _VxUploadPopupContentState extends State<VxUploadPopupContent>
   int _selectedCameraIndex = 0;
   FlashMode _flashMode = FlashMode.off;
   int _selectedFilterIndex = 0;
+  int _selectedModeIndex = 1; // 0: Story, 1: Video, 2: Photo, 3: Template
   final ImagePicker _picker = ImagePicker();
   double _audioVolume = 1.0;
   String? _selectedSoundTitle;
   String? _selectedSoundUrl;
+  int? _selectedSoundId;
 
   @override
   void initState() {
     super.initState();
     _selectedSoundTitle = widget.initialSound;
+    _selectedSoundId = widget.initialSoundId;
     // For demo, we assume a default URL if initialSound is provided
     if (_selectedSoundTitle != null) {
       _selectedSoundUrl = "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3";
@@ -94,6 +98,7 @@ class _VxUploadPopupContentState extends State<VxUploadPopupContent>
       setState(() {
         _selectedSoundTitle = result.title;
         _selectedSoundUrl = result.url;
+        _selectedSoundId = int.tryParse(result.id);
       });
       await _initializeAudio();
     }
@@ -144,6 +149,29 @@ class _VxUploadPopupContentState extends State<VxUploadPopupContent>
   Future<void> _handleRecording() async {
     if (_controller == null || !_isInitialized) return;
 
+    // Handle Photo Mode (Index 2)
+    if (_selectedModeIndex == 2) {
+      HapticService.impactMedium();
+      final XFile photo = await _controller!.takePicture();
+      if (mounted) {
+        // For now, we reuse VideoPreviewScreen but we should ideally have a PhotoPreviewScreen
+        // Or handle it in VideoPreviewScreen if it supports images.
+        // Let's check VideoPreviewScreen first.
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => VideoPreviewScreen(
+              videoPath: photo.path, 
+              isImage: true,
+              soundId: _selectedSoundId,
+              soundTitle: _selectedSoundTitle,
+            ),
+          ),
+        );
+      }
+      return;
+    }
+
     if (_isRecording) {
       HapticService.impactHeavy();
       final XFile file = await _controller!.stopVideoRecording();
@@ -160,7 +188,12 @@ class _VxUploadPopupContentState extends State<VxUploadPopupContent>
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => VideoPreviewScreen(videoPath: file.path),
+            builder: (context) => VideoPreviewScreen(
+              videoPath: file.path,
+              isStory: _selectedModeIndex == 0,
+              soundId: _selectedSoundId,
+              soundTitle: _selectedSoundTitle,
+            ),
           ),
         );
       }
@@ -179,13 +212,50 @@ class _VxUploadPopupContentState extends State<VxUploadPopupContent>
 
   Future<void> _pickFromGallery() async {
     HapticService.impactLight();
-    final XFile? video = await _picker.pickVideo(source: ImageSource.gallery);
-    if (video != null) {
+    
+    if (_selectedModeIndex == 2) { // Photo Mode - Allow Multiple
+      final List<XFile> images = await _picker.pickMultiImage();
+      if (images.isNotEmpty) {
+        if (mounted) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => VideoPreviewScreen(
+                videoPath: images.first.path,
+                imagePaths: images.map((e) => e.path).toList(),
+                isImage: true,
+                isStory: false,
+                soundId: _selectedSoundId,
+                soundTitle: _selectedSoundTitle,
+              ),
+            ),
+          );
+        }
+      }
+      return;
+    }
+
+    // Default: Single media (Video or Image)
+    final XFile? media = await _picker.pickMedia();
+    if (media != null) {
       if (mounted) {
+        final String path = media.path.toLowerCase();
+        final bool isImage = path.endsWith('.jpg') || 
+                            path.endsWith('.jpeg') || 
+                            path.endsWith('.png') ||
+                            path.endsWith('.webp') ||
+                            path.endsWith('.heic');
+
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => VideoPreviewScreen(videoPath: video.path),
+            builder: (context) => VideoPreviewScreen(
+              videoPath: media.path,
+              isImage: isImage,
+              isStory: _selectedModeIndex == 0,
+              soundId: _selectedSoundId,
+              soundTitle: _selectedSoundTitle,
+            ),
           ),
         );
       }
@@ -341,6 +411,9 @@ class _VxUploadPopupContentState extends State<VxUploadPopupContent>
               selectedFilterIndex: _selectedFilterIndex,
               onFilterSelected: (index) {
                 setState(() => _selectedFilterIndex = index);
+              },
+              onModeChanged: (index) {
+                setState(() => _selectedModeIndex = index);
               },
             ),
           ),

@@ -30,6 +30,14 @@ class HomeApi {
     });
   }
 
+  static Future<http.Response> getStories(String token) async {
+    final uri = Uri.parse('${constants.baseUrl}/home/stories');
+    return await http.get(uri, headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer $token',
+    });
+  }
+
   static Future<http.Response> toggleLike(int videoId, String token) async {
     final uri = Uri.parse('${constants.baseUrl}/interaction/like');
     return await http.post(uri, 

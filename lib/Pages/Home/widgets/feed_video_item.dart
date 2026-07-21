@@ -104,7 +104,7 @@ class _FeedVideoItemState extends State<FeedVideoItem>
   void initState() {
     super.initState();
     _loadCurrentUserId();
-    _likedNotifier        = ValueNotifier(false);
+    _likedNotifier        = ValueNotifier(widget.data.isLiked);
     _likeCountNotifier    = ValueNotifier(widget.data.likes);
     _savedNotifier        = ValueNotifier(false);
     _isSeekingNotifier    = ValueNotifier(false);
@@ -419,11 +419,14 @@ class _FeedVideoItemState extends State<FeedVideoItem>
   void _onDoubleTapDown(TapDownDetails d) => _tapPosition = d.localPosition;
 
   void _onDoubleTap() {
-    _performProtectedAction(() {
+    _performProtectedAction(() async {
       HapticFeedback.mediumImpact();
       if (!_likedNotifier.value) {
-        _likedNotifier.value = true;
-        _likeCountNotifier.value = _likeCountNotifier.value + 1;
+        final success = await context.read<HomeProvider>().toggleLike(widget.data.id);
+        if (success && mounted) {
+          _likedNotifier.value = widget.data.isLiked;
+          _likeCountNotifier.value = widget.data.likes;
+        }
       }
       _popHeart();
     });
@@ -437,15 +440,21 @@ class _FeedVideoItemState extends State<FeedVideoItem>
   }
 
   void _onLike() {
-    _performProtectedAction(() {
+    _performProtectedAction(() async {
       HapticFeedback.lightImpact();
       final wasLiked = _likedNotifier.value;
-      _likedNotifier.value = !wasLiked;
-      _likeCountNotifier.value = _likeCountNotifier.value + (wasLiked ? -1 : 1);
-      if (!wasLiked) {
-        _tapPosition =
-            Offset(_screenWidth / 2, MediaQuery.of(context).size.height / 2);
-        _popHeart();
+      
+      final success = await context.read<HomeProvider>().toggleLike(widget.data.id);
+      
+      if (success && mounted) {
+        _likedNotifier.value = widget.data.isLiked;
+        _likeCountNotifier.value = widget.data.likes;
+        
+        if (!wasLiked && _likedNotifier.value) {
+          _tapPosition =
+              Offset(_screenWidth / 2, MediaQuery.of(context).size.height / 2);
+          _popHeart();
+        }
       }
     });
   }
@@ -510,7 +519,10 @@ class _FeedVideoItemState extends State<FeedVideoItem>
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
-      builder: (_) => ShareSheet(onMore: _showContextMenu),
+      builder: (_) => ShareSheet(
+        videoUrl: widget.data.url,
+        onMore: _showContextMenu,
+      ),
     );
   }
 
@@ -875,6 +887,7 @@ class _FeedVideoItemState extends State<FeedVideoItem>
               RightActions(
                 username:          widget.data.username,
                 avatarUrl:         widget.data.avatarUrl,
+                soundData:         widget.data.soundData,
                 likedNotifier:     _likedNotifier,
                 likeCountNotifier: _likeCountNotifier,
                 savedNotifier:     _savedNotifier,
@@ -918,10 +931,10 @@ class _FeedVideoItemState extends State<FeedVideoItem>
         onTap: _togglePlay,
         onDoubleTapDown: _onDoubleTapDown,
         onDoubleTap: _onDoubleTap,
-        onHorizontalDragStart: _onSeekDragStart,
-        onHorizontalDragUpdate: _onSeekDragUpdate,
-        onHorizontalDragEnd: _onSeekDragEnd,
-        behavior: HitTestBehavior.opaque,
+        onHorizontalDragStart: null,
+        onHorizontalDragUpdate: null,
+        onHorizontalDragEnd: null,
+        behavior: widget.data.isImage ? HitTestBehavior.translucent : HitTestBehavior.opaque,
         child: Transform.scale(
         scale: _jiggleFactor,
         alignment: Alignment.center,
@@ -1001,13 +1014,14 @@ class _FeedVideoItemState extends State<FeedVideoItem>
                       ),
                     ),
                   ),
-                  SeekOverlayLayer(
-                    isSeekingNotifier: _isSeekingNotifier,
-                    seekProgressNotifier: _seekProgressNotifier,
-                    seekStartProgress: _seekStartProgress,
-                    ready: ready,
-                    ctrl: ctrl,
-                  ),
+                  if (!widget.data.isImage)
+                    SeekOverlayLayer(
+                      isSeekingNotifier: _isSeekingNotifier,
+                      seekProgressNotifier: _seekProgressNotifier,
+                      seekStartProgress: _seekStartProgress,
+                      ready: ready,
+                      ctrl: ctrl,
+                    ),
                   if (_isHolding)
                     ColoredBox(
                       color: Colors.black.withValues(alpha: 0.3),
@@ -1167,13 +1181,13 @@ class _FeedVideoItemState extends State<FeedVideoItem>
       child: Focus(
         autofocus: widget.isCurrent,
         child: Listener(
-          behavior: HitTestBehavior.opaque,
+          behavior: widget.data.isImage ? HitTestBehavior.translucent : HitTestBehavior.opaque,
           child: GestureDetector(
             onLongPress: _onLongPress,
             onScaleStart: _onScaleStart,
             onScaleUpdate: _onScaleUpdate,
             onScaleEnd: _onScaleEnd,
-            behavior: HitTestBehavior.opaque,
+            behavior: widget.data.isImage ? HitTestBehavior.translucent : HitTestBehavior.opaque,
             child: content,
           ),
         ),

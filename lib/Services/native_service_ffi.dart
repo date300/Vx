@@ -104,6 +104,9 @@ typedef ProcessTouchEventDart = void Function(int pointerId, int action, double 
 typedef GetNativeScrollDeltaC = Double Function();
 typedef GetNativeScrollDeltaDart = double Function();
 
+typedef GetNativeScrollDeltaXC = Double Function();
+typedef GetNativeScrollDeltaXDart = double Function();
+
 typedef GetNativeVelocityC = Double Function();
 typedef GetNativeVelocityDart = double Function();
 
@@ -144,6 +147,7 @@ class NativeService {
   late TrimVideoDart trimVideo;
   late ProcessTouchEventDart processTouchEvent;
   late GetNativeScrollDeltaDart getNativeScrollDelta;
+  late GetNativeScrollDeltaXDart getNativeScrollDeltaX;
   late GetNativeVelocityDart getNativeVelocity;
   late ShouldTriggerHapticDart shouldTriggerHaptic;
   late SetThreadPriorityDart setThreadPriority;
@@ -225,6 +229,7 @@ class NativeService {
     trimVideo = _nativeLib.lookup<NativeFunction<TrimVideoC>>('trim_video').asFunction();
     processTouchEvent = _nativeLib.lookup<NativeFunction<ProcessTouchEventC>>('process_touch_event').asFunction();
     getNativeScrollDelta = _nativeLib.lookup<NativeFunction<GetNativeScrollDeltaC>>('get_native_scroll_delta').asFunction();
+    getNativeScrollDeltaX = _nativeLib.lookup<NativeFunction<GetNativeScrollDeltaXC>>('get_native_scroll_delta_x').asFunction();
     getNativeVelocity = _nativeLib.lookup<NativeFunction<GetNativeVelocityC>>('get_native_velocity').asFunction();
     shouldTriggerHaptic = _nativeLib.lookup<NativeFunction<ShouldTriggerHapticC>>('should_trigger_haptic').asFunction();
     setThreadPriority = _nativeLib.lookup<NativeFunction<SetThreadPriorityC>>('set_thread_priority').asFunction();
@@ -263,6 +268,7 @@ class NativeService {
     trimVideo = (i, o, s, d) => -1;
     processTouchEvent = (id, a, x, y, t) {};
     getNativeScrollDelta = () => 0.0;
+    getNativeScrollDeltaX = () => 0.0;
     getNativeVelocity = () => 0.0;
     shouldTriggerHaptic = (p, v) => false;
     setThreadPriority = (p) {};

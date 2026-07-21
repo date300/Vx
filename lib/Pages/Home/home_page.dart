@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'home_provider.dart';
 import 'widgets/top_bar.dart';
 import 'widgets/video_feed_list.dart';
+import 'widgets/story_row.dart';
 import '../Upload/widgets/vx_premium_loader.dart';
 
 class HomeFeedPage extends StatefulWidget {
@@ -135,6 +136,12 @@ class HomeFeedPageState extends State<HomeFeedPage>
                 ),
               ],
             ),
+          Positioned(
+            top: MediaQuery.of(context).padding.top + 60,
+            left: 0,
+            right: 0,
+            child: StoryRow(stories: homeProvider.stories),
+          ),
           HomeTopBar(tabController: _tabController),
         ],
       ),

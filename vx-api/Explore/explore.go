@@ -13,6 +13,7 @@ import (
 	"vx-api/Middleware"
 
 	"github.com/gin-gonic/gin"
+	"github.com/lib/pq"
 )
 
 const (
@@ -27,7 +28,9 @@ func RegisterRoutes(r *gin.RouterGroup) {
 		// OptionalAuth যাতে লগইন করা ইউজার হলে is_liked/is_following দেখানো যায়,
 		// guest হলেও সার্চ/ট্রেন্ডিং কাজ করবে
 		exploreGroup.GET("/search", Middleware.OptionalAuth(), SearchVideos)
+		exploreGroup.GET("/users", Middleware.OptionalAuth(), SearchUsers)
 		exploreGroup.GET("/trending", Middleware.OptionalAuth(), GetTrending)
+		UpdateSoundRoutes(exploreGroup)
 	}
 }
 
@@ -95,6 +98,43 @@ func SearchVideos(c *gin.Context) {
 		"limit":  limit,
 		"offset": offset,
 		"data":   enrichVideos(userID, videos),
+	})
+}
+
+// SearchUsers handles GET /api/v1/explore/users?q=query&limit=20&offset=0
+// username এবং nickname-এ সার্চ করে
+func SearchUsers(c *gin.Context) {
+	query := strings.TrimSpace(c.Query("q"))
+	if query == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"status": false, "message": "Search query is required"})
+		return
+	}
+
+	limit, offset := parsePagination(c)
+	searchTerm := "%" + escapeLike(strings.ToLower(query)) + "%"
+
+	var total int64
+	Config.DB.Model(&User{}).
+		Where("LOWER(username) LIKE ? ESCAPE '\\' OR LOWER(nickname) LIKE ? ESCAPE '\\'", searchTerm, searchTerm).
+		Count(&total)
+
+	var users []User
+	if err := Config.DB.
+		Where("LOWER(username) LIKE ? ESCAPE '\\' OR LOWER(nickname) LIKE ? ESCAPE '\\'", searchTerm, searchTerm).
+		Order("followers desc").
+		Limit(limit).Offset(offset).
+		Find(&users).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"status": false, "message": "User search failed"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"status": true,
+		"query":  query,
+		"total":  total,
+		"limit":  limit,
+		"offset": offset,
+		"data":   users,
 	})
 }
 
@@ -196,6 +236,15 @@ func enrichVideos(userID uint, videos []Video) []gin.H {
 	}
 
 	for _, v := range videos {
+		// মিউজিক ডিটেইলস খুঁজে বের করা যদি থাকে
+		var soundData *Sound
+		if v.SoundID != nil {
+			var s Sound
+			if err := Config.DB.First(&s, *v.SoundID).Error; err == nil {
+				soundData = &s
+			}
+		}
+
 		result = append(result, gin.H{
 			"id":             v.ID,
 			"user_id":        v.UserID,
@@ -203,6 +252,8 @@ func enrichVideos(userID uint, videos []Video) []gin.H {
 			"url":            v.URL,
 			"caption":        v.Caption,
 			"sound":          v.Sound,
+			"sound_id":       v.SoundID,
+			"sound_data":     soundData,
 			"likes":          v.Likes,
 			"comments":       v.Comments,
 			"views":          v.Views,
@@ -266,7 +317,7 @@ type Video struct {
 	Comments        int            `gorm:"default:0" json:"comments"`
 	Shares          int            `gorm:"default:0" json:"shares"`
 	IsImage         bool           `gorm:"default:false" json:"is_image"`
-	Images          []string       `gorm:"type:text[]" json:"images"`
+	Images          pq.StringArray `gorm:"type:text[]" json:"images"`
 	IsAd            bool           `gorm:"default:false" json:"is_ad"`
 	AdCta           string         `gorm:"type:varchar(50)" json:"ad_cta"`
 	AdLink          string         `gorm:"type:text" json:"ad_link"`

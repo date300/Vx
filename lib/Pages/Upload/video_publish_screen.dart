@@ -12,12 +12,27 @@ import '../../Services/haptic_service.dart';
 import '../Home/home_provider.dart';
 import 'widgets/vx_premium_loader.dart';
 import '../../Services/draft_service.dart';
+import '../../Services/auth_service.dart';
 
 class VideoPublishScreen extends StatefulWidget {
   final String videoPath;
+  final List<String>? imagePaths;
   final VideoDraft? draft;
+  final bool isImage;
+  final bool isStory;
+  final int? soundId;
+  final String? soundTitle;
 
-  const VideoPublishScreen({super.key, required this.videoPath, this.draft});
+  const VideoPublishScreen({
+    super.key,
+    required this.videoPath,
+    this.imagePaths,
+    this.draft,
+    this.isImage = false,
+    this.isStory = false,
+    this.soundId,
+    this.soundTitle,
+  });
 
   @override
   State<VideoPublishScreen> createState() => _VideoPublishScreenState();
@@ -38,19 +53,23 @@ class _VideoPublishScreenState extends State<VideoPublishScreen> {
     _captionController = TextEditingController(text: widget.draft?.caption ?? "");
     _coverTimestamp = widget.draft?.coverTimestamp ?? 0.0;
 
-    _videoController = VideoPlayerController.file(File(widget.videoPath))
-      ..initialize().then((_) {
-        if (_coverTimestamp > 0) {
-          _videoController.seekTo(Duration(milliseconds: _coverTimestamp.toInt()));
-        }
-        setState(() {});
-      });
+    if (!widget.isImage) {
+      _videoController = VideoPlayerController.file(File(widget.videoPath))
+        ..initialize().then((_) {
+          if (_coverTimestamp > 0) {
+            _videoController.seekTo(Duration(milliseconds: _coverTimestamp.toInt()));
+          }
+          setState(() {});
+        });
+    }
   }
 
   @override
   void dispose() {
     _captionController.dispose();
-    _videoController.dispose();
+    if (!widget.isImage) {
+      _videoController.dispose();
+    }
     super.dispose();
   }
 
@@ -73,7 +92,28 @@ class _VideoPublishScreenState extends State<VideoPublishScreen> {
       final uri = Uri.parse('${constants.baseUrl}/upload/video');
       final request = http.MultipartRequest('POST', uri);
       request.headers['Authorization'] = 'Bearer $token';
-      request.files.add(await http.MultipartFile.fromPath('video', widget.videoPath));
+      
+      if (widget.imagePaths != null && widget.imagePaths!.isNotEmpty) {
+        for (var path in widget.imagePaths!) {
+          request.files.add(await http.MultipartFile.fromPath('images', path));
+        }
+        request.fields['is_image'] = 'true';
+      } else {
+        request.files.add(await http.MultipartFile.fromPath('video', widget.videoPath));
+        if (widget.isImage) {
+          request.fields['is_image'] = 'true';
+        }
+      }
+
+      if (widget.isStory) {
+        request.fields['is_story'] = 'true';
+      }
+
+      if (widget.soundId != null) {
+        request.fields['sound_id'] = widget.soundId.toString();
+      } else if (widget.soundTitle != null) {
+        request.fields['sound'] = widget.soundTitle!;
+      }
       
       final caption = _captionController.text;
       final hashtags = _extractHashtags(caption);
@@ -88,6 +128,13 @@ class _VideoPublishScreenState extends State<VideoPublishScreen> {
       final streamed = await request.send();
       final response = await http.Response.fromStream(streamed);
       
+      if (response.statusCode == 401) {
+        if (mounted) {
+          AuthService.handleUnauthorized(context);
+        }
+        return;
+      }
+
       Map<String, dynamic>? result;
       if (response.statusCode == 201 || response.statusCode == 200) {
         result = json.decode(response.body);
@@ -208,7 +255,7 @@ class _VideoPublishScreenState extends State<VideoPublishScreen> {
                       const SizedBox(width: 16),
                       // Thumbnail Preview with "Select cover" overlay
                       GestureDetector(
-                        onTap: _showCoverSelector,
+                        onTap: widget.isImage ? null : _showCoverSelector,
                         child: Stack(
                           alignment: Alignment.bottomCenter,
                           children: [
@@ -221,28 +268,31 @@ class _VideoPublishScreenState extends State<VideoPublishScreen> {
                                 border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
                               ),
                               clipBehavior: Clip.antiAlias,
-                              child: _videoController.value.isInitialized
-                                  ? Center(
-                                      child: AspectRatio(
-                                        aspectRatio: _videoController.value.aspectRatio,
-                                        child: VideoPlayer(_videoController),
-                                      ),
-                                    )
-                                  : const Center(child: VxPremiumLoader(size: 3)),
+                              child: widget.isImage 
+                                  ? Image.file(File(widget.videoPath), fit: BoxFit.cover)
+                                  : _videoController.value.isInitialized
+                                      ? Center(
+                                          child: AspectRatio(
+                                            aspectRatio: _videoController.value.aspectRatio,
+                                            child: VideoPlayer(_videoController),
+                                          ),
+                                        )
+                                      : const Center(child: VxPremiumLoader(size: 3)),
                             ),
-                            Container(
-                              width: 100,
-                              padding: const EdgeInsets.symmetric(vertical: 8),
-                              decoration: BoxDecoration(
-                                color: Colors.black.withValues(alpha: 0.6),
-                                borderRadius: const BorderRadius.vertical(bottom: Radius.circular(16)),
+                            if (!widget.isImage)
+                              Container(
+                                width: 100,
+                                padding: const EdgeInsets.symmetric(vertical: 8),
+                                decoration: BoxDecoration(
+                                  color: Colors.black.withValues(alpha: 0.6),
+                                  borderRadius: const BorderRadius.vertical(bottom: Radius.circular(16)),
+                                ),
+                                child: const Text(
+                                  "Select cover",
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w700),
+                                ),
                               ),
-                              child: const Text(
-                                "Select cover",
-                                textAlign: TextAlign.center,
-                                style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w700),
-                              ),
-                            ),
                           ],
                         ),
                       ),

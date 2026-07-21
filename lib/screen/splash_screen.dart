@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import '../Layout/main_layout.dart';
 import '../Layout/theme_provider.dart';
 import '../Pages/Home/home_provider.dart';
+import '../Services/auth_service.dart';
+import '../Services/websocket_service.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -37,8 +39,14 @@ class _SplashScreenState extends State<SplashScreen>
     _controller.forward();
 
     // Start pre-fetching the feed immediately while splash is showing
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
       context.read<HomeProvider>().fetchHomeFeed();
+      
+      // Initialize WebSocket if logged in
+      final token = await AuthService.getToken();
+      if (token != null) {
+        webSocketService.connect(token);
+      }
     });
 
     Future.delayed(const Duration(milliseconds: 1000), () {

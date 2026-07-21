@@ -35,6 +35,16 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
   void initState() {
     super.initState();
     _fetchMessages();
+    _checkWSAndListen();
+  }
+
+  Future<void> _checkWSAndListen() async {
+    if (!webSocketService.isConnected) {
+      final token = await AuthService.getToken();
+      if (token != null) {
+        webSocketService.connect(token);
+      }
+    }
     _listenToWS();
   }
 
@@ -112,18 +122,21 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
     final token = await AuthService.getToken();
     if (token == null) return;
 
+    final newMessage = {
+      "text": text,
+      "isMe": true,
+      "time": "Just now",
+      "status": "sending",
+    };
+
     setState(() {
-      _messages.add({
-        "text": text,
-        "isMe": true,
-        "time": "Just now",
-      });
+      _messages.add(newMessage);
       _messageController.clear();
     });
     _scrollToBottom();
 
     try {
-      await http.post(
+      final response = await http.post(
         Uri.parse('${constants.baseUrl}/inbox/send'),
         headers: {
           'Content-Type': 'application/json',
@@ -134,7 +147,21 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
           'text': text,
         }),
       );
-    } catch (e) {}
+
+      if (response.statusCode != 200 && response.statusCode != 201) {
+        setState(() {
+          newMessage["status"] = "error";
+        });
+      } else {
+        setState(() {
+          newMessage["status"] = "sent";
+        });
+      }
+    } catch (e) {
+      setState(() {
+        newMessage["status"] = "error";
+      });
+    }
   }
 
   bool _isDark(BuildContext context) {

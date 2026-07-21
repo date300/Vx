@@ -13,7 +13,6 @@ import '../home_provider.dart';
 import '../../../Layout/responsive_layout.dart';
 import '../../../Services/performance_service.dart';
 import '../../../Services/native_service.dart';
-import '../../../Services/haptic_service.dart';
 import '../../../widgets/vx_premium_refresher.dart';
 import 'feed_video_item.dart';
 import 'feed_ad_item.dart';
@@ -35,9 +34,12 @@ class ZeroSlopVerticalDragGestureRecognizer extends VerticalDragGestureRecognize
   void handleEvent(PointerEvent event) {
     super.handleEvent(event);
     if (event is PointerMoveEvent) {
-      // Only claim if movement is primarily vertical
-      if (event.delta.dy.abs() > event.delta.dx.abs()) {
+      // Logic: Only claim if movement is primarily vertical AND NOT primarily horizontal
+      if (event.delta.dy.abs() > event.delta.dx.abs() && event.delta.dy.abs() > 0.1) {
         resolve(GestureDisposition.accepted);
+      } else if (event.delta.dx.abs() > event.delta.dy.abs()) {
+        // Explicitly reject if it looks horizontal, to let children (ImageSlideshow) have it
+        resolve(GestureDisposition.rejected);
       }
     }
   }
@@ -89,7 +91,6 @@ class VideoFeedListState extends State<VideoFeedList>
   final Set<int> _pendingInit = {};
 
   // ── Throttled side effects ──
-  DateTime? _lastHaptic;
   DateTime? _lastViewLog;
 
   @override
@@ -360,14 +361,7 @@ class VideoFeedListState extends State<VideoFeedList>
     final oldCurrent = _current;
     _current = index;
 
-    // ── Throttled haptic (skip during fast scroll) ──
-    if (!wasFast) {
-      if (_lastHaptic == null ||
-          now.difference(_lastHaptic!) > const Duration(milliseconds: _kEffectThrottleMs)) {
-        _lastHaptic = now;
-        HapticService.impactLight();
-      }
-    }
+    // ── Throttled haptic (removed to fix unwanted vibration) ──
 
     // ── Throttled view count (skip ads + fast scroll) ──
     if (!_videosWithAds[index].isAd && !wasFast) {
@@ -622,10 +616,7 @@ class VideoFeedListState extends State<VideoFeedList>
     if (notification is ScrollStartNotification) {
       _pool[_current]?.pause();
     } else if (notification is ScrollUpdateNotification) {
-       // Use C++ to decide if we should vibrate based on exact pixel position
-       if (nativeService.shouldTriggerHaptic(notification.metrics.pixels, notification.metrics.viewportDimension)) {
-         HapticService.impactLight();
-       }
+       // Automatic haptic feedback during scroll was removed to improve user experience
     } else if (notification is ScrollEndNotification) {
       if (_ready[_current] == true && _isVisible) {
         _pool[_current]?.play();

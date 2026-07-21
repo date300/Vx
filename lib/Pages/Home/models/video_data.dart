@@ -1,5 +1,31 @@
 import '../../../Core/config.dart';
 
+class SoundData {
+  final int id;
+  final String title;
+  final String authorName;
+  final String authorAvatar;
+  final String audioUrl;
+
+  SoundData({
+    required this.id,
+    required this.title,
+    required this.authorName,
+    required this.authorAvatar,
+    required this.audioUrl,
+  });
+
+  factory SoundData.fromJson(Map<String, dynamic> json) {
+    return SoundData(
+      id: json['id'] ?? 0,
+      title: json['title'] ?? 'Original Sound',
+      authorName: json['author_name'] ?? '',
+      authorAvatar: VideoData._resolveMediaUrl(json['author_avatar'] ?? ''),
+      audioUrl: VideoData._resolveMediaUrl(json['audio_url'] ?? ''),
+    );
+  }
+}
+
 class VideoData {
   final int id;
   final int uploaderId;
@@ -10,6 +36,8 @@ class VideoData {
   final String thumbnailUrl;
   final String caption;
   final String sound;
+  final int? soundId;
+  final SoundData? soundData;
   int likes;
   int comments;
   int views;
@@ -33,6 +61,8 @@ class VideoData {
     required this.thumbnailUrl,
     required this.caption,
     required this.sound,
+    this.soundId,
+    this.soundData,
     required this.likes,
     required this.comments,
     required this.views,
@@ -48,6 +78,7 @@ class VideoData {
   });
 
   static String _resolveMediaUrl(String path) {
+    if (path.isEmpty) return '';
     if (path.startsWith('/uploads')) {
       return '${ApiConfig.rootUrl}$path';
     }
@@ -69,13 +100,15 @@ class VideoData {
       thumbnailUrl: _resolveMediaUrl(json['thumbnail_url'] ?? ''),
       caption: json['caption'] ?? '',
       sound: json['sound'] ?? 'Original Sound',
+      soundId: json['sound_id'],
+      soundData: json['sound_data'] != null ? SoundData.fromJson(json['sound_data']) : null,
       likes: json['likes'] ?? 0,
       comments: json['comments'] ?? 0,
       views: json['views'] ?? 0,
       shares: json['shares'] ?? 0,
       isImage: json['is_image'] ?? false,
       images: json['images'] != null
-          ? List<String>.from(json['images'])
+          ? (json['images'] as List).map((e) => _resolveMediaUrl(e.toString())).toList()
           : null,
       isAd: json['is_ad'] ?? false,
       adCta: json['ad_cta'],

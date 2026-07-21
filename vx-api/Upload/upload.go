@@ -19,6 +19,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/lib/pq"
 )
 
 // RegisterRoutes handles all Upload related endpoints
@@ -60,57 +61,125 @@ func Upload(c *gin.Context) {
 		return
 	}
 
-	file, header, err := c.Request.FormFile("video")
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "no video file provided"})
-		return
-	}
-	defer file.Close()
-
-	ext := strings.ToLower(filepath.Ext(header.Filename))
-	if ext != ".mp4" && ext != ".mov" && ext != ".avi" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "unsupported video format"})
-		return
-	}
-
+	isImage := c.PostForm("is_image") == "true"
+	isStory := c.PostForm("is_story") == "true"
 	caption := c.PostForm("caption")
 	soundIDStr := c.PostForm("sound_id")
 	hashtagsStr := c.PostForm("hashtags")
-	coverTimestamp := c.PostForm("cover_timestamp") // in seconds, e.g. "1.5"
+	coverTimestamp := c.PostForm("cover_timestamp")
 
 	uploadDir := Config.UploadDir
 	if uploadDir == "" {
 		uploadDir = "./public/uploads"
 	}
 
-	videoUUID := uuid.New().String()
-	videoFileName := videoUUID + ext
-	videoPath := filepath.Join(uploadDir, "videos", videoFileName)
+	var videoURL string
+	var thumbURL string
+	var imageURLs []string
 
-	if err := os.MkdirAll(filepath.Dir(videoPath), 0755); err != nil {
-		log.Printf("mkdir failed: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "server error"})
-		return
-	}
+	if isImage {
+		// Handle multiple images if provided
+		files := c.Request.MultipartForm.File["images"]
+		// Fallback to "video" field if "images" is empty (for single image backward compatibility)
+		if len(files) == 0 {
+			if f, h, err := c.Request.FormFile("video"); err == nil {
+				defer f.Close()
+				files = append(files, h)
+			}
+		}
 
-	dst, err := os.Create(videoPath)
-	if err != nil {
-		log.Printf("create file failed: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "server error"})
-		return
-	}
-	defer dst.Close()
+		if len(files) == 0 {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "no images provided"})
+			return
+		}
 
-	if _, err := io.Copy(dst, file); err != nil {
-		log.Printf("copy file failed: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "server error"})
-		return
-	}
+		for _, header := range files {
+			ext := strings.ToLower(filepath.Ext(header.Filename))
+			if ext != ".jpg" && ext != ".jpeg" && ext != ".png" && ext != ".webp" {
+				continue // Skip unsupported formats
+			}
 
-	if coverTimestamp == "" {
-		coverTimestamp = "00:00:01"
+			imgUUID := uuid.New().String()
+			imgFileName := imgUUID + ext
+			imgPath := filepath.Join(uploadDir, "images", imgFileName)
+
+			if err := os.MkdirAll(filepath.Dir(imgPath), 0755); err != nil {
+				continue
+			}
+
+			// Open the file
+			src, err := header.Open()
+			if err != nil {
+				continue
+			}
+			defer src.Close()
+
+			dst, err := os.Create(imgPath)
+			if err != nil {
+				continue
+			}
+			defer dst.Close()
+
+			if _, err := io.Copy(dst, src); err != nil {
+				continue
+			}
+
+			url := "/uploads/images/" + imgFileName
+			imageURLs = append(imageURLs, url)
+		}
+
+		if len(imageURLs) == 0 {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "no valid images uploaded"})
+			return
+		}
+
+		videoURL = imageURLs[0]
+		thumbURL = imageURLs[0]
+	} else {
+		// Handle single video
+		file, header, err := c.Request.FormFile("video")
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "no video file provided"})
+			return
+		}
+		defer file.Close()
+
+		ext := strings.ToLower(filepath.Ext(header.Filename))
+		if ext != ".mp4" && ext != ".mov" && ext != ".avi" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "unsupported video format"})
+			return
+		}
+
+		videoUUID := uuid.New().String()
+		videoFileName := videoUUID + ext
+		videoPath := filepath.Join(uploadDir, "videos", videoFileName)
+
+		if err := os.MkdirAll(filepath.Dir(videoPath), 0755); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "server error"})
+			return
+		}
+
+		dst, err := os.Create(videoPath)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "server error"})
+			return
+		}
+		defer dst.Close()
+
+		if _, err := io.Copy(dst, file); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "server error"})
+			return
+		}
+
+		videoURL = "/uploads/videos/" + videoFileName
+		if coverTimestamp == "" {
+			coverTimestamp = "00:00:01"
+		}
+		thumbnailPath := generateThumbnail(videoPath, uploadDir, videoUUID, coverTimestamp)
+		if thumbnailPath != "" {
+			thumbURL = "/uploads/thumbnails/" + filepath.Base(thumbnailPath)
+		}
 	}
-	thumbnailPath := generateThumbnail(videoPath, uploadDir, videoUUID, coverTimestamp)
 
 	var soundID *int64
 	if soundIDStr != "" {
@@ -119,19 +188,27 @@ func Upload(c *gin.Context) {
 		}
 	}
 
-	videoURL := "/uploads/videos/" + videoFileName
-	thumbURL := ""
-	if thumbnailPath != "" {
-		thumbURL = "/uploads/thumbnails/" + filepath.Base(thumbnailPath)
-	}
-
 	video := Video{
 		UserID:       uid,
 		URL:          videoURL,
 		Caption:      caption,
 		Duration:     0,
 		ThumbnailURL: thumbURL,
-		Status:       "processing",
+		Status:       "ready",
+		IsImage:      isImage,
+		Images:       pq.StringArray(imageURLs),
+	}
+	if !isImage {
+		video.Status = "processing"
+	}
+	if isStory {
+		video.Status = "story"
+	}
+	if !isImage {
+		video.Status = "processing"
+	}
+	if isStory {
+		video.Status = "story"
 	}
 	if soundID != nil {
 		video.SoundID = soundID
@@ -141,6 +218,11 @@ func Upload(c *gin.Context) {
 		log.Printf("db insert error: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "server error"})
 		return
+	}
+
+	// সাউন্ড ব্যবহার করা হলে টোটাল ভিডিও সংখ্যা বাড়ানো
+	if video.SoundID != nil {
+		Config.DB.Table("sounds").Where("id = ?", *video.SoundID).UpdateColumn("total_videos", gorm.Expr("total_videos + 1"))
 	}
 
 	if hashtagsStr != "" {
@@ -234,7 +316,7 @@ type Video struct {
 	Comments        int            `gorm:"default:0" json:"comments"`
 	Shares          int            `gorm:"default:0" json:"shares"`
 	IsImage         bool           `gorm:"default:false" json:"is_image"`
-	Images          []string       `gorm:"type:text[]" json:"images"`
+	Images          pq.StringArray `gorm:"type:text[]" json:"images"`
 	IsAd            bool           `gorm:"default:false" json:"is_ad"`
 	AdCta           string         `gorm:"type:varchar(50)" json:"ad_cta"`
 	AdLink          string         `gorm:"type:text" json:"ad_link"`

@@ -8,10 +8,12 @@ import (
 	"path/filepath"
 	"strings"
 	"vx-api/Config"
-	
+	"vx-api/Studio"
+
 	"vx-api/Middleware"
 
 	"github.com/gin-gonic/gin"
+	"github.com/lib/pq"
 	"gorm.io/gorm"
 )
 
@@ -25,6 +27,7 @@ func RegisterRoutes(r *gin.RouterGroup) {
 		homeGroup.GET("/foryou", Middleware.OptionalAuth(), GetForYouVideos)
 		homeGroup.GET("/following", Middleware.AuthRequired(), GetFollowingVideos)
 		homeGroup.GET("/friends", Middleware.AuthRequired(), GetFriendsVideos)
+		homeGroup.GET("/stories", Middleware.AuthRequired(), GetStories)
 	}
 
 	interactionGroup := r.Group("/interaction", Middleware.AuthRequired())
@@ -140,6 +143,22 @@ func enrichVideos(userID uint, videos []Video) []gin.H {
 	}
 
 	for _, v := range videos {
+		// মিউজিক ডিটেইলস খুঁজে বের করা যদি থাকে
+		// (সরাসরি Join করে বা Preload করে আনলে আরও ভালো হতো, আপাতত consistency-র জন্য আলাদা কোয়েরি)
+		var soundData interface{}
+		if v.SoundID != nil {
+			var s struct {
+				ID           uint   `json:"id"`
+				Title        string `json:"title"`
+				AuthorName   string `json:"author_name"`
+				AuthorAvatar string `json:"author_avatar"`
+				AudioURL     string `json:"audio_url"`
+			}
+			if err := Config.DB.Table("sounds").Where("id = ?", *v.SoundID).First(&s).Error; err == nil {
+				soundData = s
+			}
+		}
+
 		result = append(result, gin.H{
 			"id":             v.ID,
 			"user_id":        v.UserID,
@@ -147,8 +166,10 @@ func enrichVideos(userID uint, videos []Video) []gin.H {
 			"url":            v.URL,
 			"caption":        v.Caption,
 			"sound":          v.Sound,
-			"duration":      v.Duration,
-			"thumbnail_url": v.ThumbnailURL,
+			"sound_id":       v.SoundID,
+			"sound_data":     soundData,
+			"duration":       v.Duration,
+			"thumbnail_url":  v.ThumbnailURL,
 			"status":         v.Status,
 			"likes":          v.Likes,
 			"comments":       v.Comments,
@@ -185,7 +206,7 @@ func GetForYouVideos(c *gin.Context) {
 	}
 	offset := (page - 1) * limit
 
-	query := Config.DB.Preload("User").Order("created_at desc")
+	query := Config.DB.Preload("User").Where("status != ?", "story").Order("created_at desc")
 
 	// Apply pagination
 	if err := query.Limit(limit).Offset(offset).Find(&videos).Error; err != nil {
@@ -234,7 +255,7 @@ func GetFollowingVideos(c *gin.Context) {
 	var videos []Video
 	if len(followingIDs) > 0 {
 		if err := Config.DB.Preload("User").
-			Where("user_id IN ?", followingIDs).
+			Where("user_id IN ? AND status != ?", followingIDs, "story").
 			Order("created_at desc").
 			Limit(limit).
 			Offset(offset).
@@ -285,7 +306,7 @@ func GetFriendsVideos(c *gin.Context) {
 	var videos []Video
 	if len(friendIDs) > 0 {
 		if err := Config.DB.Preload("User").
-			Where("user_id IN ?", friendIDs).
+			Where("user_id IN ? AND status != ?", friendIDs, "story").
 			Order("created_at desc").
 			Limit(limit).
 			Offset(offset).
@@ -346,6 +367,14 @@ func ToggleLike(c *gin.Context) {
 				UpdateColumn("likes", gorm.Expr("likes + 1")).Error; err != nil {
 				return err
 			}
+
+			// Analytics: Increment creator's total likes for today
+			var v Video
+			tx.Select("user_id").First(&v, input.VideoID)
+			if v.UserID != 0 {
+				Studio.IncrementDailyStat(v.UserID, "likes", 1)
+			}
+
 			isLiked = true
 		}
 		return nil
@@ -569,7 +598,42 @@ func IncrementViews(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"status": false, "message": "Failed to increment view"})
 		return
 	}
+
+	// Analytics: Increment creator's total views for today
+	var v Video
+	if err := Config.DB.Select("user_id").First(&v, videoID).Error; err == nil {
+		Studio.IncrementDailyStat(v.UserID, "views", 1)
+	}
+
 	c.JSON(http.StatusOK, gin.H{"status": true, "message": "View incremented"})
+}
+
+// GetStories handles GET /api/v1/home/stories
+func GetStories(c *gin.Context) {
+	userIDRaw, _ := c.Get("userID")
+	uid := userIDRaw.(uint)
+
+	// Get people the user follows
+	var followingIDs []uint
+	Config.DB.Model(&Follow{}).Where("follower_id = ?", uid).Pluck("following_id", &followingIDs)
+
+	// Always include self in stories
+	followingIDs = append(followingIDs, uid)
+
+	var stories []Video
+	if err := Config.DB.Preload("User").
+		Where("user_id IN ? AND status = ?", followingIDs, "story").
+		Order("created_at desc").
+		Find(&stories).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"status": false, "message": "Failed to load stories"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"status":  true,
+		"message": "Stories loaded successfully",
+		"data":    enrichVideos(uid, stories),
+	})
 }
 
 // getUserIDOrZero OptionalAuth middleware থেকে userID বের করে, না থাকলে 0 রিটার্ন করে
@@ -636,7 +700,7 @@ type Video struct {
 	Comments        int            `gorm:"default:0" json:"comments"`
 	Shares          int            `gorm:"default:0" json:"shares"`
 	IsImage         bool           `gorm:"default:false" json:"is_image"`
-	Images          []string       `gorm:"type:text[]" json:"images"`
+	Images          pq.StringArray `gorm:"type:text[]" json:"images"`
 	IsAd            bool           `gorm:"default:false" json:"is_ad"`
 	AdCta           string         `gorm:"type:varchar(50)" json:"ad_cta"`
 	AdLink          string         `gorm:"type:text" json:"ad_link"`

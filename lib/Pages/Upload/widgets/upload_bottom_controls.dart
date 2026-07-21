@@ -10,6 +10,7 @@ class UploadBottomControls extends StatefulWidget {
   final VoidCallback onGalleryTap;
   final int selectedFilterIndex;
   final Function(int) onFilterSelected;
+  final Function(int) onModeChanged;
 
   const UploadBottomControls({
     super.key,
@@ -18,6 +19,7 @@ class UploadBottomControls extends StatefulWidget {
     required this.onGalleryTap,
     required this.selectedFilterIndex,
     required this.onFilterSelected,
+    required this.onModeChanged,
   });
 
   @override
@@ -207,6 +209,7 @@ class _UploadBottomControlsState extends State<UploadBottomControls> {
                             onTap: () {
                               HapticService.impactLight();
                               setState(() => _selectedModeIndex = index);
+                              widget.onModeChanged(index);
                             },
                             child: Padding(
                               padding: const EdgeInsets.symmetric(horizontal: 18),

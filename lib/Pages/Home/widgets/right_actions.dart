@@ -1,11 +1,14 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import '../../Profile/profile_page.dart';
 import '../sound_detail_page.dart';
+import '../models/video_data.dart';
 
 class RightActions extends StatelessWidget {
   final String              username;
   final String              avatarUrl;
+  final SoundData?          soundData;
   final ValueNotifier<bool> likedNotifier;
   final ValueNotifier<int>  likeCountNotifier;
   final ValueNotifier<bool> savedNotifier;
@@ -23,6 +26,7 @@ class RightActions extends StatelessWidget {
     super.key,
     required this.username,
     required this.avatarUrl,
+    this.soundData,
     required this.likedNotifier,
     required this.likeCountNotifier,
     required this.savedNotifier,
@@ -99,13 +103,15 @@ class RightActions extends StatelessWidget {
         const SizedBox(height: 18),
 
         SpinningDisc(
+          avatarUrl: soundData?.authorAvatar,
           onTap: () {
             Navigator.push(
               context,
               MaterialPageRoute(
                 builder: (context) => SoundDetailPage(
-                  soundTitle: "Original Sound",
-                  username: username,
+                  soundId: soundData?.id,
+                  soundTitle: soundData?.title ?? "Original Sound",
+                  username: soundData?.authorName ?? username,
                 ),
               ),
             );
@@ -237,8 +243,9 @@ class ActionBtn extends StatelessWidget {
 }
 
 class SpinningDisc extends StatefulWidget {
+  final String? avatarUrl;
   final VoidCallback? onTap;
-  const SpinningDisc({super.key, this.onTap});
+  const SpinningDisc({super.key, this.avatarUrl, this.onTap});
 
   @override
   State<SpinningDisc> createState() => _SpinningDiscState();
@@ -266,7 +273,7 @@ class _SpinningDiscState extends State<SpinningDisc>
         child: RotationTransition(
           turns: _ctrl,
           child: Container(
-            width: 40, height: 40,
+            width: 42, height: 42,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               gradient: const LinearGradient(
@@ -276,13 +283,25 @@ class _SpinningDiscState extends State<SpinningDisc>
               border: Border.all(color: Colors.white10, width: 1.2),
               boxShadow: [BoxShadow(color: Colors.pinkAccent.withValues(alpha: 0.2), blurRadius: 6)],
             ),
-            child: const Center(
-              child: SizedBox(
-                width: 12, height: 12,
-                child: DecoratedBox(
-                  decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.white10),
-                  child: Center(
-                    child: Icon(Icons.music_note_rounded, color: Colors.white60, size: 8)),
+            child: Center(
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(20),
+                child: Container(
+                  width: 28, height: 28,
+                  decoration: const BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.black,
+                  ),
+                  child: widget.avatarUrl != null && widget.avatarUrl!.isNotEmpty
+                      ? CachedNetworkImage(
+                          imageUrl: widget.avatarUrl!,
+                          fit: BoxFit.cover,
+                          placeholder: (context, url) => const Icon(Icons.music_note_rounded, color: Colors.white60, size: 14),
+                          errorWidget: (context, url, error) => const Icon(Icons.music_note_rounded, color: Colors.white60, size: 14),
+                        )
+                      : const Center(
+                          child: Icon(Icons.music_note_rounded, color: Colors.white60, size: 14),
+                        ),
                 ),
               ),
             ),

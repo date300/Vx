@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import '../Core/constants.dart' as constants;
 import 'auth_service.dart';
+import 'websocket_service.dart';
 
 enum NotificationType { like, comment, reply, follow, mention }
 
@@ -45,6 +46,28 @@ class NotificationService extends ChangeNotifier {
   List<VxNotification> _notifications = [];
   int _unreadCount = 0;
   bool _isLoading = false;
+  StreamSubscription? _wsSub;
+
+  NotificationService() {
+    _listenToWS();
+  }
+
+  void _listenToWS() {
+    _wsSub = webSocketService.eventStream.listen((event) {
+      if (event['type'] == 'notification') {
+        final payload = event['payload'];
+        if (payload != null) {
+          addNotification(VxNotification.fromJson(payload));
+        }
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _wsSub?.cancel();
+    super.dispose();
+  }
 
   List<VxNotification> get notifications => List.unmodifiable(_notifications);
   int get unreadCount => _unreadCount;

@@ -20,10 +20,10 @@ func GenerateOTP() string {
 
 // প্রোডাকশন-গ্রেড JWT ডুয়াল টোকেন ইঞ্জিন
 func GenerateTokens(userID uint) (string, string, error) {
-	// ১ ঘণ্টার জন্য অ্যাক্সেস টোকেন
+	// ৭ দিনের জন্য অ্যাক্সেস টোকেন (আগে ১ ঘণ্টা ছিল)
 	accessTokenClaims := jwt.MapClaims{
 		"user_id": userID,
-		"exp":     time.Now().Add(1 * time.Hour).Unix(),
+		"exp":     time.Now().Add(7 * 24 * time.Hour).Unix(),
 	}
 	accessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, accessTokenClaims)
 	at, err := accessToken.SignedString([]byte(Config.JWTSecret))

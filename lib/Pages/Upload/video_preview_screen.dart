@@ -10,8 +10,21 @@ import 'widgets/vx_premium_loader.dart';
 
 class VideoPreviewScreen extends StatefulWidget {
   final String videoPath;
+  final List<String>? imagePaths;
+  final bool isImage;
+  final bool isStory;
+  final int? soundId;
+  final String? soundTitle;
 
-  const VideoPreviewScreen({super.key, required this.videoPath});
+  const VideoPreviewScreen({
+    super.key,
+    required this.videoPath,
+    this.imagePaths,
+    this.isImage = false,
+    this.isStory = false,
+    this.soundId,
+    this.soundTitle,
+  });
 
   @override
   State<VideoPreviewScreen> createState() => _VideoPreviewScreenState();
@@ -26,19 +39,23 @@ class _VideoPreviewScreenState extends State<VideoPreviewScreen> {
   @override
   void initState() {
     super.initState();
-    _controller = VideoPlayerController.file(File(widget.videoPath))
-      ..initialize().then((_) {
-        setState(() {
-          _endValue = _controller.value.duration.inMilliseconds.toDouble();
+    if (!widget.isImage) {
+      _controller = VideoPlayerController.file(File(widget.videoPath))
+        ..initialize().then((_) {
+          setState(() {
+            _endValue = _controller.value.duration.inMilliseconds.toDouble();
+          });
+          _controller.play();
+          _controller.setLooping(true);
         });
-        _controller.play();
-        _controller.setLooping(true);
-      });
+    }
   }
 
   @override
   void dispose() {
-    _controller.dispose();
+    if (!widget.isImage) {
+      _controller.dispose();
+    }
     super.dispose();
   }
 
@@ -48,8 +65,27 @@ class _VideoPreviewScreenState extends State<VideoPreviewScreen> {
       backgroundColor: Colors.black,
       body: Stack(
         children: [
-          // Full Screen Video Preview
-          if (_controller.value.isInitialized)
+          // Full Screen Video/Image Preview
+          if (widget.isImage)
+            SizedBox.expand(
+              child: Center(
+                child: (widget.imagePaths != null && widget.imagePaths!.length > 1)
+                    ? PageView.builder(
+                        itemCount: widget.imagePaths!.length,
+                        itemBuilder: (context, index) {
+                          return Image.file(
+                            File(widget.imagePaths![index]),
+                            fit: BoxFit.contain,
+                          );
+                        },
+                      )
+                    : Image.file(
+                        File(widget.videoPath),
+                        fit: BoxFit.contain,
+                      ),
+              ),
+            )
+          else if (_controller.value.isInitialized)
             GestureDetector(
               onTap: () {
                 setState(() {
@@ -130,7 +166,7 @@ class _VideoPreviewScreenState extends State<VideoPreviewScreen> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 // Trimming UI
-                if (_controller.value.isInitialized)
+                if (!widget.isImage && _controller.value.isInitialized)
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 24),
                     child: ClipRRect(
@@ -242,7 +278,7 @@ class _VideoPreviewScreenState extends State<VideoPreviewScreen> {
   Future<void> _handleNext() async {
     HapticService.impactMedium();
     String finalPath = widget.videoPath;
-    if (_startValue > 0 || _endValue < _controller.value.duration.inMilliseconds) {
+    if (!widget.isImage && (_startValue > 0 || _endValue < _controller.value.duration.inMilliseconds)) {
       setState(() => _isTrimming = true);
       final trimmedPath = await VideoEditorService.trimVideo(
         inputPath: widget.videoPath,
@@ -253,7 +289,14 @@ class _VideoPreviewScreenState extends State<VideoPreviewScreen> {
       if (trimmedPath != null) finalPath = trimmedPath;
     }
     if (mounted) {
-      Navigator.push(context, MaterialPageRoute(builder: (context) => VideoPublishScreen(videoPath: finalPath)));
+      Navigator.push(context, MaterialPageRoute(builder: (context) => VideoPublishScreen(
+        videoPath: finalPath,
+        imagePaths: widget.imagePaths,
+        isImage: widget.isImage,
+        isStory: widget.isStory,
+        soundId: widget.soundId,
+        soundTitle: widget.soundTitle,
+      )));
     }
   }
 

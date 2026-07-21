@@ -10,10 +10,12 @@ import (
 	"time"
 
 	"vx-api/Config"
-	
+	"vx-api/Studio"
+
 	"vx-api/Middleware"
 
 	"github.com/gin-gonic/gin"
+	"github.com/lib/pq"
 	"gorm.io/gorm"
 )
 
@@ -408,7 +410,7 @@ type Video struct {
 	Comments        int            `gorm:"default:0" json:"comments"`
 	Shares          int            `gorm:"default:0" json:"shares"`
 	IsImage         bool           `gorm:"default:false" json:"is_image"`
-	Images          []string       `gorm:"type:text[]" json:"images"`
+	Images          pq.StringArray `gorm:"type:text[]" json:"images"`
 	IsAd            bool           `gorm:"default:false" json:"is_ad"`
 	AdCta           string         `gorm:"type:varchar(50)" json:"ad_cta"`
 	AdLink          string         `gorm:"type:text" json:"ad_link"`
@@ -484,6 +486,9 @@ func GetPublicProfile(c *gin.Context) {
 
 		var fb Follow
 		isFollowedBy = Config.DB.Where("follower_id = ? AND following_id = ?", target.ID, myIDUint).First(&fb).Error == nil
+
+		// Analytics: Increment profile visit for target user
+		Studio.IncrementDailyStat(target.ID, "profile_visits", 1)
 	}
 
 	c.JSON(http.StatusOK, gin.H{
@@ -551,6 +556,10 @@ func FollowUser(c *gin.Context) {
 		}
 		tx.Model(&User{}).Where("id = ?", target.ID).UpdateColumn("followers", gorm.Expr("followers + 1"))
 		tx.Model(&User{}).Where("id = ?", myIDUint).UpdateColumn("following", gorm.Expr("following + 1"))
+
+		// Analytics: Increment follower count for target user
+		Studio.IncrementDailyStat(target.ID, "followers", 1)
+
 		return nil
 	})
 

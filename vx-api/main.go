@@ -11,6 +11,7 @@ import (
 	"vx-api/Profile"
 	"vx-api/Realtime"
 	"vx-api/Settings"
+	"vx-api/Studio"
 	"vx-api/Upload"
 
 	"github.com/gin-gonic/gin"
@@ -34,8 +35,10 @@ func main() {
 		&Inbox.Conversation{},
 		&Inbox.Message{},
 		&Explore.Hashtag{},
+		&Explore.Sound{},
 		&Explore.VideoHashtag{},
 		&Settings.UserSettings{},
+		&Studio.DailyStats{},
 	)
 
 
@@ -57,6 +60,7 @@ func main() {
 	r.Static("/public", "./public")
 	r.Static("/uploads", "./public/uploads")
 	r.Static("/thumbnails", "./public/uploads/thumbnails")
+	r.Static("/images", "./public/uploads/images")
 
 	// Global API Group - Top level /api
 	api := r.Group("/api/v1")
@@ -68,6 +72,7 @@ func main() {
 		Explore.RegisterRoutes(api)    // Explore & Search
 		Inbox.RegisterRoutes(api)      // Inbox & Notifications
 		Settings.RegisterRoutes(api)   // User Settings
+		Studio.RegisterRoutes(api)     // Creator Studio
 		Upload.RegisterRoutes(api)
 		Realtime.RegisterRoutes(api)
 

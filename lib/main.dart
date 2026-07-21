@@ -7,6 +7,7 @@ import 'screen/splash_screen.dart';
 import 'Layout/theme_provider.dart';
 import 'Layout/main_layout.dart';
 import 'Pages/Profile/profile_provider.dart';
+import 'Pages/Profile/studio_provider.dart';
 import 'Pages/Home/home_provider.dart';
 import 'Services/performance_service.dart';
 import 'Services/notification_service.dart';
@@ -37,6 +38,7 @@ void main() async {
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
         ChangeNotifierProvider(create: (_) => ProfileProvider()),
         ChangeNotifierProvider(create: (_) => HomeProvider()),
+        ChangeNotifierProvider(create: (_) => StudioProvider()),
         ChangeNotifierProvider(create: (_) => notificationService),
       ],
       child: const MyApp(),

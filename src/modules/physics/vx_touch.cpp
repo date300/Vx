@@ -1,6 +1,10 @@
 #include "vx_touch.h"
 #include <array>
 #include <cmath>
+#include <android/log.h>
+
+#define LOG_TAG "VX_NATIVE_TOUCH"
+#define LOGD(...) __android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, __VA_ARGS__)
 
 /* ── Compiler hints ── */
 #if defined(__GNUC__) || defined(__clang__)
@@ -32,6 +36,7 @@ struct TouchState {
     int32_t  pointerId   = -1;
     bool     isActive    = false;
     double   lastDeltaY  = 0.0;
+    double   lastDeltaX  = 0.0;
 
     // Power-of-2 → bitmask indexing, no modulo/divide
     static constexpr uint32_t kCapacity = 16;
@@ -104,28 +109,41 @@ FFI_EXPORT void process_touch_event(int32_t pointerId, int32_t action,
 
         if (VX_LIKELY(g_state.count > 0)) {
             const TouchPoint& last = point_from_end(0);
-            // Accumulate delta to ensure we don't lose movement between Dart frames
-            g_state.lastDeltaY += (y - last.y);
+            double dx = x - last.x;
+            double dy = y - last.y;
+            g_state.lastDeltaY += dy;
+            g_state.lastDeltaX += dx;
+            // LOGD("ACTION_MOVE: dx=%.2f, dy=%.2f, total_dx=%.2f", dx, dy, g_state.lastDeltaX);
         }
         push_point(x, y, timestamp);
     }
     else if (action == ACTION_DOWN) {
+        LOGD("ACTION_DOWN: x=%.2f, y=%.2f", x, y);
         g_state.pointerId = pointerId;
         g_state.isActive  = true;
         g_state.head      = 0;
         g_state.count     = 0;
         g_state.lastDeltaY = 0.0;
+        g_state.lastDeltaX = 0.0;
         push_point(x, y, timestamp);
     }
     else { // UP or CANCEL
+        LOGD("ACTION_UP/CANCEL");
         g_state.isActive   = false;
         g_state.lastDeltaY = 0.0;
+        g_state.lastDeltaX = 0.0;
     }
 }
 
 FFI_EXPORT double get_native_scroll_delta() {
     double d = g_state.lastDeltaY;
     g_state.lastDeltaY = 0.0;
+    return d;
+}
+
+FFI_EXPORT double get_native_scroll_delta_x() {
+    double d = g_state.lastDeltaX;
+    g_state.lastDeltaX = 0.0;
     return d;
 }
 

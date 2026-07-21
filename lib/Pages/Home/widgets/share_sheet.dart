@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:share_plus/share_plus.dart';
 
 class ShareOption {
   final dynamic icon;
@@ -13,8 +15,9 @@ class ShareOption {
 }
 
 class ShareSheet extends StatelessWidget {
+  final String? videoUrl;
   final VoidCallback? onMore;
-  const ShareSheet({super.key, this.onMore});
+  const ShareSheet({super.key, this.videoUrl, this.onMore});
 
   static const _options = [
     ShareOption(icon: Icons.link_rounded,         label: "Copy Link",   bgColor: Color(0xFF333333), isFa: false),
@@ -58,21 +61,34 @@ class ShareSheet extends StatelessWidget {
               itemBuilder: (_, i) {
                 final opt = _options[i];
                 return GestureDetector(
-                  onTap: () {
+                  onTap: () async {
                     Navigator.pop(context);
                     if (opt.label == "More" && onMore != null) {
                       onMore!();
+                    } else if (opt.label == "Copy Link") {
+                      if (videoUrl != null) {
+                        await Clipboard.setData(ClipboardData(text: videoUrl!));
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                            content: Text("Link copied to clipboard! 🔗"),
+                            duration: Duration(milliseconds: 900),
+                            backgroundColor: Colors.pinkAccent,
+                            behavior: SnackBarBehavior.floating,
+                          ));
+                        }
+                      }
                     } else {
-                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                        content: Text("Shared via ${opt.label} ?"),
-                        duration: const Duration(milliseconds: 900),
-                        backgroundColor: opt.bgColor == const Color(0xFF333333)
-                            ? Colors.pinkAccent : opt.bgColor,
-                        behavior: SnackBarBehavior.floating,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12)),
-                        margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                      ));
+                      if (videoUrl != null) {
+                        await Share.share('Check out this video on Vx: $videoUrl');
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                          content: Text("Shared via ${opt.label} ?"),
+                          duration: const Duration(milliseconds: 900),
+                          backgroundColor: opt.bgColor == const Color(0xFF333333)
+                              ? Colors.pinkAccent : opt.bgColor,
+                          behavior: SnackBarBehavior.floating,
+                        ));
+                      }
                     }
                   },
                   child: Column(

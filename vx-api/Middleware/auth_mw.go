@@ -1,6 +1,7 @@
 package Middleware
 
 import (
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -37,6 +38,7 @@ func AuthRequired() gin.HandlerFunc {
 			return []byte(Config.JWTSecret), nil
 		})
 		if err != nil || !token.Valid {
+			fmt.Printf("DEBUG: Auth failed for token: %s, Error: %v\n", tokenString, err)
 			c.JSON(http.StatusUnauthorized, gin.H{"status": false, "error": "অবৈধ বা মেয়াদোত্তীর্ণ টোকেন।"})
 			c.Abort()
 			return

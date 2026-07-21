@@ -5,6 +5,7 @@ import 'package:flutter_material_design_icons/flutter_material_design_icons.dart
 import 'package:http/http.dart' as http;
 import '../../Core/constants.dart' as constants;
 import '../../Services/auth_service.dart';
+import '../../Services/websocket_service.dart';
 import 'setup_profile_screen.dart';
 import '../../Layout/responsive_layout.dart';
 
@@ -153,6 +154,9 @@ class _VxAuthGateContentState extends State<VxAuthGateContent> {
         bool isNewUser = data['is_new_user'] ?? true; 
         
         await AuthService.saveToken(accessToken, refreshToken, userId, username: username);
+
+        // 🚀 WebSocket কানেক্ট করুন লগইন করার সাথে সাথে
+        webSocketService.connect(accessToken);
 
         if (!mounted) return;
         
